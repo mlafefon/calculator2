@@ -147,18 +147,24 @@
         <div class="hr"></div>
         <h2>מסלול תמחור</h2>
         <div class="row">
-           <div class="span-4">
-            <label for="pricingMode" class="inline-row" style="cursor:pointer;">
-                <input id="pricingMode" type="checkbox" autocomplete="off" checked/>
-                <span>עם פיקדון</span>
-            </label>
+           <div class="span-3">
+                <label for="pricingModeSelect">מסלול תמחור</label>
+                <select id="pricingModeSelect">
+                    <option value="deposit" selected>עם פיקדון</option>
+                    <option value="entrance_fee">דמי כניסה</option>
+                    <option value="none">ללא</option>
+                </select>
           </div>
-          <div class="span-4" id="baseWithDepositWrapper">
-            <label for="baseWithDeposit">דמי אחזקה (תפקוד מלא) – עם פיקדון (₪)</label>
+          <div class="span-3" id="baseWithDepositWrapper">
+            <label for="baseWithDeposit">דמי אחזקה – עם פיקדון (₪)</label>
             <input type="text" id="baseWithDeposit" value="9000" min="0" step="100" class="expense" autocomplete="off" inputmode="decimal"/>
           </div>
-          <div class="span-4" id="baseNoDepositWrapper">
-            <label for="baseNoDeposit">דמי אחזקה (תפקוד מלא) – ללא פיקדון (₪)</label>
+           <div class="span-3" id="baseWithEntranceFeeWrapper">
+            <label for="baseWithEntranceFee">דמי אחזקה – עם דמי כניסה (₪)</label>
+            <input type="text" id="baseWithEntranceFee" value="9500" min="0" step="100" class="expense" autocomplete="off" inputmode="decimal"/>
+          </div>
+          <div class="span-3" id="baseNoDepositWrapper">
+            <label for="baseNoDeposit">דמי אחזקה – ללא (₪)</label>
             <input type="text" id="baseNoDeposit" value="14000" min="0" step="100" class="expense" autocomplete="off" inputmode="decimal"/>
           </div>
         </div>
@@ -183,6 +189,24 @@
             <div class="span-4" id="allowUseDepositWrapper">
               <label for="allowUseDeposit" class="inline-row" style="margin-top: 20px;"><input id="allowUseDeposit" type="checkbox" autocomplete="off"/> לאפשר שימוש בפיקדון</label>
                <div class="note" style="margin-top:-5px;">(לא נהוג – כבוי כברירת מחדל)</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="entranceFeeSection">
+          <div class="row">
+            <div class="span-4">
+              <label for="entranceFeeAmount">סכום דמי כניסה (₪)</label>
+              <input type="text" id="entranceFeeAmount" value="450000" min="0" step="1000" class="income" autocomplete="off" inputmode="decimal"/>
+            </div>
+            <div class="span-4">
+              <label for="entranceFeeDepreciationRateMonthly">שיעור פחת חודשי (%)</label>
+               <div class="note" style="margin-top: -4px; margin-bottom: 6px;">מהסכום המקורי</div>
+              <input type="text" id="entranceFeeDepreciationRateMonthly" value="1.5" min="0" step="0.1" class="expense" autocomplete="off" inputmode="decimal"/>
+            </div>
+            <div class="span-4">
+              <label for="entranceFeeDepreciationYears">משך זמן הפחת (שנים)</label>
+              <input type="text" id="entranceFeeDepreciationYears" value="5" min="0" step="1" class="expense" autocomplete="off" inputmode="decimal"/>
             </div>
           </div>
         </div>
@@ -299,9 +323,9 @@
             <div class="value" id="kpiCash">—</div>
           </div>
           <div class="item" id="kpiDepositItem">
-            <div class="label">יתרת פיקדון משוערת בסיום* (₪)</div>
+            <div class="label" id="kpiRefundLabel">יתרת פיקדון משוערת בסיום* (₪)</div>
             <div class="value" id="kpiDeposit">—</div>
-            <div class="note">*לא נצרך לתשלום חודשי, לפי אחוז החזר ופחת שנתי.</div>
+            <div class="note" id="kpiRefundNote">*לא נצרך לתשלום חודשי, לפי אחוז החזר ופחת שנתי.</div>
           </div>
         </div>
 
@@ -414,14 +438,17 @@
     }
     
     // Pricing mode dependent visibility
-    const pricingModeCheckbox = $('pricingMode');
+    const pricingModeSelect = $('pricingModeSelect');
     function updatePricingModeVisibility() {
-      const isWithDeposit = pricingModeCheckbox.checked;
-      $('baseWithDepositWrapper').style.display = isWithDeposit ? 'block' : 'none';
-      $('baseNoDepositWrapper').style.display = !isWithDeposit ? 'block' : 'none';
-      $('depositSection').style.display = isWithDeposit ? 'block' : 'none';
+        const mode = pricingModeSelect.value;
+        $('baseWithDepositWrapper').style.display = (mode === 'deposit') ? 'block' : 'none';
+        $('baseWithEntranceFeeWrapper').style.display = (mode === 'entrance_fee') ? 'block' : 'none';
+        $('baseNoDepositWrapper').style.display = (mode === 'none') ? 'block' : 'none';
+        
+        $('depositSection').style.display = (mode === 'deposit') ? 'block' : 'none';
+        $('entranceFeeSection').style.display = (mode === 'entrance_fee') ? 'block' : 'none';
     }
-    pricingModeCheckbox.addEventListener('change', () => {
+    pricingModeSelect.addEventListener('change', () => {
         updatePricingModeVisibility();
         calculateAndRender();
     });
@@ -450,8 +477,9 @@
         monthlyIncome: unformat($('monthlyIncome').value),
         monthlyLivingExpenses: unformat($('monthlyLivingExpenses').value),
         monthsIndependent: unformat($('monthsIndependent').value),
-        pricingMode: $('pricingMode').checked ? 'with' : 'without',
+        pricingMode: $('pricingModeSelect').value,
         baseWithDeposit: unformat($('baseWithDeposit').value),
+        baseWithEntranceFee: unformat($('baseWithEntranceFee').value),
         baseNoDeposit: unformat($('baseNoDeposit').value),
         nursingAddon: unformat($('nursingAddon').value),
         nursingAllowance: unformat($('nursingAllowance').value),
@@ -466,6 +494,10 @@
         depositDepreciationPct: unformat($('depositDepreciationPct').value) / 100,
         depositRefundPct: unformat($('depositRefundPct').value) / 100,
         allowUseDeposit: $('allowUseDeposit').checked,
+        // entrance fee
+        entranceFeeAmount: unformat($('entranceFeeAmount').value),
+        entranceFeeDepreciationRateMonthly: unformat($('entranceFeeDepreciationRateMonthly').value) / 100,
+        entranceFeeDepreciationYears: unformat($('entranceFeeDepreciationYears').value),
         // sale
         salePrice: unformat($('salePrice').value),
         saleCostsPct: unformat($('saleCostsPct').value) / 100,
@@ -484,28 +516,45 @@
       
       let cash = p.initCash;
       let depositBook = 0;
-      const useWithDeposit = p.pricingMode === 'with';
-
+      let entranceFeeBook = 0;
+      
       if (p.scenario === 'sell') {
         cash += Math.max(0, p.salePrice * (1 - p.saleCostsPct));
       }
-      if (useWithDeposit && p.depositAmount > 0) {
+
+      if (p.pricingMode === 'deposit' && p.depositAmount > 0) {
         cash -= p.depositAmount;
         depositBook = p.depositAmount;
+      }
+      if (p.pricingMode === 'entrance_fee' && p.entranceFeeAmount > 0) {
+        cash -= p.entranceFeeAmount;
+        entranceFeeBook = p.entranceFeeAmount;
       }
       cash -= p.oneTimeCosts;
 
       if (cash < 0) {
-        return { totalMonths: 0, independentMonths: 0, nursingMonths: 0, depositEnd: depositRefunded(depositBook, p, 0), finalCash: 0 };
+        let refund = 0;
+        if (p.pricingMode === 'deposit') {
+            refund = depositRefunded(depositBook, p, 0);
+        } else if (p.pricingMode === 'entrance_fee') {
+            refund = entranceFeeBook;
+        }
+        return { totalMonths: 0, independentMonths: 0, nursingMonths: 0, refundEnd: refund, finalCash: 0 };
       }
 
       const monthlyReturn = p.monthlyReturn;
       const monthlyInfl = p.monthlyInflation;
-      // 0 = unlimited, capped at 50 years to prevent infinite loops
       const maxMonths = p.maxYears > 0 ? p.maxYears * 12 : 50 * 12;
 
       function baseMonthlyCost(t) {
-        const base = useWithDeposit ? p.baseWithDeposit : p.baseNoDeposit;
+        let base;
+        if (p.pricingMode === 'deposit') {
+          base = p.baseWithDeposit;
+        } else if (p.pricingMode === 'entrance_fee') {
+            base = p.baseWithEntranceFee;
+        } else {
+          base = p.baseNoDeposit;
+        }
         return base * Math.pow(1 + monthlyInfl, t);
       }
       function nursingExtra(t) {
@@ -543,9 +592,14 @@
 
         cash += delta;
 
-        if (depositBook > 0 && t < (12 * 12)) { // Stop depreciation after 12 years
+        if (p.pricingMode === 'deposit' && depositBook > 0 && t < (12 * 12)) {
           const monthlyDep = 1 - Math.pow(1 - p.depositDepreciationPct, 1/12);
           depositBook *= (1 - monthlyDep);
+        }
+        
+        if (p.pricingMode === 'entrance_fee' && entranceFeeBook > 0 && t < (p.entranceFeeDepreciationYears * 12)) {
+            const monthlyDepAmount = p.entranceFeeAmount * p.entranceFeeDepreciationRateMonthly;
+            entranceFeeBook = Math.max(0, entranceFeeBook - monthlyDepAmount);
         }
 
         if (cash < 0) break;
@@ -559,12 +613,19 @@
         lastPositiveCash = cash;
         t++;
       }
+      
+      let refundEnd = 0;
+      if (p.pricingMode === 'deposit') {
+          refundEnd = depositRefunded(depositBook, p, t);
+      } else if (p.pricingMode === 'entrance_fee') {
+          refundEnd = entranceFeeBook;
+      }
 
       return {
         totalMonths: t,
         independentMonths: independentMonths,
         nursingMonths: nursingMonths,
-        depositEnd: depositRefunded(depositBook, p, t),
+        refundEnd: refundEnd,
         finalCash: lastPositiveCash
       };
     }
@@ -589,10 +650,25 @@
       $('kpiInd').textContent = fmt(r.independentMonths);
       $('kpiNur').textContent = fmt(r.nursingMonths);
       $('kpiCash').textContent = fmt(r.finalCash);
-      $('kpiDeposit').textContent = fmt(r.depositEnd);
 
-      const useWithDeposit = p.pricingMode === 'with';
-      $('kpiDepositItem').style.display = useWithDeposit ? 'block' : 'none';
+      const refundItem = $('kpiDepositItem');
+      const refundLabel = $('kpiRefundLabel');
+      const refundValue = $('kpiDeposit');
+      const refundNote = $('kpiRefundNote');
+      
+      if (p.pricingMode === 'deposit') {
+        refundItem.style.display = 'block';
+        refundLabel.textContent = 'יתרת פיקדון משוערת בסיום* (₪)';
+        refundValue.textContent = fmt(r.refundEnd);
+        refundNote.textContent = '*לא נצרך לתשלום חודשי, לפי אחוז החזר ופחת שנתי.';
+      } else if (p.pricingMode === 'entrance_fee') {
+        refundItem.style.display = 'block';
+        refundLabel.textContent = 'החזר מדמי כניסה בסיום (₪)';
+        refundValue.textContent = fmt(r.refundEnd);
+        refundNote.textContent = 'היתרה הלא משופחתת מדמי הכניסה.';
+      } else { // none
+        refundItem.style.display = 'none';
+      }
 
       renderBreakdown(p);
     }
@@ -601,8 +677,15 @@
         const container = $('breakdownContainer');
         if (!container) return;
 
-        const useWithDeposit = p.pricingMode === 'with';
-        const baseCost = useWithDeposit ? p.baseWithDeposit : p.baseNoDeposit;
+        let baseCost;
+        if (p.pricingMode === 'deposit') {
+            baseCost = p.baseWithDeposit;
+        } else if (p.pricingMode === 'entrance_fee') {
+            baseCost = p.baseWithEntranceFee;
+        } else {
+            baseCost = p.baseNoDeposit;
+        }
+
         const livingExpenses = p.monthlyLivingExpenses;
         const fixedIncome = p.monthlyIncome;
         const rentIncome = (p.scenario === 'rent') 
@@ -876,9 +959,10 @@
       monthlyIncome: { title: 'הכנסה חודשית קבועה', text: 'סך ההכנסות הקבועות מדי חודש, כגון פנסיה, קצבאות ביטוח לאומי (לא כולל גמלת סיעוד), או כל מקור הכנסה יציב אחר.' },
       monthlyLivingExpenses: { title: 'הוצאות מחייה חודשיות', text: 'הוצאות אישיות חודשיות שאינן כלולות בדמי האחזקה של הדיור המוגן. לדוגמה: תרופות, ביגוד, בילויים, מתנות וכו\'.' },
       maxYears: { title: 'מגבלת סימולציה (שנים)', text: 'הגדר את משך הזמן המקסימלי שהסימולציה תרוץ. ערך \'0\' מסיר את המגבלה ומחשב עד שההון אוזל, עד למקסימום של 50 שנה.' },
-      pricingMode: { title: 'מסלול תמחור', text: 'יש לבחור אם מסלול התמחור כולל תשלום פיקדון. מסלול "עם פיקדון" (תיבה מסומנת) כולל תשלום ראשוני גבוה ודמי אחזקה חודשיים נמוכים. מסלול "ללא פיקדון" (תיבה לא מסומנת) הוא ללא תשלום ראשוני, אך עם דמי אחזקה חודשיים גבוהים יותר.' },
+      pricingModeSelect: { title: 'מסלול תמחור', text: 'בחר את מסלול התשלום: "עם פיקדון" כולל תשלום ראשוני גבוה ודמי אחזקה נמוכים. "דמי כניסה" הוא תשלום ראשוני שאינו מוחזר אך נשחק עם הזמן (עם אפשרות להחזר חלקי). "ללא" הוא מסלול ללא תשלום ראשוני ועם דמי אחזקה חודשיים גבוהים.' },
       baseWithDeposit: { title: 'דמי אחזקה (עם פיקדון)', text: 'התשלום החודשי השוטף לדיור המוגן במסלול "עם פיקדון", עבור מגורים, שירותים בסיסיים, חשבונות וכו\'.' },
-      baseNoDeposit: { title: 'דמי אחזקה (ללא פיקדון)', text: 'התשלום החודשי השוטף לדיור המוגן במסלול "ללא פיקדון". סכום זה גבוה יותר מהמסלול המקביל.' },
+      baseWithEntranceFee: { title: 'דמי אחזקה (עם דמי כניסה)', text: 'התשלום החודשי השוטף לדיור המוגן במסלול "דמי כניסה".' },
+      baseNoDeposit: { title: 'דמי אחזקה (ללא)', text: 'התשלום החודשי השוטף לדיור המוגן במסלול ללא פיקדון או דמי כניסה. סכום זה גבוה יותר מהמסלולים המקבילים.' },
       isNursing: { title: 'מצב סיעודי', text: 'הפעלת אפשרות זו מוסיפה לסימולציה שלב שני, בו הדייר עובר למצב סיעודי. המעבר משפיע על העלויות וההכנסות החל מהחודש שיוגדר.' },
       monthsIndependent: { title: 'חודשים בתפקוד מלא לפני סיעודי', text: 'מספר החודשים שהדייר ישהה בדיור המוגן במצב עצמאי, לפני המעבר הצפוי למצב סיעודי.' },
       nursingAddon: { title: 'תוספת חודשית במצב סיעודי', text: 'העלות החודשית הנוספת הנדרשת עבור טיפול סיעודי (כח אדם, ציוד וכו\'). סכום זה מתווסף לדמי האחזקה הרגילים.' },
@@ -890,6 +974,9 @@
       depositAmount: { title: 'סכום פיקדון', text: 'הסכום החד-פעמי המופקד בידי הדיור המוגן עם הכניסה (במסלול "עם פיקדון").' },
       depositDepreciationPct: { title: 'שיעור פחת פיקדון שנתי', text: 'אחוז השחיקה השנתי של הפיקדון, כפי שנקבע בחוזה. בדרך כלל, השחיקה נעצרת לאחר מספר שנים (המחשבון מגביל אותה ל-12 שנים).' },
       depositRefundPct: { title: 'אחוז החזר פיקדון בסיום', text: 'האחוז המינימלי מכספי הפיקדון שיוחזר בסיום ההתקשרות, ללא קשר למשך השהות. הוא משמש כרצפת ביטחון ומונע שחיקה מלאה של הפיקדון.' },
+      entranceFeeAmount: { title: 'סכום דמי כניסה', text: 'התשלום החד-פעמי המשולם עם הכניסה במסלול "דמי כניסה". סכום זה אינו פיקדון וערכו נשחק עם הזמן.' },
+      entranceFeeDepreciationRateMonthly: { title: 'שיעור פחת חודשי', text: 'האחוז מהסכום המקורי של דמי הכניסה שנשחק (מפוחת) מדי חודש. אם הדייר עוזב לפני תום תקופת הפחת, ייתכן ויוחזר לו החלק היחסי שלא נוצל.' },
+      entranceFeeDepreciationYears: { title: 'משך זמן הפחת (שנים)', text: 'מספר השנים שלאורכן דמי הכניסה נשחקים. לאחר תקופה זו, ערכם יורד לאפס ולא יתקבל החזר במקרה של עזיבה.' },
       salePrice: { title: 'מחיר מכירה', text: 'המחיר הצפוי שיתקבל ממכירת דירת המגורים.' },
       saleCostsPct: { title: 'עלויות עסקה', text: 'סך עלויות המכירה כאחוז ממחיר הדירה (למשל: מס שבח, תיווך, עו"ד).' },
       rentGross: { title: 'שכר דירה חודשי ברוטו', text: 'דמי השכירות החודשיים שיתקבלו מהשכרת דירת המגורים, לפני ניכוי מסים והוצאות.' },
