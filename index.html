@@ -1,0 +1,968 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>מחשבון משך שהות בדיור מוגן</title>
+  <style>
+    :root {
+      --bg: #0f172a;          /* slate-900 */
+      --panel: #111827;       /* gray-900 */
+      --muted: #94a3b8;       /* slate-400 */
+      --text: #e5e7eb;        /* gray-200 */
+      --accent: #22d3ee;      /* cyan-400 */
+      --accent-2: #34d399;    /* emerald-400 */
+      --danger: #fb7185;      /* rose-400 */
+      --warn: #f59e0b;        /* amber-500 */
+      --ok: #10b981;          /* emerald-500 */
+      --card: #0b1220;
+      --input: #111827;
+      --border: #1f2937;      /* gray-800 */
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, Segoe UI, Arial, "Noto Sans Hebrew", sans-serif; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 2rem; margin: 0 0 8px; }
+    h2 { font-size: 1.25rem; margin: 24px 0 8px; color: var(--accent); }
+    h3 { font-size: 1rem; color: var(--muted); margin: 16px 0 8px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+    p.subtitle { color: var(--muted); margin-top: 0; }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; }
+    .span-12 { grid-column: span 12; }
+    .span-8 { grid-column: span 8; }
+    .span-6 { grid-column: span 6; }
+    .span-4 { grid-column: span 4; }
+    .span-3 { grid-column: span 3; }
+    .row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 10px; margin-bottom: 10px; align-items: end; }
+    label { font-size: 0.9rem; color: var(--muted); display: block; margin-bottom: 6px; }
+    label .help-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--muted); color: var(--muted); font-size: 11px; font-weight: bold; margin-right: 6px; cursor: pointer; user-select: none; }
+    input, select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--input); color: var(--text); font-size: 0.95rem; }
+    input.income, select.income { color: var(--ok); }
+    input.expense, select.expense { color: var(--danger); }
+    input[type="checkbox"] { width: auto; }
+    .btn { cursor: pointer; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #001018; border: none; padding: 12px 16px; border-radius: 12px; font-weight: 700; }
+    .btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+    .kpi { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .kpi .item { background: var(--panel); border: 1px solid var(--border); padding: 14px; border-radius: 14px; }
+    .kpi .label { color: var(--muted); font-size: .85rem; }
+    .kpi .value { font-size: 1.35rem; font-weight: 800; margin-top: 6px; }
+    .muted { color: var(--muted); }
+    .tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+    .tab { padding: 10px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel); cursor: pointer; }
+    .tab.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(34,211,238,.15) inset; }
+    .note { font-size: .85rem; color: var(--muted); }
+    .footer { display: flex; gap: 8px; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+    code.inline { background: #0a0f1a; padding: 2px 6px; border-radius: 6px; border: 1px solid var(--border); }
+    .inline-row { display: flex; align-items: center; gap: 8px; }
+    .switch { display: flex; align-items: center; gap: 8px; }
+    .warn { color: var(--warn); }
+    .danger { color: var(--danger); }
+    .ok { color: var(--ok); }
+    .hr { border-top: 1px dashed var(--border); margin: 12px 0; }
+    .hr-small { border-top: 1px solid var(--border); margin: 4px 0; }
+    .breakdown-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    .breakdown-table td { padding: 6px 0; }
+    .breakdown-table td:last-child { text-align: left; font-weight: 500; direction: ltr; }
+
+    /* Help Modal Styles */
+    #helpModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; transition: opacity .2s ease; opacity: 0; }
+    #helpModal.visible { display: flex; opacity: 1; }
+    .modal-content { background: var(--card); border: 1px solid var(--border); padding: 24px; border-radius: 16px; max-width: 500px; width: 90%; position: relative; transition: transform .2s ease; transform: scale(0.95); }
+    #helpModal.visible .modal-content { transform: scale(1); }
+    .modal-close { position: absolute; top: 12px; left: 12px; font-size: 1.5rem; color: var(--muted); cursor: pointer; border: none; background: none; line-height: 1; }
+    #helpModal h2 { margin-top: 0; }
+    #helpModal p { color: var(--muted); line-height: 1.6; }
+    
+    .btn.secondary.danger {
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+    .btn.secondary.danger:hover:not(:disabled) {
+        background-color: hsla(349, 91%, 71%, 0.1);
+    }
+
+    @media (max-width: 900px) {
+      .span-8, .span-6, .span-4, .span-3 { grid-column: span 12; }
+      .kpi { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.15.0",
+    "marked": "https://esm.sh/marked@^16.2.0"
+  }
+}
+</script>
+</head>
+<body>
+  <div class="container">
+    <h1>מחשבון משך שהות בדיור מוגן</h1>
+    <p class="subtitle">שנו כל פרמטר כדי לקבל את מספר החודשים עד לאפסית ההון. המחשבון מדמה זרמי מזומנים חודשיים בשני שלבים: תפקוד מלא → סיעודי.</p>
+
+    <div class="tabs" id="scenarioTabs">
+      <div class="tab active" data-s="sell">תרחיש מכירה</div>
+      <div class="tab" data-s="rent">תרחיש השכרה</div>
+      <div class="tab" data-s="cash">ללא שימוש בדירה</div>
+    </div>
+
+    <div class="grid">
+      <!-- Inputs -->
+      <div class="span-8 card" id="inputs">
+        <h2>פרמטרים כלליים</h2>
+        <div class="row">
+          <div class="span-4">
+            <label for="initCash">הון נזיל התחלתי (₪)</label>
+            <input type="text" id="initCash" value="1500000" min="0" step="1000" class="income" autocomplete="off" inputmode="decimal"/>
+          </div>
+          <div class="span-4">
+            <label for="monthlyIncome">הכנסה חודשית קבועה (₪)</label>
+            <input type="text" id="monthlyIncome" value="5500" min="0" step="100" class="income" autocomplete="off" inputmode="decimal"/>
+          </div>
+          <div class="span-4">
+            <label for="monthlyLivingExpenses">הוצאות מחייה חודשיות (₪)</label>
+            <input type="text" id="monthlyLivingExpenses" value="1500" min="0" step="100" class="expense" autocomplete="off" inputmode="decimal"/>
+          </div>
+        </div>
+        <div class="row">
+          <div class="span-3">
+            <label for="annualReturn">תשואת ריבית שנתית על היתרה (%)</label>
+            <input type="text" id="annualReturn" value="1" min="0" step="0.1" class="income" autocomplete="off" inputmode="decimal"/>
+          </div>
+          <div class="span-3">
+            <label for="annualInflation">קצב התייקרות שנתי (מדד) (%)</label>
+            <input type="text" id="annualInflation" value="2" min="0" step="0.1" class="expense" autocomplete="off" inputmode="decimal"/>
+          </div>
+          <div class="span-3">
+            <label for="oneTimeCosts">עלויות חד־פעמיות (כניסה/התארגנות) (₪)</label>
+            <input type="text" id="oneTimeCosts" value="0" min="0" step="100" class="expense" autocomplete="off" inputmode="decimal"/>
+          </div>
+           <div class="span-3">
+            <label for="maxYears">מגבלת סימולציה (שנים)</label>
+            <input type="text" id="maxYears" value="15" min="0" step="1" autocomplete="off" inputmode="decimal"/>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+        <h2>מסלול תמחור</h2>
+        <div class="row">
+           <div class="span-4">
+            <label for="pricingMode" class="inline-row" style="cursor:pointer;">
+                <input id="pricingMode" type="checkbox" autocomplete="off" checked/>
+                <span>עם פיקדון</span>
+            </label>
+          </div>
+          <div class="span-4" id="baseWithDepositWrapper">
+            <label for="baseWithDeposit">דמי אחזקה (תפקוד מלא) – עם פיקדון (₪)</label>
+            <input type="text" id="baseWithDeposit" value="9000" min="0" step="100" class="expense" autocomplete="off" inputmode="decimal"/>
+          </div>
+          <div class="span-4" id="baseNoDepositWrapper">
+            <label for="baseNoDeposit">דמי אחזקה (תפקוד מלא) – ללא פיקדון (₪)</label>
+            <input type="text" id="baseNoDeposit" value="14000" min="0" step="100" class="expense" autocomplete="off" inputmode="decimal"/>
+          </div>
+        </div>
+        
+        <div id="depositSection">
+          <div class="row">
+            <div class="span-4">
+              <label for="depositAmount">סכום פיקדון (₪)</label>
+              <input type="text" id="depositAmount" value="1000000" min="0" step="10000" class="income" autocomplete="off" inputmode="decimal"/>
+            </div>
+            <div class="span-4">
+              <label for="depositDepreciationPct">שיעור פחת פיקדון שנתי (%)</label>
+               <div class="note" style="margin-top: -4px; margin-bottom: 6px;">(השחיקה מחושבת למשך 12 שנים לכל היותר)</div>
+              <input type="text" id="depositDepreciationPct" value="3" min="0" step="0.1" class="expense" autocomplete="off" inputmode="decimal"/>
+            </div>
+            <div class="span-4">
+              <label for="depositRefundPct">אחוז החזר פיקדון בסיום (%)</label>
+              <input type="text" id="depositRefundPct" value="80" min="0" step="1" class="income" autocomplete="off" inputmode="decimal"/>
+            </div>
+          </div>
+          <div class="row">
+            <div class="span-4" id="allowUseDepositWrapper">
+              <label for="allowUseDeposit" class="inline-row" style="margin-top: 20px;"><input id="allowUseDeposit" type="checkbox" autocomplete="off"/> לאפשר שימוש בפיקדון</label>
+               <div class="note" style="margin-top:-5px;">(לא נהוג – כבוי כברירת מחדל)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+        <h2>מצב סיעודי</h2>
+        <div class="row">
+          <div class="span-12">
+            <label for="isNursing" class="inline-row"><input id="isNursing" type="checkbox" autocomplete="off"/> מצב סיעודי</label>
+          </div>
+        </div>
+        
+        <div class="row" id="nursingFieldsRow">
+          <div class="span-4">
+            <label for="monthsIndependent">חודשים בתפקוד מלא לפני סיעודי</label>
+            <input type="text" id="monthsIndependent" value="60" min="0" step="1" autocomplete="off" inputmode="decimal"/>
+          </div>
+          <div class="span-4">
+            <label for="nursingAddon">תוספת חודשית במצב סיעודי (₪)</label>
+            <input type="text" id="nursingAddon" value="18000" min="0" step="100" class="expense" autocomplete="off" inputmode="decimal"/>
+          </div>
+          <div class="span-4">
+            <label for="nursingAllowance">גמלת סיעוד לקיזוז (₪/חודש)</label>
+            <input type="text" id="nursingAllowance" value="2000" min="0" step="100" class="income" autocomplete="off" inputmode="decimal"/>
+          </div>
+        </div>
+        
+        <div class="hr"></div>
+        <h2 id="sellTitle">תרחיש מכירה</h2>
+        <div class="row" id="sellBlock">
+          <div class="span-4">
+            <label for="salePrice">מחיר מכירה (₪)</label>
+            <input type="text" id="salePrice" value="3000000" min="0" step="10000" class="income" autocomplete="off" inputmode="decimal"/>
+          </div>
+          <div class="span-4">
+            <label for="saleCostsPct">עלויות עסקה (% מהמחיר)</label>
+            <input type="text" id="saleCostsPct" value="3" min="0" step="0.1" class="expense" autocomplete="off" inputmode="decimal"/>
+          </div>
+        </div>
+
+        <h2 id="rentTitle">תרחיש השכרה</h2>
+        <div class="row" id="rentBlock">
+          <div class="span-3">
+            <label for="rentGross">שכר דירה חודשי ברוטו (₪)</label>
+            <input type="text" id="rentGross" value="7000" min="0" step="100" class="income" autocomplete="off" inputmode="decimal"/>
+          </div>
+          <div class="span-3">
+            <label for="rentTaxPct">מס על שכ"ד (%)</label>
+            <input type="text" id="rentTaxPct" value="10" min="0" step="0.1" class="expense" autocomplete="off" inputmode="decimal"/>
+          </div>
+          <div class="span-3">
+            <label for="vacancyPct">חודשים פנויים בשנה (Vacancy) (%)</label>
+            <input type="text" id="vacancyPct" value="8" min="0" step="0.1" class="expense" autocomplete="off" inputmode="decimal"/>
+          </div>
+          <div class="span-3">
+            <label for="annualMaintenance">תחזוקת נכס שנתית (₪)</label>
+            <input type="text" id="annualMaintenance" value="6000" min="0" step="100" class="expense" autocomplete="off" inputmode="decimal"/>
+          </div>
+        </div>
+        
+        <div class="hr"></div>
+        <h2>שמירה וטעינה</h2>
+        <div id="saveLoadContainer">
+            <div class="row" id="loadStateRow">
+                <div class="span-8">
+                    <label for="savedConfigsSelect">טעינת תרחיש שמור</label>
+                    <select id="savedConfigsSelect">
+                        <option value="">בחר תרחיש...</option>
+                    </select>
+                </div>
+                <div class="span-4" style="display: flex; gap: 8px; align-items: flex-end;">
+                    <button class="btn secondary" id="saveBtn" style="flex-grow: 1;">שמור</button>
+                    <button class="btn secondary danger" id="deleteBtn" style="flex-grow: 1;" disabled title="מחק תרחיש שנבחר">מחק</button>
+                </div>
+            </div>
+            <div class="row" id="saveStateRow" style="display: none;">
+                <div class="span-8">
+                    <label for="saveNameInput">שם התרחיש</label>
+                    <input type="text" id="saveNameInput" placeholder="הכנס שם לתרחיש..." autocomplete="off">
+                </div>
+                <div class="span-4" style="display: flex; gap: 8px; align-items: flex-end;">
+                    <button class="btn" id="confirmSaveBtn" style="flex-grow: 1;">שמור</button>
+                    <button class="btn secondary" id="cancelSaveBtn" style="flex-grow: 1;">בטל</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="hr"></div>
+        <div class="inline-row">
+          <button class="btn secondary" id="resetBtn" title="אפס לברירות המחדל">איפוס</button>
+          <span class="note">התוצאות מתעדכנות אוטומטית עם כל שינוי.</span>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="span-4 card">
+        <h2>תוצאות</h2>
+        <div class="kpi">
+          <div class="item" style="grid-column: span 2;">
+            <div class="label">סה"כ חודשים עד אפסית ההון</div>
+            <div class="value" id="kpiMonths">—</div>
+            <div class="note" id="kpiYears"></div>
+          </div>
+          <div class="item">
+            <div class="label">חודשים בתפקוד מלא</div>
+            <div class="value" id="kpiInd">—</div>
+          </div>
+          <div class="item">
+            <div class="label">חודשים במצב סיעודי</div>
+            <div class="value" id="kpiNur">—</div>
+          </div>
+          <div class="item">
+            <div class="label">יתרת הון נזיל בסיום (₪)</div>
+            <div class="value" id="kpiCash">—</div>
+          </div>
+          <div class="item" id="kpiDepositItem">
+            <div class="label">יתרת פיקדון משוערת בסיום* (₪)</div>
+            <div class="value" id="kpiDeposit">—</div>
+            <div class="note">*לא נצרך לתשלום חודשי, לפי אחוז החזר ופחת שנתי.</div>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+        <h2>פירוט תזרים חודשי (בחודש הראשון)</h2>
+        <div id="breakdownContainer">
+            <!-- Content will be generated by JS -->
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Help Modal -->
+  <div id="helpModal">
+    <div class="modal-content">
+      <button class="modal-close" aria-label="סגירה">&times;</button>
+      <h2 id="helpModalTitle"></h2>
+      <p id="helpModalText"></p>
+    </div>
+  </div>
+
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const fmt = (n) => n === null || isNaN(n) ? '—' : new Intl.NumberFormat('he-IL').format(Math.round(n));
+    const unformat = (val) => +(val || '0').toString().replace(/,/g, '');
+
+    let defaultFormState = {};
+    const defaultScenario = 'sell';
+
+    function captureDefaultState() {
+      const inputs = document.querySelectorAll('#inputs input, #inputs select');
+      inputs.forEach(input => {
+        if (input.type === 'checkbox') {
+          defaultFormState[input.id] = input.checked;
+        } else {
+          defaultFormState[input.id] = input.value;
+        }
+      });
+    }
+
+    function checkResetButtonState() {
+      const inputs = document.querySelectorAll('#inputs input, #inputs select');
+      let isModified = false;
+
+      if (activeScenario !== defaultScenario) {
+        isModified = true;
+      }
+
+      if (!isModified) {
+        for (const input of inputs) {
+          const defaultValue = defaultFormState[input.id];
+          if (defaultValue === undefined) continue;
+
+          let currentValue;
+          if (input.type === 'checkbox') {
+            currentValue = input.checked;
+          } else {
+            currentValue = input.value;
+          }
+
+          if (currentValue !== defaultValue) {
+            isModified = true;
+            break;
+          }
+        }
+      }
+      $('resetBtn').disabled = !isModified;
+    }
+
+
+    // Debounce function
+    function debounce(func, delay) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+      };
+    }
+
+    // Main calculation and rendering function
+    function calculateAndRender() {
+      const input = readInputs();
+      const result = simulate(input);
+      render(result, input);
+    }
+
+    // Tabs behaviour
+    const tabs = document.querySelectorAll('.tab');
+    let activeScenario = 'sell';
+    tabs.forEach(t => t.addEventListener('click', () => {
+      tabs.forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      activeScenario = t.dataset.s;
+      updateVisibility();
+      calculateAndRender(); // Recalculate on scenario change
+      checkResetButtonState();
+    }));
+
+    function updateVisibility() {
+      const sell = activeScenario === 'sell';
+      const rent = activeScenario === 'rent';
+      const cash = activeScenario === 'cash';
+      $('sellBlock').style.display = sell ? 'grid' : 'none';
+      $('rentBlock').style.display = rent ? 'grid' : 'none';
+      $('sellTitle').style.display = sell ? 'block' : 'none';
+      $('rentTitle').style.display = rent ? 'block' : 'none';
+    }
+    
+    // Pricing mode dependent visibility
+    const pricingModeCheckbox = $('pricingMode');
+    function updatePricingModeVisibility() {
+      const isWithDeposit = pricingModeCheckbox.checked;
+      $('baseWithDepositWrapper').style.display = isWithDeposit ? 'block' : 'none';
+      $('baseNoDepositWrapper').style.display = !isWithDeposit ? 'block' : 'none';
+      $('depositSection').style.display = isWithDeposit ? 'block' : 'none';
+    }
+    pricingModeCheckbox.addEventListener('change', () => {
+        updatePricingModeVisibility();
+        calculateAndRender();
+    });
+
+    // Nursing care dependent visibility
+    const nursingCheckbox = $('isNursing');
+    const nursingFieldsRow = $('nursingFieldsRow');
+    function updateNursingVisibility() {
+      nursingFieldsRow.style.display = nursingCheckbox.checked ? 'grid' : 'none';
+    }
+    nursingCheckbox.addEventListener('change', () => {
+        updateNursingVisibility();
+        calculateAndRender();
+    });
+
+    // Reset to defaults
+    $('resetBtn').addEventListener('click', () => { window.location.reload(); });
+
+    function readInputs() {
+      const annualReturn = unformat($('annualReturn').value) / 100;
+      const annualInflation = unformat($('annualInflation').value) / 100;
+      return {
+        isNursing: $('isNursing').checked,
+        scenario: activeScenario,  // 'sell' | 'rent' | 'cash'
+        initCash: unformat($('initCash').value),
+        monthlyIncome: unformat($('monthlyIncome').value),
+        monthlyLivingExpenses: unformat($('monthlyLivingExpenses').value),
+        monthsIndependent: unformat($('monthsIndependent').value),
+        pricingMode: $('pricingMode').checked ? 'with' : 'without',
+        baseWithDeposit: unformat($('baseWithDeposit').value),
+        baseNoDeposit: unformat($('baseNoDeposit').value),
+        nursingAddon: unformat($('nursingAddon').value),
+        nursingAllowance: unformat($('nursingAllowance').value),
+        annualReturn,
+        monthlyReturn: Math.pow(1 + annualReturn, 1/12) - 1,
+        annualInflation,
+        monthlyInflation: Math.pow(1 + annualInflation, 1/12) - 1,
+        oneTimeCosts: unformat($('oneTimeCosts').value),
+        maxYears: unformat($('maxYears').value),
+        // deposit
+        depositAmount: unformat($('depositAmount').value),
+        depositDepreciationPct: unformat($('depositDepreciationPct').value) / 100,
+        depositRefundPct: unformat($('depositRefundPct').value) / 100,
+        allowUseDeposit: $('allowUseDeposit').checked,
+        // sale
+        salePrice: unformat($('salePrice').value),
+        saleCostsPct: unformat($('saleCostsPct').value) / 100,
+        // rent
+        rentGross: unformat($('rentGross').value),
+        rentTaxPct: unformat($('rentTaxPct').value) / 100,
+        vacancyPct: unformat($('vacancyPct').value) / 100,
+        annualMaintenance: unformat($('annualMaintenance').value),
+      };
+    }
+
+    function simulate(p) {
+      if (!p.isNursing) {
+        p.monthsIndependent = Infinity;
+      }
+      
+      let cash = p.initCash;
+      let depositBook = 0;
+      const useWithDeposit = p.pricingMode === 'with';
+
+      if (p.scenario === 'sell') {
+        cash += Math.max(0, p.salePrice * (1 - p.saleCostsPct));
+      }
+      if (useWithDeposit && p.depositAmount > 0) {
+        cash -= p.depositAmount;
+        depositBook = p.depositAmount;
+      }
+      cash -= p.oneTimeCosts;
+
+      if (cash < 0) {
+        return { totalMonths: 0, independentMonths: 0, nursingMonths: 0, depositEnd: depositRefunded(depositBook, p, 0), finalCash: 0 };
+      }
+
+      const monthlyReturn = p.monthlyReturn;
+      const monthlyInfl = p.monthlyInflation;
+      // 0 = unlimited, capped at 50 years to prevent infinite loops
+      const maxMonths = p.maxYears > 0 ? p.maxYears * 12 : 50 * 12;
+
+      function baseMonthlyCost(t) {
+        const base = useWithDeposit ? p.baseWithDeposit : p.baseNoDeposit;
+        return base * Math.pow(1 + monthlyInfl, t);
+      }
+      function nursingExtra(t) {
+        const extra = Math.max(0, p.nursingAddon - p.nursingAllowance);
+        return extra * Math.pow(1 + monthlyInfl, t);
+      }
+      function rentNetPerMonth(t) {
+        if (p.scenario !== 'rent') return 0;
+        const gross = p.rentGross * Math.pow(1 + monthlyInfl, t);
+        return Math.max(0, (gross * (1 - p.rentTaxPct) * (1 - p.vacancyPct)) - (p.annualMaintenance / 12));
+      }
+      function monthlyLivingCost(t) {
+        return p.monthlyLivingExpenses * Math.pow(1 + monthlyInfl, t);
+      }
+
+      let t = 0; // months elapsed
+      let independentMonths = 0;
+      let nursingMonths = 0;
+      let lastPositiveCash = cash;
+
+      while (true) {
+        if (t >= maxMonths) break;
+
+        cash *= (1 + monthlyReturn);
+
+        const totalCost = baseMonthlyCost(t) + ((t < p.monthsIndependent) ? 0 : nursingExtra(t)) + monthlyLivingCost(t);
+        const income = p.monthlyIncome + rentNetPerMonth(t);
+        let delta = income - totalCost;
+
+        if (delta < 0 && p.allowUseDeposit && depositBook > 0) {
+          const draw = Math.min(-delta, depositBook);
+          depositBook -= draw;
+          delta += draw;
+        }
+
+        cash += delta;
+
+        if (depositBook > 0 && t < (12 * 12)) { // Stop depreciation after 12 years
+          const monthlyDep = 1 - Math.pow(1 - p.depositDepreciationPct, 1/12);
+          depositBook *= (1 - monthlyDep);
+        }
+
+        if (cash < 0) break;
+
+        // --- Month `t` was successful ---
+        if (t < p.monthsIndependent) {
+            independentMonths++;
+        } else {
+            nursingMonths++;
+        }
+        lastPositiveCash = cash;
+        t++;
+      }
+
+      return {
+        totalMonths: t,
+        independentMonths: independentMonths,
+        nursingMonths: nursingMonths,
+        depositEnd: depositRefunded(depositBook, p, t),
+        finalCash: lastPositiveCash
+      };
+    }
+
+    function depositRefunded(currBookValue, p, monthsElapsed) {
+      const floor = (p.depositAmount || 0) * (p.depositRefundPct || 0);
+      return Math.max(0, Math.max(currBookValue, floor));
+    }
+
+    function render(r, p) {
+      const maxMonths = p.maxYears > 0 ? p.maxYears * 12 : 50 * 12;
+      
+      if (p.maxYears > 0 && r.totalMonths >= maxMonths) {
+        $('kpiMonths').textContent = `+${fmt(maxMonths)}`;
+        $('kpiYears').textContent = `מעל ${p.maxYears} שנים`;
+      } else {
+        $('kpiMonths').textContent = r.totalMonths > 0 ? fmt(r.totalMonths) : 'לא מספיק להתחלה';
+        const years = Math.floor(r.totalMonths / 12), months = r.totalMonths % 12;
+        $('kpiYears').textContent = r.totalMonths > 0 ? `${years} שנים ו־${months} חודשים` : '';
+      }
+      
+      $('kpiInd').textContent = fmt(r.independentMonths);
+      $('kpiNur').textContent = fmt(r.nursingMonths);
+      $('kpiCash').textContent = fmt(r.finalCash);
+      $('kpiDeposit').textContent = fmt(r.depositEnd);
+
+      const useWithDeposit = p.pricingMode === 'with';
+      $('kpiDepositItem').style.display = useWithDeposit ? 'block' : 'none';
+
+      renderBreakdown(p);
+    }
+
+    function renderBreakdown(p) {
+        const container = $('breakdownContainer');
+        if (!container) return;
+
+        const useWithDeposit = p.pricingMode === 'with';
+        const baseCost = useWithDeposit ? p.baseWithDeposit : p.baseNoDeposit;
+        const livingExpenses = p.monthlyLivingExpenses;
+        const fixedIncome = p.monthlyIncome;
+        const rentIncome = (p.scenario === 'rent') 
+            ? Math.max(0, (p.rentGross * (1 - p.rentTaxPct) * (1 - p.vacancyPct)) - (p.annualMaintenance / 12))
+            : 0;
+        
+        // --- Independent Living ---
+        const indTotalIncome = fixedIncome + rentIncome;
+        const indTotalExpense = baseCost + livingExpenses;
+        const indNet = indTotalIncome - indTotalExpense;
+
+        let html = `<h3>תפקוד מלא</h3>
+        <table class="breakdown-table">
+            <tbody>
+                <tr><td>דמי אחזקה</td><td class="expense">${fmt(baseCost)}</td></tr>
+                <tr><td>הוצאות מחייה</td><td class="expense">${fmt(livingExpenses)}</td></tr>
+                <tr><td colspan="2"><div class="hr-small"></div></td></tr>
+                <tr><td>הכנסה קבועה</td><td class="income">${fmt(fixedIncome)}</td></tr>
+                ${p.scenario === 'rent' ? `<tr><td>הכנסה משכירות (נטו)</td><td class="income">${fmt(rentIncome)}</td></tr>` : ''}
+                <tr><td colspan="2"><div class="hr-small"></div></td></tr>
+                <tr><td><strong>יתרה חודשית</strong></td><td class="${indNet >= 0 ? 'ok' : 'danger'}"><strong>${fmt(indNet)}</strong></td></tr>
+            </tbody>
+        </table>`;
+
+        if (p.isNursing) {
+            // --- Nursing Care ---
+            const nurTotalIncome = fixedIncome + rentIncome + p.nursingAllowance;
+            const nurTotalExpense = baseCost + livingExpenses + p.nursingAddon;
+            const nurNet = nurTotalIncome - nurTotalExpense;
+
+            html += `<h3 style="margin-top: 16px;">סיעודי</h3>
+            <table class="breakdown-table">
+                <tbody>
+                    <tr><td>דמי אחזקה</td><td class="expense">${fmt(baseCost)}</td></tr>
+                    <tr><td>הוצאות מחייה</td><td class="expense">${fmt(livingExpenses)}</td></tr>
+                    <tr><td>תוספת סיעודי</td><td class="expense">${fmt(p.nursingAddon)}</td></tr>
+                    <tr><td colspan="2"><div class="hr-small"></div></td></tr>
+                    <tr><td>הכנסה קבועה</td><td class="income">${fmt(fixedIncome)}</td></tr>
+                    ${p.scenario === 'rent' ? `<tr><td>הכנסה משכירות (נטו)</td><td class="income">${fmt(rentIncome)}</td></tr>` : ''}
+                    <tr><td>גמלת סיעוד</td><td class="income">${fmt(p.nursingAllowance)}</td></tr>
+                    <tr><td colspan="2"><div class="hr-small"></div></td></tr>
+                    <tr><td><strong>יתרה חודשית</strong></td><td class="${nurNet >= 0 ? 'ok' : 'danger'}"><strong>${fmt(nurNet)}</strong></td></tr>
+                </tbody>
+            </table>`;
+        }
+
+        container.innerHTML = html;
+    }
+
+    // --- Save/Load Logic ---
+    const STORAGE_KEY = 'shelteredLivingCalculatorSaves';
+
+    function getSavedConfigs() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch (e) {
+        console.error("Failed to parse saved configs from localStorage", e);
+        return {};
+      }
+    }
+
+    function saveConfigs(configs) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(configs));
+    }
+
+    function getFormState() {
+      const state = { scenario: activeScenario };
+      const inputs = document.querySelectorAll('#inputs input, #inputs select');
+      inputs.forEach(input => {
+        if (input.type === 'checkbox') {
+          state[input.id] = input.checked;
+        } else {
+          state[input.id] = (input.value || '').toString().replace(/,/g, '');
+        }
+      });
+      return state;
+    }
+
+    const formatNumber = (v) => {
+        if (v === '' || v === null || v === undefined) return '';
+        const clean = v.toString().replace(/[^0-9.]/g, ''); // Allow decimal point
+        if (clean === '') return '';
+        const parts = clean.split('.');
+        const integerPart = new Intl.NumberFormat('he-IL').format(Number(parts[0]));
+        return parts.length > 1 ? `${integerPart}.${parts[1]}` : integerPart;
+    };
+    
+    function applyFormState(state) {
+      if (!state) return;
+
+      activeScenario = state.scenario || 'sell';
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.s === activeScenario);
+      });
+      
+      const inputs = document.querySelectorAll('#inputs input, #inputs select');
+      inputs.forEach(input => {
+        if (state[input.id] !== undefined) {
+          if (input.type === 'checkbox') {
+            input.checked = state[input.id];
+          } else {
+            input.value = state[input.id];
+          }
+        }
+      });
+
+      document.querySelectorAll('input[type="text"][inputmode="decimal"]').forEach(input => {
+        input.value = formatNumber(input.value);
+      });
+      
+      updateVisibility();
+      updatePricingModeVisibility();
+      updateNursingVisibility();
+      calculateAndRender();
+      checkResetButtonState();
+    }
+
+    function populateSavedConfigsDropdown() {
+      const select = $('savedConfigsSelect');
+      const configs = getSavedConfigs();
+      const keys = Object.keys(configs).sort();
+      
+      const currentSelection = select.value;
+      
+      select.innerHTML = '<option value="">בחר תרחיש...</option>';
+      
+      keys.forEach(key => {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = key;
+        select.appendChild(option);
+      });
+      
+      if (keys.includes(currentSelection)) {
+          select.value = currentSelection;
+      }
+      
+      $('deleteBtn').disabled = !select.value;
+    }
+
+    function setupSaveLoad() {
+      const saveBtn = $('saveBtn');
+      const deleteBtn = $('deleteBtn');
+      const select = $('savedConfigsSelect');
+
+      // New elements for the inline save UI
+      const loadStateRow = $('loadStateRow');
+      const saveStateRow = $('saveStateRow');
+      const saveNameInput = $('saveNameInput');
+      const confirmSaveBtn = $('confirmSaveBtn');
+      const cancelSaveBtn = $('cancelSaveBtn');
+
+      function showLoadState() {
+        saveStateRow.style.display = 'none';
+        loadStateRow.style.display = 'grid'; // A .row is display: grid
+        saveNameInput.value = '';
+      }
+      
+      function showSaveState() {
+        loadStateRow.style.display = 'none';
+        saveStateRow.style.display = 'grid';
+        saveNameInput.focus();
+      }
+
+      saveBtn.addEventListener('click', showSaveState);
+      
+      cancelSaveBtn.addEventListener('click', showLoadState);
+
+      confirmSaveBtn.addEventListener('click', () => {
+        const name = saveNameInput.value.trim();
+        if (name) {
+          const configs = getSavedConfigs();
+          configs[name] = getFormState();
+          saveConfigs(configs);
+          populateSavedConfigsDropdown();
+          select.value = name;
+          deleteBtn.disabled = false;
+          showLoadState();
+        } else {
+            saveNameInput.focus();
+            saveNameInput.style.borderColor = 'var(--danger)';
+            setTimeout(() => { saveNameInput.style.borderColor = '' }, 2000);
+        }
+      });
+      
+      saveNameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          confirmSaveBtn.click();
+        } else if (e.key === 'Escape') {
+          cancelSaveBtn.click();
+        }
+      });
+      
+      deleteBtn.addEventListener('click', () => {
+        const name = select.value;
+        if (!name) return;
+        
+        if (confirm(`האם למחוק את התרחיש "${name}"?`)) {
+          const configs = getSavedConfigs();
+          delete configs[name];
+          saveConfigs(configs);
+          populateSavedConfigsDropdown();
+          alert(`התרחיש "${name}" נמחק.`);
+        }
+      });
+      
+      select.addEventListener('change', () => {
+        const name = select.value;
+        if (name) {
+          const configs = getSavedConfigs();
+          applyFormState(configs[name]);
+        }
+        deleteBtn.disabled = !name;
+      });
+      
+      populateSavedConfigsDropdown();
+    }
+
+
+    function setupNumberFormatting() {
+        const numberInputs = document.querySelectorAll('input[type="text"][inputmode="decimal"]');
+
+        numberInputs.forEach(input => {
+            // Format the initial value
+            input.value = formatNumber(input.value);
+
+            input.addEventListener('input', (e) => {
+                const { target } = e;
+                const originalValue = target.value;
+                const cursorPos = target.selectionStart;
+                const digitsToRight = (originalValue.substring(cursorPos).match(/\d/g) || []).length;
+                
+                const formattedValue = formatNumber(originalValue);
+                if (originalValue === formattedValue) return;
+                target.value = formattedValue;
+                
+                let newCursorPos = formattedValue.length;
+                if (digitsToRight > 0) {
+                    let digitsCounted = 0;
+                    for (let i = formattedValue.length - 1; i >= 0; i--) {
+                        if (/\d/.test(formattedValue[i])) {
+                            digitsCounted++;
+                        }
+                        if (digitsCounted === digitsToRight) {
+                            newCursorPos = i;
+                            break;
+                        }
+                    }
+                }
+                target.setSelectionRange(newCursorPos, newCursorPos);
+            });
+        });
+    }
+
+    // Auto-calc on change
+    function setupAutoCalculation() {
+        const debouncedCalculate = debounce(calculateAndRender, 400);
+        const allInputs = document.querySelectorAll('#inputs input, #inputs select');
+        allInputs.forEach(el => {
+            el.addEventListener('input', () => {
+                debouncedCalculate();
+                checkResetButtonState();
+            });
+        });
+    }
+
+    // Help Modal Logic
+    const helpTexts = {
+      initCash: { title: 'הון נזיל התחלתי', text: 'סך כל הכסף הנזיל (עו"ש, פק"מ, ניירות ערך וכו\') הזמין לשימוש בתחילת התקופה, לפני כל תשלום או הכנסה ממכירת/השכרת דירה.' },
+      monthlyIncome: { title: 'הכנסה חודשית קבועה', text: 'סך ההכנסות הקבועות מדי חודש, כגון פנסיה, קצבאות ביטוח לאומי (לא כולל גמלת סיעוד), או כל מקור הכנסה יציב אחר.' },
+      monthlyLivingExpenses: { title: 'הוצאות מחייה חודשיות', text: 'הוצאות אישיות חודשיות שאינן כלולות בדמי האחזקה של הדיור המוגן. לדוגמה: תרופות, ביגוד, בילויים, מתנות וכו\'.' },
+      maxYears: { title: 'מגבלת סימולציה (שנים)', text: 'הגדר את משך הזמן המקסימלי שהסימולציה תרוץ. ערך \'0\' מסיר את המגבלה ומחשב עד שההון אוזל, עד למקסימום של 50 שנה.' },
+      pricingMode: { title: 'מסלול תמחור', text: 'יש לבחור אם מסלול התמחור כולל תשלום פיקדון. מסלול "עם פיקדון" (תיבה מסומנת) כולל תשלום ראשוני גבוה ודמי אחזקה חודשיים נמוכים. מסלול "ללא פיקדון" (תיבה לא מסומנת) הוא ללא תשלום ראשוני, אך עם דמי אחזקה חודשיים גבוהים יותר.' },
+      baseWithDeposit: { title: 'דמי אחזקה (עם פיקדון)', text: 'התשלום החודשי השוטף לדיור המוגן במסלול "עם פיקדון", עבור מגורים, שירותים בסיסיים, חשבונות וכו\'.' },
+      baseNoDeposit: { title: 'דמי אחזקה (ללא פיקדון)', text: 'התשלום החודשי השוטף לדיור המוגן במסלול "ללא פיקדון". סכום זה גבוה יותר מהמסלול המקביל.' },
+      isNursing: { title: 'מצב סיעודי', text: 'הפעלת אפשרות זו מוסיפה לסימולציה שלב שני, בו הדייר עובר למצב סיעודי. המעבר משפיע על העלויות וההכנסות החל מהחודש שיוגדר.' },
+      monthsIndependent: { title: 'חודשים בתפקוד מלא לפני סיעודי', text: 'מספר החודשים שהדייר ישהה בדיור המוגן במצב עצמאי, לפני המעבר הצפוי למצב סיעודי.' },
+      nursingAddon: { title: 'תוספת חודשית במצב סיעודי', text: 'העלות החודשית הנוספת הנדרשת עבור טיפול סיעודי (כח אדם, ציוד וכו\'). סכום זה מתווסף לדמי האחזקה הרגילים.' },
+      nursingAllowance: { title: 'גמלת סיעוד לקיזוז', text: 'סכום גמלת הסיעוד החודשית המתקבלת מהמוסד לביטוח לאומי, אשר מקזזת את עלות הטיפול הסיעודי.' },
+      annualReturn: { title: 'תשואת ריבית שנתית על היתרה', text: 'התשואה השנתית הצפויה על יתרת ההון הנזיל (למשל, מפיקדון בנקאי או תיק השקעות סולידי). המחשבון מזכה את היתרה בריבית חודשית.' },
+      annualInflation: { title: 'קצב התייקרות שנתי (מדד)', text: 'זהו מדד יוקר המחיה (אינפלציה). אחוז העלייה השנתי הצפוי בכל ההוצאות. המחשבון מעדכן את דמי האחזקה, הוצאות המחייה ועלויות הסיעוד מדי חודש בהתאם למדד זה.' },
+      oneTimeCosts: { title: 'עלויות חד־פעמיות', text: 'סך ההוצאות החד-פעמיות הקשורות למעבר: שכר טרחת עורך דין, הובלה, רכישת ריהוט וכו\'. סכום זה יורד מההון ההתחלתי.' },
+      allowUseDeposit: { title: 'לאפשר שימוש בפיקדון', text: 'אפשרות זו, שאינה נהוגה ברוב המקרים, מאפשרת למחשבון להשתמש בכספי הפיקדון לתשלום ההוצאות השוטפות במידה וההון הנזיל אוזל. בדרך כלל, הפיקדון "נעול" ואינו משמש לתזרים.' },
+      depositAmount: { title: 'סכום פיקדון', text: 'הסכום החד-פעמי המופקד בידי הדיור המוגן עם הכניסה (במסלול "עם פיקדון").' },
+      depositDepreciationPct: { title: 'שיעור פחת פיקדון שנתי', text: 'אחוז השחיקה השנתי של הפיקדון, כפי שנקבע בחוזה. בדרך כלל, השחיקה נעצרת לאחר מספר שנים (המחשבון מגביל אותה ל-12 שנים).' },
+      depositRefundPct: { title: 'אחוז החזר פיקדון בסיום', text: 'האחוז המינימלי מכספי הפיקדון שיוחזר בסיום ההתקשרות, ללא קשר למשך השהות. הוא משמש כרצפת ביטחון ומונע שחיקה מלאה של הפיקדון.' },
+      salePrice: { title: 'מחיר מכירה', text: 'המחיר הצפוי שיתקבל ממכירת דירת המגורים.' },
+      saleCostsPct: { title: 'עלויות עסקה', text: 'סך עלויות המכירה כאחוז ממחיר הדירה (למשל: מס שבח, תיווך, עו"ד).' },
+      rentGross: { title: 'שכר דירה חודשי ברוטו', text: 'דמי השכירות החודשיים שיתקבלו מהשכרת דירת המגורים, לפני ניכוי מסים והוצאות.' },
+      rentTaxPct: { title: 'מס על שכ"ד', text: 'אחוז המס שישולם על ההכנסה משכר דירה (לרוב 10% במסלול המופחת).' },
+      vacancyPct: { title: 'חודשים פנויים בשנה (Vacancy)', text: 'אומדן הזמן (באחוזים) בשנה בו הנכס צפוי לעמוד ריק בין שוכרים, ולכן לא לייצר הכנסה. 8% מייצגים כחודש אחד ריק בשנה.' },
+      annualMaintenance: { title: 'תחזוקת נכס שנתית', text: 'הוצאות שנתיות ממוצעות על תחזוקת הנכס המושכר (תיקונים, בלאי וכו\').' },
+    };
+
+    function initHelpSystem() {
+      const modal = $('helpModal');
+      const modalTitle = $('helpModalTitle');
+      const modalText = $('helpModalText');
+      const closeBtn = modal.querySelector('.modal-close');
+
+      const showHelp = (fieldId) => {
+        const helpData = helpTexts[fieldId];
+        if (!helpData) return;
+        modalTitle.textContent = helpData.title;
+        modalText.textContent = helpData.text;
+        modal.classList.add('visible');
+      };
+
+      const hideHelp = () => {
+        modal.classList.remove('visible');
+      };
+
+      // Create and inject icons
+      Object.keys(helpTexts).forEach(fieldId => {
+        const label = document.querySelector(`label[for="${fieldId}"]`);
+        if (label) {
+          const icon = document.createElement('span');
+          icon.className = 'help-icon';
+          icon.textContent = '?';
+          icon.setAttribute('role', 'button');
+          icon.setAttribute('aria-label', `הצג עזרה עבור ${helpTexts[fieldId].title}`);
+          icon.dataset.field = fieldId;
+          label.prepend(icon);
+        }
+      });
+      
+      // Event listeners
+      document.getElementById('inputs').addEventListener('click', (e) => {
+        if (e.target.classList.contains('help-icon')) {
+          showHelp(e.target.dataset.field);
+        }
+      });
+
+      closeBtn.addEventListener('click', hideHelp);
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          hideHelp();
+        }
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('visible')) {
+          hideHelp();
+        }
+      });
+    }
+
+    // Initial load
+    document.addEventListener('DOMContentLoaded', () => { 
+      setupNumberFormatting();
+      captureDefaultState();
+      updateVisibility();
+      updatePricingModeVisibility();
+      updateNursingVisibility();
+      setupAutoCalculation();
+      initHelpSystem();
+      setupSaveLoad();
+      calculateAndRender(); // Initial calculation
+      checkResetButtonState();
+    });
+  </script>
+</body>
+</html>
