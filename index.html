@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>מחשבון משך שהות בדיור מוגן</title>
+  <title>מחשבון השוואת מסלולי דיור מוגן</title>
   <style>
     :root {
       --bg: #0f172a;          /* slate-900 */
-      --panel: #111827;       /* gray-900 */
+      --panel: #1e293b;       /* slate-800 */
       --muted: #94a3b8;       /* slate-400 */
       --text: #e5e7eb;        /* gray-200 */
       --accent: #22d3ee;      /* cyan-400 */
@@ -15,904 +15,472 @@
       --danger: #fb7185;      /* rose-400 */
       --warn: #f59e0b;        /* amber-500 */
       --ok: #10b981;          /* emerald-500 */
-      --card: #0b1220;
-      --input: #111827;
-      --border: #1f2937;      /* gray-800 */
+      --card: #111827;
+      --input: #1e293b;
+      --border: #334155;      /* slate-700 */
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, Segoe UI, Arial, "Noto Sans Hebrew", sans-serif; }
     .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
-    h1 { font-size: 2rem; margin: 0 0 8px; }
-    h2 { font-size: 1.25rem; margin: 24px 0 8px; color: var(--accent); }
-    h3 { font-size: 1rem; color: var(--muted); margin: 16px 0 8px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
-    p.subtitle { color: var(--muted); margin-top: 0; }
+    h1 { font-size: 2.25rem; margin: 0 0 8px; text-align: center; color: var(--accent); }
+    h2 { font-size: 1.5rem; margin: 24px 0 16px; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    h3 { font-size: 1.1rem; color: var(--muted); margin: 16px 0 8px; }
+    p.subtitle { color: var(--muted); margin: 0 0 24px; text-align: center; max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.6; }
     .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 24px; }
     .span-12 { grid-column: span 12; }
     .span-8 { grid-column: span 8; }
     .span-6 { grid-column: span 6; }
     .span-4 { grid-column: span 4; }
     .span-3 { grid-column: span 3; }
-    .row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 10px; margin-bottom: 10px; align-items: end; }
+    .row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; margin-bottom: 16px; align-items: end; }
     label { font-size: 0.9rem; color: var(--muted); display: block; margin-bottom: 6px; }
-    label .help-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--muted); color: var(--muted); font-size: 11px; font-weight: bold; margin-right: 6px; cursor: pointer; user-select: none; }
-    input, select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--input); color: var(--text); font-size: 0.95rem; }
+    label .help-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--muted); color: var(--muted); font-size: 11px; font-weight: bold; margin-right: 6px; cursor: pointer; user-select: none; transition: all 0.2s; }
+    label .help-icon:hover { background: var(--accent); color: var(--card); border-color: var(--accent); }
+    input, select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--input); color: var(--text); font-size: 0.95rem; transition: border-color 0.2s, box-shadow 0.2s; }
+    input:focus, select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(34,211,238,.15); }
     input.income, select.income { color: var(--ok); }
     input.expense, select.expense { color: var(--danger); }
-    input[type="checkbox"] { width: auto; }
-    .btn { cursor: pointer; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #001018; border: none; padding: 12px 16px; border-radius: 12px; font-weight: 700; }
+    input[type="checkbox"] { width: auto; accent-color: var(--accent); }
+    .btn { cursor: pointer; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #001018; border: none; padding: 12px 16px; border-radius: 12px; font-weight: 700; transition: transform 0.2s, box-shadow 0.2s; }
+    .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
     .btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn.secondary:hover:not(:disabled) { background: var(--panel); border-color: var(--accent); }
+    .btn.danger { background: var(--danger); color: var(--text); border: none; }
+    .btn.danger:hover:not(:disabled) { background: #f43f5e; }
     .btn:disabled { opacity: .6; cursor: not-allowed; }
-    .kpi { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-    .kpi .item { background: var(--panel); border: 1px solid var(--border); padding: 14px; border-radius: 14px; }
-    .kpi .label { color: var(--muted); font-size: .85rem; }
-    .kpi .value { font-size: 1.35rem; font-weight: 800; margin-top: 6px; }
-    .muted { color: var(--muted); }
-    .tabs { display: flex; gap: 8px; margin-bottom: 10px; }
-    .tab { padding: 10px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel); cursor: pointer; }
-    .tab.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(34,211,238,.15) inset; }
     .note { font-size: .85rem; color: var(--muted); }
-    .footer { display: flex; gap: 8px; flex-wrap: wrap; justify-content: space-between; align-items: center; }
-    code.inline { background: #0a0f1a; padding: 2px 6px; border-radius: 6px; border: 1px solid var(--border); }
     .inline-row { display: flex; align-items: center; gap: 8px; }
-    .switch { display: flex; align-items: center; gap: 8px; }
-    .warn { color: var(--warn); }
-    .danger { color: var(--danger); }
-    .ok { color: var(--ok); }
-    .hr { border-top: 1px dashed var(--border); margin: 12px 0; }
-    .hr-small { border-top: 1px solid var(--border); margin: 4px 0; }
-    .breakdown-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-    .breakdown-table td { padding: 6px 0; }
-    .breakdown-table td:last-child { text-align: left; font-weight: 500; direction: ltr; }
-
-    /* Help Modal Styles */
-    #helpModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; transition: opacity .2s ease; opacity: 0; }
-    #helpModal.visible { display: flex; opacity: 1; }
-    .modal-content { background: var(--card); border: 1px solid var(--border); padding: 24px; border-radius: 16px; max-width: 500px; width: 90%; position: relative; transition: transform .2s ease; transform: scale(0.95); }
-    #helpModal.visible .modal-content { transform: scale(1); }
-    .modal-close { position: absolute; top: 12px; left: 12px; font-size: 1.5rem; color: var(--muted); cursor: pointer; border: none; background: none; line-height: 1; }
-    #helpModal h2 { margin-top: 0; }
-    #helpModal p { color: var(--muted); line-height: 1.6; }
+    .hr { border-top: 1px dashed var(--border); margin: 24px 0; }
     
-    .btn.secondary.danger {
-      color: var(--danger);
-      border-color: var(--danger);
-    }
-    .btn.secondary.danger:hover:not(:disabled) {
-        background-color: hsla(349, 91%, 71%, 0.1);
-    }
+    #tracksContainer .track-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; position: relative; }
+    .track-header { display: flex; gap: 16px; margin-bottom: 16px; align-items: center; }
+    .track-header .form-group { flex-grow: 1; }
+    
+    #resultsSection { display: none; }
+    .results-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    .results-table th, .results-table td { padding: 12px; text-align: center; border-bottom: 1px solid var(--border); }
+    .results-table th { color: var(--accent); font-size: 0.9rem; }
+    .results-table td { font-size: 1rem; }
+    .results-table tr:last-child td { border-bottom: none; }
+    .results-table td:first-child { font-weight: bold; text-align: right; }
+    .breakdown-cell { font-size: .8rem; text-align: right; padding: 4px; }
+    .breakdown-cell table { width: 100%; }
+    .breakdown-cell td:last-child { text-align: left; direction: ltr; }
+    
+    #sliderGroup { margin-top: 24px; padding: 16px; background: var(--panel); border-radius: 12px; }
+    #yearSlider { width: 100%; accent-color: var(--accent); }
+    #sliderLabels { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--muted); margin-top: 8px; }
 
     @media (max-width: 900px) {
       .span-8, .span-6, .span-4, .span-3 { grid-column: span 12; }
-      .kpi { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
-<script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://esm.sh/@google/genai@^1.15.0",
-    "marked": "https://esm.sh/marked@^16.2.0"
-  }
-}
-</script>
 </head>
 <body>
   <div class="container">
-    <h1>מחשבון משך שהות בדיור מוגן</h1>
-    <p class="subtitle">שנו כל פרמטר כדי לקבל את מספר החודשים עד לאפסית ההון. המחשבון מדמה זרמי מזומנים חודשיים בשני שלבים: תפקוד מלא → סיעודי.</p>
+    <h1>מחשבון השוואת מסלולי דיור מוגן</h1>
+    <p class="subtitle">הכלי מאפשר להשוות תרחישים פיננסיים שונים למגורים בדיור מוגן. התחילו בהזנת הנתונים הכלליים, הגדירו את מסלולי התמחור שברצונכם לבחון, ולבסוף השוו את התוצאות כדי לקבל החלטה מושכלת.</p>
 
-    <div class="tabs" id="scenarioTabs">
-      <div class="tab active" data-s="sell">תרחיש מכירה</div>
-      <div class="tab" data-s="rent">תרחיש השכרה</div>
-      <div class="tab" data-s="cash">ללא שימוש בדירה</div>
-    </div>
-
-    <div class="grid">
-      <!-- Inputs -->
-      <div class="span-8 card" id="inputs">
-        <h2>פרמטרים כלליים</h2>
-        <div class="row">
-          <div class="span-4">
-            <label for="initCash">הון נזיל התחלתי (₪)</label>
-            <input type="text" id="initCash" value="1500000" min="0" step="1000" class="income" autocomplete="off" inputmode="decimal"/>
-          </div>
-          <div class="span-4">
-            <label for="monthlyIncome">הכנסה חודשית קבועה (₪)</label>
-            <input type="text" id="monthlyIncome" value="5500" min="0" step="100" class="income" autocomplete="off" inputmode="decimal"/>
-          </div>
-          <div class="span-4">
-            <label for="monthlyLivingExpenses">הוצאות מחייה חודשיות (₪)</label>
-            <input type="text" id="monthlyLivingExpenses" value="1500" min="0" step="100" class="expense" autocomplete="off" inputmode="decimal"/>
-          </div>
-        </div>
-        <div class="row">
-          <div class="span-3">
-            <label for="annualReturn">תשואת ריבית שנתית על היתרה (%)</label>
-            <input type="text" id="annualReturn" value="1" min="0" step="0.1" class="income" autocomplete="off" inputmode="decimal"/>
-          </div>
-          <div class="span-3">
-            <label for="annualInflation">קצב התייקרות שנתי (מדד) (%)</label>
-            <input type="text" id="annualInflation" value="2" min="0" step="0.1" class="expense" autocomplete="off" inputmode="decimal"/>
-          </div>
-          <div class="span-3">
-            <label for="oneTimeCosts">עלויות חד־פעמיות (כניסה/התארגנות) (₪)</label>
-            <input type="text" id="oneTimeCosts" value="0" min="0" step="100" class="expense" autocomplete="off" inputmode="decimal"/>
-          </div>
-           <div class="span-3">
-            <label for="maxYears">מגבלת סימולציה (שנים)</label>
-            <input type="text" id="maxYears" value="15" min="0" step="1" autocomplete="off" inputmode="decimal"/>
-          </div>
-        </div>
-
-        <div class="hr"></div>
-        <h2>מסלול תמחור</h2>
-        <div class="row">
-           <div class="span-3">
-                <label for="pricingModeSelect">מסלול תמחור</label>
-                <select id="pricingModeSelect">
-                    <option value="deposit" selected>עם פיקדון</option>
-                    <option value="entrance_fee">דמי כניסה</option>
-                    <option value="none">ללא</option>
-                </select>
-          </div>
-          <div class="span-3" id="baseWithDepositWrapper">
-            <label for="baseWithDeposit">דמי אחזקה – עם פיקדון (₪)</label>
-            <input type="text" id="baseWithDeposit" value="9000" min="0" step="100" class="expense" autocomplete="off" inputmode="decimal"/>
-          </div>
-           <div class="span-3" id="baseWithEntranceFeeWrapper">
-            <label for="baseWithEntranceFee">דמי אחזקה – עם דמי כניסה (₪)</label>
-            <input type="text" id="baseWithEntranceFee" value="9500" min="0" step="100" class="expense" autocomplete="off" inputmode="decimal"/>
-          </div>
-          <div class="span-3" id="baseNoDepositWrapper">
-            <label for="baseNoDeposit">דמי אחזקה – ללא (₪)</label>
-            <input type="text" id="baseNoDeposit" value="14000" min="0" step="100" class="expense" autocomplete="off" inputmode="decimal"/>
-          </div>
-        </div>
-        
-        <div id="depositSection">
-          <div class="row">
-            <div class="span-4">
-              <label for="depositAmount">סכום פיקדון (₪)</label>
-              <input type="text" id="depositAmount" value="1000000" min="0" step="10000" class="income" autocomplete="off" inputmode="decimal"/>
-            </div>
-            <div class="span-4">
-              <label for="depositDepreciationPct">שיעור פחת פיקדון שנתי (%)</label>
-               <div class="note" style="margin-top: -4px; margin-bottom: 6px;">(השחיקה מחושבת למשך 12 שנים לכל היותר)</div>
-              <input type="text" id="depositDepreciationPct" value="3" min="0" step="0.1" class="expense" autocomplete="off" inputmode="decimal"/>
-            </div>
-            <div class="span-4">
-              <label for="depositRefundPct">אחוז החזר פיקדון בסיום (%)</label>
-              <input type="text" id="depositRefundPct" value="80" min="0" step="1" class="income" autocomplete="off" inputmode="decimal"/>
-            </div>
-          </div>
-          <div class="row">
-            <div class="span-4" id="allowUseDepositWrapper">
-              <label for="allowUseDeposit" class="inline-row" style="margin-top: 20px;"><input id="allowUseDeposit" type="checkbox" autocomplete="off"/> לאפשר שימוש בפיקדון</label>
-               <div class="note" style="margin-top:-5px;">(לא נהוג – כבוי כברירת מחדל)</div>
-            </div>
-          </div>
-        </div>
-
-        <div id="entranceFeeSection">
-          <div class="row">
-            <div class="span-4">
-              <label for="entranceFeeAmount">סכום דמי כניסה (₪)</label>
-              <input type="text" id="entranceFeeAmount" value="450000" min="0" step="1000" class="income" autocomplete="off" inputmode="decimal"/>
-            </div>
-            <div class="span-4">
-              <label for="entranceFeeDepreciationRateMonthly">שיעור פחת חודשי (%)</label>
-               <div class="note" style="margin-top: -4px; margin-bottom: 6px;">מהסכום המקורי</div>
-              <input type="text" id="entranceFeeDepreciationRateMonthly" value="1.5" min="0" step="0.1" class="expense" autocomplete="off" inputmode="decimal"/>
-            </div>
-            <div class="span-4">
-              <label for="entranceFeeDepreciationYears">משך זמן הפחת (שנים)</label>
-              <input type="text" id="entranceFeeDepreciationYears" value="5" min="0" step="1" class="expense" autocomplete="off" inputmode="decimal"/>
-            </div>
-          </div>
-        </div>
-
-        <div class="hr"></div>
-        <h2>מצב סיעודי</h2>
-        <div class="row">
-          <div class="span-12">
-            <label for="isNursing" class="inline-row"><input id="isNursing" type="checkbox" autocomplete="off"/> מצב סיעודי</label>
-          </div>
-        </div>
-        
-        <div class="row" id="nursingFieldsRow">
-          <div class="span-4">
-            <label for="monthsIndependent">חודשים בתפקוד מלא לפני סיעודי</label>
-            <input type="text" id="monthsIndependent" value="60" min="0" step="1" autocomplete="off" inputmode="decimal"/>
-          </div>
-          <div class="span-4">
-            <label for="nursingAddon">תוספת חודשית במצב סיעודי (₪)</label>
-            <input type="text" id="nursingAddon" value="18000" min="0" step="100" class="expense" autocomplete="off" inputmode="decimal"/>
-          </div>
-          <div class="span-4">
-            <label for="nursingAllowance">גמלת סיעוד לקיזוז (₪/חודש)</label>
-            <input type="text" id="nursingAllowance" value="2000" min="0" step="100" class="income" autocomplete="off" inputmode="decimal"/>
-          </div>
-        </div>
-        
-        <div class="hr"></div>
-        <h2 id="sellTitle">תרחיש מכירה</h2>
-        <div class="row" id="sellBlock">
-          <div class="span-4">
-            <label for="salePrice">מחיר מכירה (₪)</label>
-            <input type="text" id="salePrice" value="3000000" min="0" step="10000" class="income" autocomplete="off" inputmode="decimal"/>
-          </div>
-          <div class="span-4">
-            <label for="saleCostsPct">עלויות עסקה (% מהמחיר)</label>
-            <input type="text" id="saleCostsPct" value="3" min="0" step="0.1" class="expense" autocomplete="off" inputmode="decimal"/>
-          </div>
-        </div>
-
-        <h2 id="rentTitle">תרחיש השכרה</h2>
-        <div class="row" id="rentBlock">
-          <div class="span-3">
-            <label for="rentGross">שכר דירה חודשי ברוטו (₪)</label>
-            <input type="text" id="rentGross" value="7000" min="0" step="100" class="income" autocomplete="off" inputmode="decimal"/>
-          </div>
-          <div class="span-3">
-            <label for="rentTaxPct">מס על שכ"ד (%)</label>
-            <input type="text" id="rentTaxPct" value="10" min="0" step="0.1" class="expense" autocomplete="off" inputmode="decimal"/>
-          </div>
-          <div class="span-3">
-            <label for="vacancyPct">חודשים פנויים בשנה (Vacancy) (%)</label>
-            <input type="text" id="vacancyPct" value="8" min="0" step="0.1" class="expense" autocomplete="off" inputmode="decimal"/>
-          </div>
-          <div class="span-3">
-            <label for="annualMaintenance">תחזוקת נכס שנתית (₪)</label>
-            <input type="text" id="annualMaintenance" value="6000" min="0" step="100" class="expense" autocomplete="off" inputmode="decimal"/>
-          </div>
-        </div>
-        
-        <div class="hr"></div>
-        <h2>שמירה וטעינה</h2>
-        <div id="saveLoadContainer">
-            <div class="row" id="loadStateRow">
-                <div class="span-8">
-                    <label for="savedConfigsSelect">טעינת תרחיש שמור</label>
-                    <select id="savedConfigsSelect">
-                        <option value="">בחר תרחיש...</option>
-                    </select>
-                </div>
-                <div class="span-4" style="display: flex; gap: 8px; align-items: flex-end;">
-                    <button class="btn secondary" id="saveBtn" style="flex-grow: 1;">שמור</button>
-                    <button class="btn secondary danger" id="deleteBtn" style="flex-grow: 1;" disabled title="מחק תרחיש שנבחר">מחק</button>
-                </div>
-            </div>
-            <div class="row" id="saveStateRow" style="display: none;">
-                <div class="span-8">
-                    <label for="saveNameInput">שם התרחיש</label>
-                    <input type="text" id="saveNameInput" placeholder="הכנס שם לתרחיש..." autocomplete="off">
-                </div>
-                <div class="span-4" style="display: flex; gap: 8px; align-items: flex-end;">
-                    <button class="btn" id="confirmSaveBtn" style="flex-grow: 1;">שמור</button>
-                    <button class="btn secondary" id="cancelSaveBtn" style="flex-grow: 1;">בטל</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="hr"></div>
-        <div class="inline-row">
-          <button class="btn secondary" id="resetBtn" title="אפס לברירות המחדל">איפוס</button>
-          <span class="note">התוצאות מתעדכנות אוטומטית עם כל שינוי.</span>
-        </div>
+    <!-- Step 1: Common Inputs -->
+    <div class="card">
+      <h2>שלב 1: נתונים כלליים ונכס</h2>
+      <h3>פרמטרים פיננסיים</h3>
+      <div class="row">
+        <div class="span-3"><label for="initCash">הון נזיל התחלתי (₪)</label><input type="text" id="initCash" value="1500000" class="income" inputmode="decimal"/></div>
+        <div class="span-3"><label for="monthlyIncome">הכנסה חודשית קבועה (₪)</label><input type="text" id="monthlyIncome" value="5500" class="income" inputmode="decimal"/></div>
+        <div class="span-3"><label for="monthlyLivingExpenses">הוצאות מחייה חודשיות (₪)</label><input type="text" id="monthlyLivingExpenses" value="1500" class="expense" inputmode="decimal"/></div>
+        <div class="span-3"><label for="oneTimeCosts">עלויות חד־פעמיות (₪)</label><input type="text" id="oneTimeCosts" value="0" class="expense" inputmode="decimal"/></div>
+      </div>
+      <div class="row">
+        <div class="span-4"><label for="annualReturn">תשואת ריבית שנתית על היתרה (%)</label><input type="text" id="annualReturn" value="1" class="income" inputmode="decimal"/></div>
+        <div class="span-4"><label for="annualInflation">קצב התייקרות שנתי (מדד) (%)</label><input type="text" id="annualInflation" value="2" class="expense" inputmode="decimal"/></div>
+        <div class="span-4"><label for="maxYears">מגבלת סימולציה (שנים)</label><input type="text" id="maxYears" value="15" inputmode="decimal"/></div>
+      </div>
+      
+      <div class="hr"></div>
+      <h3>מצב סיעודי</h3>
+      <div class="row">
+        <div class="span-12"><label class="inline-row"><input id="isNursing" type="checkbox"/> להפעיל תרחיש מצב סיעודי</label></div>
+      </div>
+      <div class="row" id="nursingFieldsRow" style="display: none;">
+        <div class="span-4"><label for="monthsIndependent">חודשים בתפקוד מלא</label><input type="text" id="monthsIndependent" value="60" inputmode="decimal"/></div>
+        <div class="span-4"><label for="nursingAddon">תוספת חודשית במצב סיעודי (₪)</label><input type="text" id="nursingAddon" value="18000" class="expense" inputmode="decimal"/></div>
+        <div class="span-4"><label for="nursingAllowance">גמלת סיעוד לקיזוז (₪/חודש)</label><input type="text" id="nursingAllowance" value="2000" class="income" inputmode="decimal"/></div>
       </div>
 
-      <!-- Outputs -->
-      <div class="span-4 card">
-        <h2>תוצאות</h2>
-        <div class="kpi">
-          <div class="item" style="grid-column: span 2;">
-            <div class="label">סה"כ חודשים עד אפסית ההון</div>
-            <div class="value" id="kpiMonths">—</div>
-            <div class="note" id="kpiYears"></div>
-          </div>
-          <div class="item">
-            <div class="label">חודשים בתפקוד מלא</div>
-            <div class="value" id="kpiInd">—</div>
-          </div>
-          <div class="item">
-            <div class="label">חודשים במצב סיעודי</div>
-            <div class="value" id="kpiNur">—</div>
-          </div>
-          <div class="item">
-            <div class="label">יתרת הון נזיל בסיום (₪)</div>
-            <div class="value" id="kpiCash">—</div>
-          </div>
-          <div class="item" id="kpiDepositItem">
-            <div class="label" id="kpiRefundLabel">יתרת פיקדון משוערת בסיום* (₪)</div>
-            <div class="value" id="kpiDeposit">—</div>
-            <div class="note" id="kpiRefundNote">*לא נצרך לתשלום חודשי, לפי אחוז החזר ופחת שנתי.</div>
-          </div>
+      <div class="hr"></div>
+      <h3>תרחיש נכס</h3>
+      <div class="row">
+        <div class="span-4">
+            <label for="assetScenarioSelect">בחר תרחיש עבור הדירה</label>
+            <select id="assetScenarioSelect">
+                <option value="sell" selected>מכירת הדירה</option>
+                <option value="rent">השכרת הדירה</option>
+                <option value="none">ללא שימוש בדירה</option>
+            </select>
         </div>
-
-        <div class="hr"></div>
-        <h2>פירוט תזרים חודשי (בחודש הראשון)</h2>
-        <div id="breakdownContainer">
-            <!-- Content will be generated by JS -->
+      </div>
+      <div id="sellBlock">
+        <div class="row">
+          <div class="span-6"><label for="salePrice">מחיר מכירה (₪)</label><input type="text" id="salePrice" value="3000000" class="income" inputmode="decimal"/></div>
+          <div class="span-6"><label for="saleCostsPct">עלויות עסקה (% מהמחיר)</label><input type="text" id="saleCostsPct" value="3" class="expense" inputmode="decimal"/></div>
         </div>
-
+      </div>
+      <div id="rentBlock" style="display: none;">
+        <div class="row">
+          <div class="span-3"><label for="rentGross">שכ"ד חודשי ברוטו (₪)</label><input type="text" id="rentGross" value="7000" class="income" inputmode="decimal"/></div>
+          <div class="span-3"><label for="rentTaxPct">מס על שכ"ד (%)</label><input type="text" id="rentTaxPct" value="10" class="expense" inputmode="decimal"/></div>
+          <div class="span-3"><label for="vacancyPct">חודשים פנויים בשנה (%)</label><input type="text" id="vacancyPct" value="8" class="expense" inputmode="decimal"/></div>
+          <div class="span-3"><label for="annualMaintenance">תחזוקה שנתית (₪)</label><input type="text" id="annualMaintenance" value="6000" class="expense" inputmode="decimal"/></div>
+        </div>
       </div>
     </div>
+    
+    <!-- Step 2: Tracks Definition -->
+    <div class="card">
+        <h2>שלב 2: הגדרת מסלולים להשוואה</h2>
+        <div id="tracksContainer"></div>
+        <button id="addTrackBtn" class="btn secondary" style="margin-top: 16px;">+ הוסף מסלול חדש</button>
+    </div>
 
-  </div>
+    <!-- Calculate Button -->
+    <button id="calculateBtn" class="btn" style="width: 100%; padding: 16px; font-size: 1.2rem; margin-top: 16px;">השווה מסלולים</button>
 
-  <!-- Help Modal -->
-  <div id="helpModal">
-    <div class="modal-content">
-      <button class="modal-close" aria-label="סגירה">&times;</button>
-      <h2 id="helpModalTitle"></h2>
-      <p id="helpModalText"></p>
+    <!-- Step 3: Results -->
+    <div class="card" id="resultsSection">
+        <h2>שלב 3: השוואת תוצאות</h2>
+        <div id="resultsTableContainer" style="overflow-x: auto;"></div>
+        
+        <div id="sliderGroup">
+            <h3>ניתוח עלות מצטברת לפי שנים</h3>
+            <label for="yearSlider" id="yearSliderLabel">בחר שנה</label>
+            <input type="range" id="yearSlider" min="1" max="15" value="1" style="width:100%;">
+            <div id="sliderLabels">
+                <span id="sliderMinLabel">שנה 1</span>
+                <span id="sliderMaxLabel">שנה 15</span>
+            </div>
+            <div id="cumulativeCostTableContainer" style="margin-top: 16px;"></div>
+        </div>
     </div>
   </div>
-
 
   <script>
     const $ = (id) => document.getElementById(id);
     const fmt = (n) => n === null || isNaN(n) ? '—' : new Intl.NumberFormat('he-IL').format(Math.round(n));
     const unformat = (val) => +(val || '0').toString().replace(/,/g, '');
 
-    let defaultFormState = {};
-    const defaultScenario = 'sell';
+    // --- State Management ---
+    let tracks = [];
+    let simulationResults = [];
 
-    function captureDefaultState() {
-      const inputs = document.querySelectorAll('#inputs input, #inputs select');
-      inputs.forEach(input => {
-        if (input.type === 'checkbox') {
-          defaultFormState[input.id] = input.checked;
-        } else {
-          defaultFormState[input.id] = input.value;
+    // --- Core Simulation Logic ---
+    function simulate(p) {
+        if (!p.isNursing) p.monthsIndependent = Infinity;
+
+        let cash = p.initCash;
+        if (p.scenario === 'sell') cash += Math.max(0, p.salePrice * (1 - p.saleCostsPct));
+        
+        let depositBook = 0;
+        let entranceFeeBook = 0;
+
+        if (p.pricingMode === 'deposit' && p.depositAmount > 0) {
+            cash -= p.depositAmount;
+            depositBook = p.depositAmount;
         }
-      });
-    }
-
-    function checkResetButtonState() {
-      const inputs = document.querySelectorAll('#inputs input, #inputs select');
-      let isModified = false;
-
-      if (activeScenario !== defaultScenario) {
-        isModified = true;
-      }
-
-      if (!isModified) {
-        for (const input of inputs) {
-          const defaultValue = defaultFormState[input.id];
-          if (defaultValue === undefined) continue;
-
-          let currentValue;
-          if (input.type === 'checkbox') {
-            currentValue = input.checked;
-          } else {
-            currentValue = input.value;
-          }
-
-          if (currentValue !== defaultValue) {
-            isModified = true;
-            break;
-          }
+        if (p.pricingMode === 'entrance_fee' && p.entranceFeeAmount > 0) {
+            cash -= p.entranceFeeAmount;
+            entranceFeeBook = p.entranceFeeAmount;
         }
-      }
-      $('resetBtn').disabled = !isModified;
+        cash -= p.oneTimeCosts;
+
+        const monthlyLog = [];
+
+        if (cash < 0) {
+             const summary = { totalMonths: 0, independentMonths: 0, nursingMonths: 0, refundEnd: p.pricingMode === 'deposit' ? p.depositAmount : p.entranceFeeAmount, finalCash: 0, trackName: p.trackName };
+            return { summary, monthlyLog };
+        }
+
+        const monthlyReturn = Math.pow(1 + p.annualReturn, 1/12) - 1;
+        const monthlyInfl = Math.pow(1 + p.annualInflation, 1/12) - 1;
+        const maxMonths = p.maxYears > 0 ? p.maxYears * 12 : 50 * 12;
+
+        const baseMonthlyCost = (t, mode) => {
+            let base;
+            if (mode === 'deposit') base = p.baseWithDeposit;
+            else if (mode === 'entrance_fee') base = p.baseWithEntranceFee;
+            else base = p.baseNoDeposit;
+            return base * Math.pow(1 + monthlyInfl, t);
+        };
+        const nursingExtra = (t) => (Math.max(0, p.nursingAddon - p.nursingAllowance)) * Math.pow(1 + monthlyInfl, t);
+        const rentNetPerMonth = (t) => {
+            if (p.scenario !== 'rent') return 0;
+            const gross = p.rentGross * Math.pow(1 + monthlyInfl, t);
+            return Math.max(0, (gross * (1 - p.rentTaxPct) * (1 - p.vacancyPct)) - (p.annualMaintenance / 12));
+        };
+        const monthlyLivingCost = (t) => p.monthlyLivingExpenses * Math.pow(1 + monthlyInfl, t);
+
+        let t = 0, independentMonths = 0, nursingMonths = 0, lastPositiveCash = cash;
+
+        while (t < maxMonths) {
+            cash *= (1 + monthlyReturn);
+            const totalMonthlyCost = baseMonthlyCost(t, p.pricingMode) + ((t < p.monthsIndependent) ? 0 : nursingExtra(t)) + monthlyLivingCost(t);
+            const income = p.monthlyIncome + rentNetPerMonth(t);
+            cash += (income - totalMonthlyCost);
+            
+            monthlyLog.push({ month: t + 1, totalCost: totalMonthlyCost });
+
+            if (p.pricingMode === 'deposit' && depositBook > 0 && t < (12 * 12)) {
+                const monthlyDep = 1 - Math.pow(1 - (p.depositDepreciationPct || 0), 1/12);
+                depositBook *= (1 - monthlyDep);
+            }
+            if (p.pricingMode === 'entrance_fee' && entranceFeeBook > 0 && t < (p.entranceFeeDepreciationYears * 12)) {
+                const monthlyDepAmount = p.entranceFeeAmount * (p.entranceFeeDepreciationRateMonthly || 0);
+                entranceFeeBook = Math.max(0, entranceFeeBook - monthlyDepAmount);
+            }
+
+            if (cash < 0) break;
+            
+            if (t < p.monthsIndependent) independentMonths++; else nursingMonths++;
+            lastPositiveCash = cash;
+            t++;
+        }
+
+        let refundEnd = 0;
+        if (p.pricingMode === 'deposit') {
+            const floor = (p.depositAmount || 0) * (p.depositRefundPct || 0);
+            refundEnd = Math.max(0, Math.max(depositBook, floor));
+        } else if (p.pricingMode === 'entrance_fee') {
+            refundEnd = entranceFeeBook;
+        }
+
+        const summary = { totalMonths: t, independentMonths, nursingMonths, refundEnd, finalCash: lastPositiveCash, trackName: p.trackName, maxedOut: t >= maxMonths };
+        return { summary, monthlyLog };
     }
 
 
-    // Debounce function
-    function debounce(func, delay) {
-      let timeout;
-      return function(...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), delay);
-      };
-    }
+    // --- UI Rendering ---
+    function renderTrackCard(track) {
+        const trackId = track.id;
+        const card = document.createElement('div');
+        card.className = 'track-card';
+        card.dataset.trackId = trackId;
+        card.innerHTML = `
+            <div class="track-header">
+                <div class="form-group"><label for="trackName_${trackId}">שם המסלול</label><input type="text" id="trackName_${trackId}" value="${track.name}" placeholder="לדוגמה: בית א׳ - מסלול פיקדון"></div>
+                <div class="form-group"><label for="pricingMode_${trackId}">סוג המסלול</label>
+                    <select id="pricingMode_${trackId}">
+                        <option value="deposit" ${track.pricingMode === 'deposit' ? 'selected' : ''}>עם פיקדון</option>
+                        <option value="entrance_fee" ${track.pricingMode === 'entrance_fee' ? 'selected' : ''}>דמי כניסה</option>
+                        <option value="none" ${track.pricingMode === 'none' ? 'selected' : ''}>ללא</option>
+                    </select>
+                </div>
+                <button class="btn danger" data-remove-track-id="${trackId}" style="align-self: flex-end;">הסר</button>
+            </div>
+            <div class="track-body"></div>`;
 
-    // Main calculation and rendering function
-    function calculateAndRender() {
-      const input = readInputs();
-      const result = simulate(input);
-      render(result, input);
-    }
-
-    // Tabs behaviour
-    const tabs = document.querySelectorAll('.tab');
-    let activeScenario = 'sell';
-    tabs.forEach(t => t.addEventListener('click', () => {
-      tabs.forEach(x => x.classList.remove('active'));
-      t.classList.add('active');
-      activeScenario = t.dataset.s;
-      updateVisibility();
-      calculateAndRender(); // Recalculate on scenario change
-      checkResetButtonState();
-    }));
-
-    function updateVisibility() {
-      const sell = activeScenario === 'sell';
-      const rent = activeScenario === 'rent';
-      const cash = activeScenario === 'cash';
-      $('sellBlock').style.display = sell ? 'grid' : 'none';
-      $('rentBlock').style.display = rent ? 'grid' : 'none';
-      $('sellTitle').style.display = sell ? 'block' : 'none';
-      $('rentTitle').style.display = rent ? 'block' : 'none';
+        $('tracksContainer').appendChild(card);
+        updateTrackBody(trackId);
     }
     
-    // Pricing mode dependent visibility
-    const pricingModeSelect = $('pricingModeSelect');
-    function updatePricingModeVisibility() {
-        const mode = pricingModeSelect.value;
-        $('baseWithDepositWrapper').style.display = (mode === 'deposit') ? 'block' : 'none';
-        $('baseWithEntranceFeeWrapper').style.display = (mode === 'entrance_fee') ? 'block' : 'none';
-        $('baseNoDepositWrapper').style.display = (mode === 'none') ? 'block' : 'none';
+    function updateTrackBody(trackId) {
+        const card = document.querySelector(`.track-card[data-track-id='${trackId}']`);
+        const body = card.querySelector('.track-body');
+        const mode = card.querySelector(`#pricingMode_${trackId}`).value;
+
+        let html = '<div class="row">';
+        if (mode === 'deposit') {
+            html += `
+                <div class="span-3"><label for="baseWithDeposit_${trackId}">דמי אחזקה (₪)</label><input type="text" id="baseWithDeposit_${trackId}" value="9000" class="expense" inputmode="decimal"></div>
+                <div class="span-3"><label for="depositAmount_${trackId}">סכום פיקדון (₪)</label><input type="text" id="depositAmount_${trackId}" value="1000000" class="income" inputmode="decimal"></div>
+                <div class="span-3"><label for="depositDepreciationPct_${trackId}">פחת פיקדון שנתי (%)</label><input type="text" id="depositDepreciationPct_${trackId}" value="3" class="expense" inputmode="decimal"></div>
+                <div class="span-3"><label for="depositRefundPct_${trackId}">אחוז החזר מינימלי (%)</label><input type="text" id="depositRefundPct_${trackId}" value="80" class="income" inputmode="decimal"></div>`;
+        } else if (mode === 'entrance_fee') {
+            html += `
+                <div class="span-3"><label for="baseWithEntranceFee_${trackId}">דמי אחזקה (₪)</label><input type="text" id="baseWithEntranceFee_${trackId}" value="9500" class="expense" inputmode="decimal"></div>
+                <div class="span-3"><label for="entranceFeeAmount_${trackId}">סכום דמי כניסה (₪)</label><input type="text" id="entranceFeeAmount_${trackId}" value="450000" class="income" inputmode="decimal"></div>
+                <div class="span-3"><label for="entranceFeeDepreciationRateMonthly_${trackId}">פחת חודשי (%)</label><input type="text" id="entranceFeeDepreciationRateMonthly_${trackId}" value="1.5" class="expense" inputmode="decimal"></div>
+                <div class="span-3"><label for="entranceFeeDepreciationYears_${trackId}">משך הפחת (שנים)</label><input type="text" id="entranceFeeDepreciationYears_${trackId}" value="5" class="expense" inputmode="decimal"></div>`;
+        } else { // none
+            html += `<div class="span-3"><label for="baseNoDeposit_${trackId}">דמי אחזקה (₪)</label><input type="text" id="baseNoDeposit_${trackId}" value="14000" class="expense" inputmode="decimal"></div>`;
+        }
+        html += '</div>';
+        body.innerHTML = html;
+        setupNumberFormattingForContainer(body);
+    }
+    
+    function renderResults() {
+        const container = $('resultsTableContainer');
+        const results = simulationResults.map(r => r.summary);
         
-        $('depositSection').style.display = (mode === 'deposit') ? 'block' : 'none';
-        $('entranceFeeSection').style.display = (mode === 'entrance_fee') ? 'block' : 'none';
-    }
-    pricingModeSelect.addEventListener('change', () => {
-        updatePricingModeVisibility();
-        calculateAndRender();
-    });
+        let table = `<table class="results-table"><thead><tr>
+            <th>מסלול</th>
+            <th>סה"כ חודשים</th>
+            <th>פירוט חודשים (עצמאי / סיעודי)</th>
+            <th>יתרת הון בסיום (₪)</th>
+            <th>החזר צפוי (₪)</th>
+            <th>תזרים חודשי ראשון (₪)</th>
+        </tr></thead><tbody>`;
 
-    // Nursing care dependent visibility
-    const nursingCheckbox = $('isNursing');
-    const nursingFieldsRow = $('nursingFieldsRow');
-    function updateNursingVisibility() {
-      nursingFieldsRow.style.display = nursingCheckbox.checked ? 'grid' : 'none';
-    }
-    nursingCheckbox.addEventListener('change', () => {
-        updateNursingVisibility();
-        calculateAndRender();
-    });
+        results.forEach(r => {
+            const years = Math.floor(r.totalMonths / 12), months = r.totalMonths % 12;
+            const durationText = r.maxedOut ? `+${r.totalMonths}` : r.totalMonths;
+            const durationNote = r.totalMonths > 0 ? `<div class="note">${years} שנים ו־${months} חודשים</div>` : '<div class="note">לא מספיק להתחלה</div>';
+            
+            // First month cash flow
+            const firstMonthParams = readAllInputsForTrack(r.trackName); // Assuming trackName is unique
+            const baseCost = (firstMonthParams.pricingMode === 'deposit') ? firstMonthParams.baseWithDeposit : (firstMonthParams.pricingMode === 'entrance_fee') ? firstMonthParams.baseWithEntranceFee : firstMonthParams.baseNoDeposit;
+            const livingExpenses = firstMonthParams.monthlyLivingExpenses;
+            const fixedIncome = firstMonthParams.monthlyIncome;
+            const rentIncome = (firstMonthParams.scenario === 'rent') ? Math.max(0, (firstMonthParams.rentGross * (1 - firstMonthParams.rentTaxPct) * (1 - firstMonthParams.vacancyPct)) - (firstMonthParams.annualMaintenance / 12)) : 0;
+            const indNet = (fixedIncome + rentIncome) - (baseCost + livingExpenses);
 
-    // Reset to defaults
-    $('resetBtn').addEventListener('click', () => { window.location.reload(); });
+            table += `<tr>
+                <td>${r.trackName}</td>
+                <td><b>${durationText}</b>${durationNote}</td>
+                <td>${fmt(r.independentMonths)} / ${fmt(r.nursingMonths)}</td>
+                <td>${fmt(r.finalCash)}</td>
+                <td>${fmt(r.refundEnd)}</td>
+                <td class="breakdown-cell">
+                    <table>
+                        <tr><td>הכנסות</td><td class="income">${fmt(fixedIncome + rentIncome)}</td></tr>
+                        <tr><td>הוצאות</td><td class="expense">${fmt(baseCost + livingExpenses)}</td></tr>
+                        <tr><td><b>יתרה</b></td><td class="${indNet >= 0 ? 'ok' : 'danger'}"><b>${fmt(indNet)}</b></td></tr>
+                    </table>
+                </td>
+            </tr>`;
+        });
 
-    function readInputs() {
-      const annualReturn = unformat($('annualReturn').value) / 100;
-      const annualInflation = unformat($('annualInflation').value) / 100;
-      return {
-        isNursing: $('isNursing').checked,
-        scenario: activeScenario,  // 'sell' | 'rent' | 'cash'
-        initCash: unformat($('initCash').value),
-        monthlyIncome: unformat($('monthlyIncome').value),
-        monthlyLivingExpenses: unformat($('monthlyLivingExpenses').value),
-        monthsIndependent: unformat($('monthsIndependent').value),
-        pricingMode: $('pricingModeSelect').value,
-        baseWithDeposit: unformat($('baseWithDeposit').value),
-        baseWithEntranceFee: unformat($('baseWithEntranceFee').value),
-        baseNoDeposit: unformat($('baseNoDeposit').value),
-        nursingAddon: unformat($('nursingAddon').value),
-        nursingAllowance: unformat($('nursingAllowance').value),
-        annualReturn,
-        monthlyReturn: Math.pow(1 + annualReturn, 1/12) - 1,
-        annualInflation,
-        monthlyInflation: Math.pow(1 + annualInflation, 1/12) - 1,
-        oneTimeCosts: unformat($('oneTimeCosts').value),
-        maxYears: unformat($('maxYears').value),
-        // deposit
-        depositAmount: unformat($('depositAmount').value),
-        depositDepreciationPct: unformat($('depositDepreciationPct').value) / 100,
-        depositRefundPct: unformat($('depositRefundPct').value) / 100,
-        allowUseDeposit: $('allowUseDeposit').checked,
-        // entrance fee
-        entranceFeeAmount: unformat($('entranceFeeAmount').value),
-        entranceFeeDepreciationRateMonthly: unformat($('entranceFeeDepreciationRateMonthly').value) / 100,
-        entranceFeeDepreciationYears: unformat($('entranceFeeDepreciationYears').value),
-        // sale
-        salePrice: unformat($('salePrice').value),
-        saleCostsPct: unformat($('saleCostsPct').value) / 100,
-        // rent
-        rentGross: unformat($('rentGross').value),
-        rentTaxPct: unformat($('rentTaxPct').value) / 100,
-        vacancyPct: unformat($('vacancyPct').value) / 100,
-        annualMaintenance: unformat($('annualMaintenance').value),
-      };
+        table += '</tbody></table>';
+        container.innerHTML = table;
+        $('resultsSection').style.display = 'block';
     }
 
-    function simulate(p) {
-      if (!p.isNursing) {
-        p.monthsIndependent = Infinity;
-      }
-      
-      let cash = p.initCash;
-      let depositBook = 0;
-      let entranceFeeBook = 0;
-      
-      if (p.scenario === 'sell') {
-        cash += Math.max(0, p.salePrice * (1 - p.saleCostsPct));
-      }
-
-      if (p.pricingMode === 'deposit' && p.depositAmount > 0) {
-        cash -= p.depositAmount;
-        depositBook = p.depositAmount;
-      }
-      if (p.pricingMode === 'entrance_fee' && p.entranceFeeAmount > 0) {
-        cash -= p.entranceFeeAmount;
-        entranceFeeBook = p.entranceFeeAmount;
-      }
-      cash -= p.oneTimeCosts;
-
-      if (cash < 0) {
-        let refund = 0;
-        if (p.pricingMode === 'deposit') {
-            refund = depositRefunded(depositBook, p, 0);
-        } else if (p.pricingMode === 'entrance_fee') {
-            refund = entranceFeeBook;
-        }
-        return { totalMonths: 0, independentMonths: 0, nursingMonths: 0, refundEnd: refund, finalCash: 0 };
-      }
-
-      const monthlyReturn = p.monthlyReturn;
-      const monthlyInfl = p.monthlyInflation;
-      const maxMonths = p.maxYears > 0 ? p.maxYears * 12 : 50 * 12;
-
-      function baseMonthlyCost(t) {
-        let base;
-        if (p.pricingMode === 'deposit') {
-          base = p.baseWithDeposit;
-        } else if (p.pricingMode === 'entrance_fee') {
-            base = p.baseWithEntranceFee;
-        } else {
-          base = p.baseNoDeposit;
-        }
-        return base * Math.pow(1 + monthlyInfl, t);
-      }
-      function nursingExtra(t) {
-        const extra = Math.max(0, p.nursingAddon - p.nursingAllowance);
-        return extra * Math.pow(1 + monthlyInfl, t);
-      }
-      function rentNetPerMonth(t) {
-        if (p.scenario !== 'rent') return 0;
-        const gross = p.rentGross * Math.pow(1 + monthlyInfl, t);
-        return Math.max(0, (gross * (1 - p.rentTaxPct) * (1 - p.vacancyPct)) - (p.annualMaintenance / 12));
-      }
-      function monthlyLivingCost(t) {
-        return p.monthlyLivingExpenses * Math.pow(1 + monthlyInfl, t);
-      }
-
-      let t = 0; // months elapsed
-      let independentMonths = 0;
-      let nursingMonths = 0;
-      let lastPositiveCash = cash;
-
-      while (true) {
-        if (t >= maxMonths) break;
-
-        cash *= (1 + monthlyReturn);
-
-        const totalCost = baseMonthlyCost(t) + ((t < p.monthsIndependent) ? 0 : nursingExtra(t)) + monthlyLivingCost(t);
-        const income = p.monthlyIncome + rentNetPerMonth(t);
-        let delta = income - totalCost;
-
-        if (delta < 0 && p.allowUseDeposit && depositBook > 0) {
-          const draw = Math.min(-delta, depositBook);
-          depositBook -= draw;
-          delta += draw;
-        }
-
-        cash += delta;
-
-        if (p.pricingMode === 'deposit' && depositBook > 0 && t < (12 * 12)) {
-          const monthlyDep = 1 - Math.pow(1 - p.depositDepreciationPct, 1/12);
-          depositBook *= (1 - monthlyDep);
-        }
+    function renderCumulativeCostTable(year) {
+        const container = $('cumulativeCostTableContainer');
+        let table = `<table class="results-table"><thead><tr>
+            <th>מסלול</th>
+            <th>עלות מצטברת כוללת עד סוף שנה ${year} (₪)</th>
+        </tr></thead><tbody>`;
         
-        if (p.pricingMode === 'entrance_fee' && entranceFeeBook > 0 && t < (p.entranceFeeDepreciationYears * 12)) {
-            const monthlyDepAmount = p.entranceFeeAmount * p.entranceFeeDepreciationRateMonthly;
-            entranceFeeBook = Math.max(0, entranceFeeBook - monthlyDepAmount);
-        }
-
-        if (cash < 0) break;
-
-        // --- Month `t` was successful ---
-        if (t < p.monthsIndependent) {
-            independentMonths++;
-        } else {
-            nursingMonths++;
-        }
-        lastPositiveCash = cash;
-        t++;
-      }
-      
-      let refundEnd = 0;
-      if (p.pricingMode === 'deposit') {
-          refundEnd = depositRefunded(depositBook, p, t);
-      } else if (p.pricingMode === 'entrance_fee') {
-          refundEnd = entranceFeeBook;
-      }
-
-      return {
-        totalMonths: t,
-        independentMonths: independentMonths,
-        nursingMonths: nursingMonths,
-        refundEnd: refundEnd,
-        finalCash: lastPositiveCash
-      };
-    }
-
-    function depositRefunded(currBookValue, p, monthsElapsed) {
-      const floor = (p.depositAmount || 0) * (p.depositRefundPct || 0);
-      return Math.max(0, Math.max(currBookValue, floor));
-    }
-
-    function render(r, p) {
-      const maxMonths = p.maxYears > 0 ? p.maxYears * 12 : 50 * 12;
-      
-      if (p.maxYears > 0 && r.totalMonths >= maxMonths) {
-        $('kpiMonths').textContent = `+${fmt(maxMonths)}`;
-        $('kpiYears').textContent = `מעל ${p.maxYears} שנים`;
-      } else {
-        $('kpiMonths').textContent = r.totalMonths > 0 ? fmt(r.totalMonths) : 'לא מספיק להתחלה';
-        const years = Math.floor(r.totalMonths / 12), months = r.totalMonths % 12;
-        $('kpiYears').textContent = r.totalMonths > 0 ? `${years} שנים ו־${months} חודשים` : '';
-      }
-      
-      $('kpiInd').textContent = fmt(r.independentMonths);
-      $('kpiNur').textContent = fmt(r.nursingMonths);
-      $('kpiCash').textContent = fmt(r.finalCash);
-
-      const refundItem = $('kpiDepositItem');
-      const refundLabel = $('kpiRefundLabel');
-      const refundValue = $('kpiDeposit');
-      const refundNote = $('kpiRefundNote');
-      
-      if (p.pricingMode === 'deposit') {
-        refundItem.style.display = 'block';
-        refundLabel.textContent = 'יתרת פיקדון משוערת בסיום* (₪)';
-        refundValue.textContent = fmt(r.refundEnd);
-        refundNote.textContent = '*לא נצרך לתשלום חודשי, לפי אחוז החזר ופחת שנתי.';
-      } else if (p.pricingMode === 'entrance_fee') {
-        refundItem.style.display = 'block';
-        refundLabel.textContent = 'החזר מדמי כניסה בסיום (₪)';
-        refundValue.textContent = fmt(r.refundEnd);
-        refundNote.textContent = 'היתרה הלא משופחתת מדמי הכניסה.';
-      } else { // none
-        refundItem.style.display = 'none';
-      }
-
-      renderBreakdown(p);
-    }
-
-    function renderBreakdown(p) {
-        const container = $('breakdownContainer');
-        if (!container) return;
-
-        let baseCost;
-        if (p.pricingMode === 'deposit') {
-            baseCost = p.baseWithDeposit;
-        } else if (p.pricingMode === 'entrance_fee') {
-            baseCost = p.baseWithEntranceFee;
-        } else {
-            baseCost = p.baseNoDeposit;
-        }
-
-        const livingExpenses = p.monthlyLivingExpenses;
-        const fixedIncome = p.monthlyIncome;
-        const rentIncome = (p.scenario === 'rent') 
-            ? Math.max(0, (p.rentGross * (1 - p.rentTaxPct) * (1 - p.vacancyPct)) - (p.annualMaintenance / 12))
-            : 0;
+        simulationResults.forEach(result => {
+            const targetMonths = year * 12;
+            const cumulativeCost = result.monthlyLog
+                .filter(log => log.month <= targetMonths)
+                .reduce((sum, log) => sum + log.totalCost, 0);
+            
+            table += `<tr><td>${result.summary.trackName}</td><td>${fmt(cumulativeCost)}</td></tr>`;
+        });
         
-        // --- Independent Living ---
-        const indTotalIncome = fixedIncome + rentIncome;
-        const indTotalExpense = baseCost + livingExpenses;
-        const indNet = indTotalIncome - indTotalExpense;
+        table += '</tbody></table>';
+        container.innerHTML = table;
+    }
 
-        let html = `<h3>תפקוד מלא</h3>
-        <table class="breakdown-table">
-            <tbody>
-                <tr><td>דמי אחזקה</td><td class="expense">${fmt(baseCost)}</td></tr>
-                <tr><td>הוצאות מחייה</td><td class="expense">${fmt(livingExpenses)}</td></tr>
-                <tr><td colspan="2"><div class="hr-small"></div></td></tr>
-                <tr><td>הכנסה קבועה</td><td class="income">${fmt(fixedIncome)}</td></tr>
-                ${p.scenario === 'rent' ? `<tr><td>הכנסה משכירות (נטו)</td><td class="income">${fmt(rentIncome)}</td></tr>` : ''}
-                <tr><td colspan="2"><div class="hr-small"></div></td></tr>
-                <tr><td><strong>יתרה חודשית</strong></td><td class="${indNet >= 0 ? 'ok' : 'danger'}"><strong>${fmt(indNet)}</strong></td></tr>
-            </tbody>
-        </table>`;
+    // --- Input Reading ---
+    function readAllInputsForTrack(trackName) {
+        const trackCard = Array.from(document.querySelectorAll('.track-card')).find(c => c.querySelector('input[id^="trackName"]').value === trackName);
+        if (!trackCard) return null;
+        const trackId = trackCard.dataset.trackId;
+        const pMode = $(`pricingMode_${trackId}`).value;
 
-        if (p.isNursing) {
-            // --- Nursing Care ---
-            const nurTotalIncome = fixedIncome + rentIncome + p.nursingAllowance;
-            const nurTotalExpense = baseCost + livingExpenses + p.nursingAddon;
-            const nurNet = nurTotalIncome - nurTotalExpense;
+        const trackParams = {
+            trackName: trackName,
+            pricingMode: pMode,
+            baseWithDeposit: pMode === 'deposit' ? unformat($(`baseWithDeposit_${trackId}`).value) : 0,
+            baseWithEntranceFee: pMode === 'entrance_fee' ? unformat($(`baseWithEntranceFee_${trackId}`).value) : 0,
+            baseNoDeposit: pMode === 'none' ? unformat($(`baseNoDeposit_${trackId}`).value) : 0,
+            depositAmount: pMode === 'deposit' ? unformat($(`depositAmount_${trackId}`).value) : 0,
+            depositDepreciationPct: pMode === 'deposit' ? unformat($(`depositDepreciationPct_${trackId}`).value) / 100 : 0,
+            depositRefundPct: pMode === 'deposit' ? unformat($(`depositRefundPct_${trackId}`).value) / 100 : 0,
+            entranceFeeAmount: pMode === 'entrance_fee' ? unformat($(`entranceFeeAmount_${trackId}`).value) : 0,
+            entranceFeeDepreciationRateMonthly: pMode === 'entrance_fee' ? unformat($(`entranceFeeDepreciationRateMonthly_${trackId}`).value) / 100 : 0,
+            entranceFeeDepreciationYears: pMode === 'entrance_fee' ? unformat($(`entranceFeeDepreciationYears_${trackId}`).value) : 0,
+        };
+        
+        const commonParams = {
+            isNursing: $('isNursing').checked,
+            initCash: unformat($('initCash').value),
+            monthlyIncome: unformat($('monthlyIncome').value),
+            monthlyLivingExpenses: unformat($('monthlyLivingExpenses').value),
+            oneTimeCosts: unformat($('oneTimeCosts').value),
+            annualReturn: unformat($('annualReturn').value) / 100,
+            annualInflation: unformat($('annualInflation').value) / 100,
+            maxYears: unformat($('maxYears').value),
+            monthsIndependent: unformat($('monthsIndependent').value),
+            nursingAddon: unformat($('nursingAddon').value),
+            nursingAllowance: unformat($('nursingAllowance').value),
+            scenario: $('assetScenarioSelect').value,
+            salePrice: unformat($('salePrice').value),
+            saleCostsPct: unformat($('saleCostsPct').value) / 100,
+            rentGross: unformat($('rentGross').value),
+            rentTaxPct: unformat($('rentTaxPct').value) / 100,
+            vacancyPct: unformat($('vacancyPct').value) / 100,
+            annualMaintenance: unformat($('annualMaintenance').value),
+        };
 
-            html += `<h3 style="margin-top: 16px;">סיעודי</h3>
-            <table class="breakdown-table">
-                <tbody>
-                    <tr><td>דמי אחזקה</td><td class="expense">${fmt(baseCost)}</td></tr>
-                    <tr><td>הוצאות מחייה</td><td class="expense">${fmt(livingExpenses)}</td></tr>
-                    <tr><td>תוספת סיעודי</td><td class="expense">${fmt(p.nursingAddon)}</td></tr>
-                    <tr><td colspan="2"><div class="hr-small"></div></td></tr>
-                    <tr><td>הכנסה קבועה</td><td class="income">${fmt(fixedIncome)}</td></tr>
-                    ${p.scenario === 'rent' ? `<tr><td>הכנסה משכירות (נטו)</td><td class="income">${fmt(rentIncome)}</td></tr>` : ''}
-                    <tr><td>גמלת סיעוד</td><td class="income">${fmt(p.nursingAllowance)}</td></tr>
-                    <tr><td colspan="2"><div class="hr-small"></div></td></tr>
-                    <tr><td><strong>יתרה חודשית</strong></td><td class="${nurNet >= 0 ? 'ok' : 'danger'}"><strong>${fmt(nurNet)}</strong></td></tr>
-                </tbody>
-            </table>`;
+        return { ...commonParams, ...trackParams };
+    }
+
+
+    // --- Event Handlers & Setup ---
+    function handleAddTrack() {
+        const newTrack = {
+            id: Date.now(),
+            name: `מסלול ${tracks.length + 1}`,
+            pricingMode: 'deposit'
+        };
+        tracks.push(newTrack);
+        renderTrackCard(newTrack);
+    }
+    
+    function handleCalculate() {
+        const trackNames = Array.from(document.querySelectorAll('input[id^="trackName"]')).map(input => input.value);
+        if (trackNames.length === 0) {
+            alert('יש להוסיף לפחות מסלול אחד להשוואה.');
+            return;
         }
 
-        container.innerHTML = html;
+        simulationResults = trackNames.map(name => {
+            const params = readAllInputsForTrack(name);
+            return simulate(params);
+        });
+
+        renderResults();
+        setupYearSlider();
+    }
+    
+    function setupYearSlider() {
+        const slider = $('yearSlider');
+        const maxYears = Math.max(1, ...simulationResults.map(r => Math.ceil(r.summary.totalMonths / 12)), unformat($('maxYears').value) || 15);
+        
+        slider.max = maxYears;
+        slider.value = 1;
+        $('sliderMinLabel').textContent = 'שנה 1';
+        $('sliderMaxLabel').textContent = `שנה ${maxYears}`;
+
+        const updateSliderDisplay = () => {
+            const year = slider.value;
+            $('yearSliderLabel').textContent = `ניתוח עלות מצטברת עד סוף שנה ${year}`;
+            renderCumulativeCostTable(year);
+        };
+
+        slider.oninput = updateSliderDisplay;
+        updateSliderDisplay(); // Initial render
     }
 
-    // --- Save/Load Logic ---
-    const STORAGE_KEY = 'shelteredLivingCalculatorSaves';
-
-    function getSavedConfigs() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : {};
-      } catch (e) {
-        console.error("Failed to parse saved configs from localStorage", e);
-        return {};
-      }
-    }
-
-    function saveConfigs(configs) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(configs));
-    }
-
-    function getFormState() {
-      const state = { scenario: activeScenario };
-      const inputs = document.querySelectorAll('#inputs input, #inputs select');
-      inputs.forEach(input => {
-        if (input.type === 'checkbox') {
-          state[input.id] = input.checked;
-        } else {
-          state[input.id] = (input.value || '').toString().replace(/,/g, '');
-        }
-      });
-      return state;
-    }
-
+    // --- Utilities ---
     const formatNumber = (v) => {
         if (v === '' || v === null || v === undefined) return '';
-        const clean = v.toString().replace(/[^0-9.]/g, ''); // Allow decimal point
+        const clean = v.toString().replace(/[^0-9.]/g, '');
         if (clean === '') return '';
         const parts = clean.split('.');
         const integerPart = new Intl.NumberFormat('he-IL').format(Number(parts[0]));
         return parts.length > 1 ? `${integerPart}.${parts[1]}` : integerPart;
     };
     
-    function applyFormState(state) {
-      if (!state) return;
-
-      activeScenario = state.scenario || 'sell';
-      document.querySelectorAll('.tab').forEach(tab => {
-        tab.classList.toggle('active', tab.dataset.s === activeScenario);
-      });
-      
-      const inputs = document.querySelectorAll('#inputs input, #inputs select');
-      inputs.forEach(input => {
-        if (state[input.id] !== undefined) {
-          if (input.type === 'checkbox') {
-            input.checked = state[input.id];
-          } else {
-            input.value = state[input.id];
-          }
-        }
-      });
-
-      document.querySelectorAll('input[type="text"][inputmode="decimal"]').forEach(input => {
-        input.value = formatNumber(input.value);
-      });
-      
-      updateVisibility();
-      updatePricingModeVisibility();
-      updateNursingVisibility();
-      calculateAndRender();
-      checkResetButtonState();
-    }
-
-    function populateSavedConfigsDropdown() {
-      const select = $('savedConfigsSelect');
-      const configs = getSavedConfigs();
-      const keys = Object.keys(configs).sort();
-      
-      const currentSelection = select.value;
-      
-      select.innerHTML = '<option value="">בחר תרחיש...</option>';
-      
-      keys.forEach(key => {
-        const option = document.createElement('option');
-        option.value = key;
-        option.textContent = key;
-        select.appendChild(option);
-      });
-      
-      if (keys.includes(currentSelection)) {
-          select.value = currentSelection;
-      }
-      
-      $('deleteBtn').disabled = !select.value;
-    }
-
-    function setupSaveLoad() {
-      const saveBtn = $('saveBtn');
-      const deleteBtn = $('deleteBtn');
-      const select = $('savedConfigsSelect');
-
-      // New elements for the inline save UI
-      const loadStateRow = $('loadStateRow');
-      const saveStateRow = $('saveStateRow');
-      const saveNameInput = $('saveNameInput');
-      const confirmSaveBtn = $('confirmSaveBtn');
-      const cancelSaveBtn = $('cancelSaveBtn');
-
-      function showLoadState() {
-        saveStateRow.style.display = 'none';
-        loadStateRow.style.display = 'grid'; // A .row is display: grid
-        saveNameInput.value = '';
-      }
-      
-      function showSaveState() {
-        loadStateRow.style.display = 'none';
-        saveStateRow.style.display = 'grid';
-        saveNameInput.focus();
-      }
-
-      saveBtn.addEventListener('click', showSaveState);
-      
-      cancelSaveBtn.addEventListener('click', showLoadState);
-
-      confirmSaveBtn.addEventListener('click', () => {
-        const name = saveNameInput.value.trim();
-        if (name) {
-          const configs = getSavedConfigs();
-          configs[name] = getFormState();
-          saveConfigs(configs);
-          populateSavedConfigsDropdown();
-          select.value = name;
-          deleteBtn.disabled = false;
-          showLoadState();
-        } else {
-            saveNameInput.focus();
-            saveNameInput.style.borderColor = 'var(--danger)';
-            setTimeout(() => { saveNameInput.style.borderColor = '' }, 2000);
-        }
-      });
-      
-      saveNameInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          confirmSaveBtn.click();
-        } else if (e.key === 'Escape') {
-          cancelSaveBtn.click();
-        }
-      });
-      
-      deleteBtn.addEventListener('click', () => {
-        const name = select.value;
-        if (!name) return;
-        
-        if (confirm(`האם למחוק את התרחיש "${name}"?`)) {
-          const configs = getSavedConfigs();
-          delete configs[name];
-          saveConfigs(configs);
-          populateSavedConfigsDropdown();
-          alert(`התרחיש "${name}" נמחק.`);
-        }
-      });
-      
-      select.addEventListener('change', () => {
-        const name = select.value;
-        if (name) {
-          const configs = getSavedConfigs();
-          applyFormState(configs[name]);
-        }
-        deleteBtn.disabled = !name;
-      });
-      
-      populateSavedConfigsDropdown();
-    }
-
-
-    function setupNumberFormatting() {
-        const numberInputs = document.querySelectorAll('input[type="text"][inputmode="decimal"]');
-
-        numberInputs.forEach(input => {
-            // Format the initial value
+    function setupNumberFormattingForContainer(container) {
+        container.querySelectorAll('input[type="text"][inputmode="decimal"]').forEach(input => {
             input.value = formatNumber(input.value);
-
             input.addEventListener('input', (e) => {
                 const { target } = e;
                 const originalValue = target.value;
@@ -927,9 +495,7 @@
                 if (digitsToRight > 0) {
                     let digitsCounted = 0;
                     for (let i = formattedValue.length - 1; i >= 0; i--) {
-                        if (/\d/.test(formattedValue[i])) {
-                            digitsCounted++;
-                        }
+                        if (/\d/.test(formattedValue[i])) digitsCounted++;
                         if (digitsCounted === digitsToRight) {
                             newCursorPos = i;
                             break;
@@ -941,114 +507,42 @@
         });
     }
 
-    // Auto-calc on change
-    function setupAutoCalculation() {
-        const debouncedCalculate = debounce(calculateAndRender, 400);
-        const allInputs = document.querySelectorAll('#inputs input, #inputs select');
-        allInputs.forEach(el => {
-            el.addEventListener('input', () => {
-                debouncedCalculate();
-                checkResetButtonState();
-            });
-        });
-    }
-
-    // Help Modal Logic
-    const helpTexts = {
-      initCash: { title: 'הון נזיל התחלתי', text: 'סך כל הכסף הנזיל (עו"ש, פק"מ, ניירות ערך וכו\') הזמין לשימוש בתחילת התקופה, לפני כל תשלום או הכנסה ממכירת/השכרת דירה.' },
-      monthlyIncome: { title: 'הכנסה חודשית קבועה', text: 'סך ההכנסות הקבועות מדי חודש, כגון פנסיה, קצבאות ביטוח לאומי (לא כולל גמלת סיעוד), או כל מקור הכנסה יציב אחר.' },
-      monthlyLivingExpenses: { title: 'הוצאות מחייה חודשיות', text: 'הוצאות אישיות חודשיות שאינן כלולות בדמי האחזקה של הדיור המוגן. לדוגמה: תרופות, ביגוד, בילויים, מתנות וכו\'.' },
-      maxYears: { title: 'מגבלת סימולציה (שנים)', text: 'הגדר את משך הזמן המקסימלי שהסימולציה תרוץ. ערך \'0\' מסיר את המגבלה ומחשב עד שההון אוזל, עד למקסימום של 50 שנה.' },
-      pricingModeSelect: { title: 'מסלול תמחור', text: 'בחר את מסלול התשלום: "עם פיקדון" כולל תשלום ראשוני גבוה ודמי אחזקה נמוכים. "דמי כניסה" הוא תשלום ראשוני שאינו מוחזר אך נשחק עם הזמן (עם אפשרות להחזר חלקי). "ללא" הוא מסלול ללא תשלום ראשוני ועם דמי אחזקה חודשיים גבוהים.' },
-      baseWithDeposit: { title: 'דמי אחזקה (עם פיקדון)', text: 'התשלום החודשי השוטף לדיור המוגן במסלול "עם פיקדון", עבור מגורים, שירותים בסיסיים, חשבונות וכו\'.' },
-      baseWithEntranceFee: { title: 'דמי אחזקה (עם דמי כניסה)', text: 'התשלום החודשי השוטף לדיור המוגן במסלול "דמי כניסה".' },
-      baseNoDeposit: { title: 'דמי אחזקה (ללא)', text: 'התשלום החודשי השוטף לדיור המוגן במסלול ללא פיקדון או דמי כניסה. סכום זה גבוה יותר מהמסלולים המקבילים.' },
-      isNursing: { title: 'מצב סיעודי', text: 'הפעלת אפשרות זו מוסיפה לסימולציה שלב שני, בו הדייר עובר למצב סיעודי. המעבר משפיע על העלויות וההכנסות החל מהחודש שיוגדר.' },
-      monthsIndependent: { title: 'חודשים בתפקוד מלא לפני סיעודי', text: 'מספר החודשים שהדייר ישהה בדיור המוגן במצב עצמאי, לפני המעבר הצפוי למצב סיעודי.' },
-      nursingAddon: { title: 'תוספת חודשית במצב סיעודי', text: 'העלות החודשית הנוספת הנדרשת עבור טיפול סיעודי (כח אדם, ציוד וכו\'). סכום זה מתווסף לדמי האחזקה הרגילים.' },
-      nursingAllowance: { title: 'גמלת סיעוד לקיזוז', text: 'סכום גמלת הסיעוד החודשית המתקבלת מהמוסד לביטוח לאומי, אשר מקזזת את עלות הטיפול הסיעודי.' },
-      annualReturn: { title: 'תשואת ריבית שנתית על היתרה', text: 'התשואה השנתית הצפויה על יתרת ההון הנזיל (למשל, מפיקדון בנקאי או תיק השקעות סולידי). המחשבון מזכה את היתרה בריבית חודשית.' },
-      annualInflation: { title: 'קצב התייקרות שנתי (מדד)', text: 'זהו מדד יוקר המחיה (אינפלציה). אחוז העלייה השנתי הצפוי בכל ההוצאות. המחשבון מעדכן את דמי האחזקה, הוצאות המחייה ועלויות הסיעוד מדי חודש בהתאם למדד זה.' },
-      oneTimeCosts: { title: 'עלויות חד־פעמיות', text: 'סך ההוצאות החד-פעמיות הקשורות למעבר: שכר טרחת עורך דין, הובלה, רכישת ריהוט וכו\'. סכום זה יורד מההון ההתחלתי.' },
-      allowUseDeposit: { title: 'לאפשר שימוש בפיקדון', text: 'אפשרות זו, שאינה נהוגה ברוב המקרים, מאפשרת למחשבון להשתמש בכספי הפיקדון לתשלום ההוצאות השוטפות במידה וההון הנזיל אוזל. בדרך כלל, הפיקדון "נעול" ואינו משמש לתזרים.' },
-      depositAmount: { title: 'סכום פיקדון', text: 'הסכום החד-פעמי המופקד בידי הדיור המוגן עם הכניסה (במסלול "עם פיקדון").' },
-      depositDepreciationPct: { title: 'שיעור פחת פיקדון שנתי', text: 'אחוז השחיקה השנתי של הפיקדון, כפי שנקבע בחוזה. בדרך כלל, השחיקה נעצרת לאחר מספר שנים (המחשבון מגביל אותה ל-12 שנים).' },
-      depositRefundPct: { title: 'אחוז החזר פיקדון בסיום', text: 'האחוז המינימלי מכספי הפיקדון שיוחזר בסיום ההתקשרות, ללא קשר למשך השהות. הוא משמש כרצפת ביטחון ומונע שחיקה מלאה של הפיקדון.' },
-      entranceFeeAmount: { title: 'סכום דמי כניסה', text: 'התשלום החד-פעמי המשולם עם הכניסה במסלול "דמי כניסה". סכום זה אינו פיקדון וערכו נשחק עם הזמן.' },
-      entranceFeeDepreciationRateMonthly: { title: 'שיעור פחת חודשי', text: 'האחוז מהסכום המקורי של דמי הכניסה שנשחק (מפוחת) מדי חודש. אם הדייר עוזב לפני תום תקופת הפחת, ייתכן ויוחזר לו החלק היחסי שלא נוצל.' },
-      entranceFeeDepreciationYears: { title: 'משך זמן הפחת (שנים)', text: 'מספר השנים שלאורכן דמי הכניסה נשחקים. לאחר תקופה זו, ערכם יורד לאפס ולא יתקבל החזר במקרה של עזיבה.' },
-      salePrice: { title: 'מחיר מכירה', text: 'המחיר הצפוי שיתקבל ממכירת דירת המגורים.' },
-      saleCostsPct: { title: 'עלויות עסקה', text: 'סך עלויות המכירה כאחוז ממחיר הדירה (למשל: מס שבח, תיווך, עו"ד).' },
-      rentGross: { title: 'שכר דירה חודשי ברוטו', text: 'דמי השכירות החודשיים שיתקבלו מהשכרת דירת המגורים, לפני ניכוי מסים והוצאות.' },
-      rentTaxPct: { title: 'מס על שכ"ד', text: 'אחוז המס שישולם על ההכנסה משכר דירה (לרוב 10% במסלול המופחת).' },
-      vacancyPct: { title: 'חודשים פנויים בשנה (Vacancy)', text: 'אומדן הזמן (באחוזים) בשנה בו הנכס צפוי לעמוד ריק בין שוכרים, ולכן לא לייצר הכנסה. 8% מייצגים כחודש אחד ריק בשנה.' },
-      annualMaintenance: { title: 'תחזוקת נכס שנתית', text: 'הוצאות שנתיות ממוצעות על תחזוקת הנכס המושכר (תיקונים, בלאי וכו\').' },
-    };
-
-    function initHelpSystem() {
-      const modal = $('helpModal');
-      const modalTitle = $('helpModalTitle');
-      const modalText = $('helpModalText');
-      const closeBtn = modal.querySelector('.modal-close');
-
-      const showHelp = (fieldId) => {
-        const helpData = helpTexts[fieldId];
-        if (!helpData) return;
-        modalTitle.textContent = helpData.title;
-        modalText.textContent = helpData.text;
-        modal.classList.add('visible');
-      };
-
-      const hideHelp = () => {
-        modal.classList.remove('visible');
-      };
-
-      // Create and inject icons
-      Object.keys(helpTexts).forEach(fieldId => {
-        const label = document.querySelector(`label[for="${fieldId}"]`);
-        if (label) {
-          const icon = document.createElement('span');
-          icon.className = 'help-icon';
-          icon.textContent = '?';
-          icon.setAttribute('role', 'button');
-          icon.setAttribute('aria-label', `הצג עזרה עבור ${helpTexts[fieldId].title}`);
-          icon.dataset.field = fieldId;
-          label.prepend(icon);
-        }
-      });
-      
-      // Event listeners
-      document.getElementById('inputs').addEventListener('click', (e) => {
-        if (e.target.classList.contains('help-icon')) {
-          showHelp(e.target.dataset.field);
-        }
-      });
-
-      closeBtn.addEventListener('click', hideHelp);
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          hideHelp();
-        }
-      });
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.classList.contains('visible')) {
-          hideHelp();
-        }
-      });
-    }
-
-    // Initial load
+    // --- Initial Load ---
     document.addEventListener('DOMContentLoaded', () => { 
-      setupNumberFormatting();
-      captureDefaultState();
-      updateVisibility();
-      updatePricingModeVisibility();
-      updateNursingVisibility();
-      setupAutoCalculation();
-      initHelpSystem();
-      setupSaveLoad();
-      calculateAndRender(); // Initial calculation
-      checkResetButtonState();
+        // Initial setup for common inputs
+        setupNumberFormattingForContainer(document.body);
+        
+        $('isNursing').addEventListener('change', (e) => {
+            $('nursingFieldsRow').style.display = e.target.checked ? 'grid' : 'none';
+        });
+
+        $('assetScenarioSelect').addEventListener('change', (e) => {
+            const scenario = e.target.value;
+            $('sellBlock').style.display = scenario === 'sell' ? 'block' : 'none';
+            $('rentBlock').style.display = scenario === 'rent' ? 'block' : 'none';
+        });
+
+        // Track management
+        $('addTrackBtn').addEventListener('click', handleAddTrack);
+        $('tracksContainer').addEventListener('click', (e) => {
+            if (e.target.dataset.removeTrackId) {
+                const trackId = e.target.dataset.removeTrackId;
+                tracks = tracks.filter(t => t.id != trackId);
+                document.querySelector(`.track-card[data-track-id='${trackId}']`).remove();
+            }
+        });
+        $('tracksContainer').addEventListener('change', (e) => {
+            if (e.target.id.startsWith('pricingMode_')) {
+                const trackId = e.target.id.split('_')[1];
+                updateTrackBody(trackId);
+            }
+        });
+
+        // Calculation
+        $('calculateBtn').addEventListener('click', handleCalculate);
+        
+        // Add one track by default
+        handleAddTrack();
     });
   </script>
 </body>
