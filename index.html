@@ -33,6 +33,7 @@
     .span-6 { grid-column: span 6; }
     .span-4 { grid-column: span 4; }
     .span-3 { grid-column: span 3; }
+    .span-2 { grid-column: span 2; }
     .row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; margin-bottom: 16px; align-items: end; }
     label { font-size: 0.9rem; color: var(--muted); display: block; margin-bottom: 6px; }
     label .help-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--muted); color: var(--muted); font-size: 11px; font-weight: bold; margin-right: 6px; cursor: pointer; user-select: none; transition: all 0.2s; }
@@ -64,7 +65,6 @@
     .results-table th { color: var(--accent); font-size: 0.9rem; }
     .results-table td { font-size: 1rem; }
     .results-table tr:last-child td { border-bottom: none; }
-    .results-table td:first-child { font-weight: bold; text-align: right; }
     .results-table tr.insolvent { background-color: rgba(251, 113, 133, 0.1); }
     .breakdown-cell { font-size: .8rem; text-align: right; padding: 4px; }
     .breakdown-cell table { width: 100%; }
@@ -157,7 +157,7 @@
     }
 
     @media (max-width: 900px) {
-      .span-8, .span-6, .span-4, .span-3 { grid-column: span 12; }
+      .span-8, .span-6, .span-4, .span-3, .span-2 { grid-column: span 12; }
     }
   </style>
 </head>
@@ -403,18 +403,32 @@
         let html = '<div class="row">';
         if (mode === 'deposit') {
             html += `
-                <div class="span-3">
+                <div class="span-2">
                     <label for="baseWithDeposit_${trackId}">דמי אחזקה (₪)</label>
                     <div class="spinner-control">
-                        <button type="button" class="spinner-btn stepper-btn" data-step-dir="up" data-track-id="${trackId}">+</button>
+                        <button type="button" class="spinner-btn" data-step-dir="up" data-target="baseWithDeposit_${trackId}">+</button>
                         <input type="text" id="baseWithDeposit_${trackId}" data-track-id="${trackId}" data-base-value="9000" value="9000" class="expense" inputmode="decimal">
+                        <button type="button" class="spinner-btn" data-step-dir="down" data-target="baseWithDeposit_${trackId}">-</button>
+                    </div>
+                </div>
+                <div class="span-3">
+                    <label for="tradeoffAmount_${trackId}" class="tooltip-header">המרת פיקדון (₪)<span class="tooltip-text">תוספת לדמי האחזקה להפחתת הפיקדון. כל 500₪ כאן מפחיתים 50,000₪ מהפיקדון.</span></label>
+                    <div class="spinner-control">
+                        <button type="button" class="spinner-btn stepper-btn" data-step-dir="up" data-track-id="${trackId}">+</button>
+                        <input type="text" id="tradeoffAmount_${trackId}" data-track-id="${trackId}" value="0" class="expense" inputmode="decimal">
                         <button type="button" class="spinner-btn stepper-btn" data-step-dir="down" data-track-id="${trackId}">-</button>
                     </div>
-                    <input type="hidden" id="tradeoffAmount_${trackId}" value="0">
                 </div>
-                <div class="span-3"><label for="depositAmount_${trackId}">סכום פיקדון (₪)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="depositAmount_${trackId}">+</button><input type="text" id="depositAmount_${trackId}" data-track-id="${trackId}" data-base-value="1000000" value="1000000" class="income" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="depositAmount_${trackId}">-</button></div></div>
-                <div class="span-3"><label for="depositDepreciationPct_${trackId}">פחת פיקדון שנתי (%)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="depositDepreciationPct_${trackId}">+</button><input type="text" id="depositDepreciationPct_${trackId}" value="3" class="expense" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="depositDepreciationPct_${trackId}">-</button></div></div>
-                <div class="span-3"><label for="depositRefundPct_${trackId}">אחוז החזר מינימלי (%)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="depositRefundPct_${trackId}">+</button><input type="text" id="depositRefundPct_${trackId}" value="80" class="income" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="depositRefundPct_${trackId}">-</button></div></div>`;
+                <div class="span-3">
+                    <label for="depositAmount_${trackId}">סכום פיקדון (₪)</label>
+                    <div class="spinner-control">
+                        <button class="spinner-btn" data-step-dir="up" data-target="depositAmount_${trackId}">+</button>
+                        <input type="text" id="depositAmount_${trackId}" data-track-id="${trackId}" data-base-value="1000000" value="1000000" class="income" inputmode="decimal">
+                        <button class="spinner-btn" data-step-dir="down" data-target="depositAmount_${trackId}">-</button>
+                    </div>
+                </div>
+                <div class="span-2"><label for="depositDepreciationPct_${trackId}">פחת פיקדון שנתי (%)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="depositDepreciationPct_${trackId}">+</button><input type="text" id="depositDepreciationPct_${trackId}" value="3" class="expense" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="depositDepreciationPct_${trackId}">-</button></div></div>
+                <div class="span-2"><label for="depositRefundPct_${trackId}">אחוז החזר מינימלי (%)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="depositRefundPct_${trackId}">+</button><input type="text" id="depositRefundPct_${trackId}" value="80" class="income" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="depositRefundPct_${trackId}">-</button></div></div>`;
         } else if (mode === 'entrance_fee') {
             html += `
                 <div class="span-3"><label for="baseWithEntranceFee_${trackId}">דמי אחזקה (₪)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="baseWithEntranceFee_${trackId}">+</button><input type="text" id="baseWithEntranceFee_${trackId}" value="9500" class="expense" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="baseWithEntranceFee_${trackId}">-</button></div></div>
@@ -688,13 +702,22 @@
         const tradeoffInput = $(`tradeoffAmount_${trackId}`);
         const maintenanceInput = $(`baseWithDeposit_${trackId}`);
         const depositInput = $(`depositAmount_${trackId}`);
+
+        if (!tradeoffInput || !maintenanceInput || !depositInput) return;
         
         const baseMaintenance = unformat(maintenanceInput.dataset.baseValue);
         const baseDeposit = unformat(depositInput.dataset.baseValue);
-        const tradeoffAmount = unformat(tradeoffInput.value);
-        
+        let tradeoffAmount = unformat(tradeoffInput.value);
+
+        // Cap tradeoff amount if it would result in negative deposit
+        const maxTradeoff = (baseDeposit / 100);
+        if (tradeoffAmount > maxTradeoff) {
+            tradeoffAmount = maxTradeoff;
+            tradeoffInput.value = formatNumber(tradeoffAmount);
+        }
+
         const newMaintenance = baseMaintenance + tradeoffAmount;
-        const newDeposit = baseDeposit - (tradeoffAmount / 1000) * 100000;
+        const newDeposit = baseDeposit - (tradeoffAmount * 100);
         
         maintenanceInput.value = formatNumber(Math.max(0, newMaintenance));
         depositInput.value = formatNumber(Math.max(0, newDeposit));
@@ -788,9 +811,25 @@
             } else if (e.target.classList.contains('stepper-btn')) {
                 const { trackId, stepDir } = e.target.dataset;
                 const tradeoffInput = $(`tradeoffAmount_${trackId}`);
-                const currentVal = unformat(tradeoffInput.value);
-                const newVal = currentVal + (stepDir === 'up' ? 500 : -500); // 500 NIS steps for maintenance
-                tradeoffInput.value = formatNumber(newVal);
+                const depositInput = $(`depositAmount_${trackId}`);
+
+                const currentTradeoff = unformat(tradeoffInput.value);
+                const step = 500;
+                const newTradeoff = currentTradeoff + (stepDir === 'up' ? step : -step);
+
+                if (newTradeoff < 0) {
+                    return; // Don't allow negative tradeoff
+                }
+
+                const baseDeposit = unformat(depositInput.dataset.baseValue);
+                const prospectiveDeposit = baseDeposit - (newTradeoff * 100);
+                
+                if (stepDir === 'up' && prospectiveDeposit < 0) {
+                    alert('לא ניתן להמיר יותר מהפיקדון הקיים.');
+                    return;
+                }
+                
+                tradeoffInput.value = formatNumber(newTradeoff);
                 updateTradeoffCalculation(trackId);
             }
         });
@@ -806,6 +845,9 @@
             if (e.target.id.startsWith('entranceFeeDepreciationYears_')) {
                 const trackId = e.target.id.split('_')[1];
                 updateCalculatedEntranceFeeRate(trackId);
+            } else if (e.target.id.startsWith('tradeoffAmount_')) {
+                const trackId = e.target.dataset.trackId;
+                updateTradeoffCalculation(trackId);
             }
 
             const trackId = e.target.dataset.trackId;
@@ -818,9 +860,13 @@
                 // User is manually editing a base value, so reset the tradeoff.
                 e.target.dataset.baseValue = unformat(e.target.value);
                 const tradeoffInput = $(`tradeoffAmount_${trackId}`);
-                if (tradeoffInput.value !== '0') {
-                    tradeoffInput.value = '0';
-                    // If we reset one, we need to update the other field's base value to its current value.
+                if (tradeoffInput.value !== '0' && tradeoffInput.value !== '') {
+                    tradeoffInput.value = formatNumber('0');
+                    
+                    // After resetting tradeoff, recalculate to bring fields back to their new base values
+                    updateTradeoffCalculation(trackId);
+
+                    // Then, update the *other* field's base value to its current value.
                     if (isMaintenance) {
                         const depositInput = $(`depositAmount_${trackId}`);
                         depositInput.dataset.baseValue = unformat(depositInput.value);
