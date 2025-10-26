@@ -156,7 +156,7 @@
     <p class="subtitle">הכלי מאפשר להשוות תרחישים פיננסיים שונים למגורים בדיור מוגן. התחילו בהזנת הנתונים הכלליים, הגדירו את מסלולי התמחור שברצונכם לבחון, ולבסוף השוו את התוצאות כדי לקבל החלטה מושכלת.</p>
 
     <!-- Step 1: Common Inputs -->
-    <div class="card">
+    <div class="card" id="commonInputsCard">
       <h2>שלב 1: נתונים כלליים ונכס</h2>
       <h3>פרמטרים פיננסיים</h3>
       <div class="row">
@@ -211,7 +211,7 @@
     </div>
     
     <!-- Step 2: Tracks Definition -->
-    <div class="card">
+    <div class="card" id="tracksCard">
         <h2>שלב 2: הגדרת מסלולים להשוואה</h2>
         <div id="tracksContainer"></div>
         <button id="addTrackBtn" class="btn secondary" style="margin-top: 16px;">+ הוסף מסלול חדש</button>
@@ -696,6 +696,25 @@
     document.addEventListener('DOMContentLoaded', () => { 
         // Initial setup for common inputs
         setupNumberFormattingForContainer(document.body);
+
+        // Hide results when inputs change
+        const hideResults = () => {
+            $('resultsSection').style.display = 'none';
+        };
+        const commonInputsCard = $('commonInputsCard');
+        const tracksCard = $('tracksCard');
+        const resetHandler = () => {
+            hideResults();
+        };
+        commonInputsCard.addEventListener('input', resetHandler);
+        commonInputsCard.addEventListener('change', resetHandler);
+        tracksCard.addEventListener('input', resetHandler);
+        tracksCard.addEventListener('change', resetHandler);
+        tracksCard.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                resetHandler();
+            }
+        });
         
         $('isNursing').addEventListener('change', (e) => {
             $('nursingFieldsRow').style.display = e.target.checked ? 'grid' : 'none';
