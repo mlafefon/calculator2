@@ -365,7 +365,7 @@
         card.dataset.trackId = trackId;
         card.innerHTML = `
             <div class="track-header">
-                <div class="form-group"><label for="trackName_${trackId}">שם המסלול</label><input type="text" id="trackName_${trackId}" value="${track.name}" placeholder="לדוגמה: בית א׳ - מסלול פיקדון"></div>
+                <div class="form-group"><label for="trackName_${trackId}">שם החברה-סוג החדר</label><input type="text" id="trackName_${trackId}" value="${track.name}" placeholder="לדוגמה: פאלאס - דירת 2 חדרים"></div>
                 <div class="form-group"><label for="pricingMode_${trackId}">סוג המסלול</label>
                     <select id="pricingMode_${trackId}">
                         <option value="deposit" ${track.pricingMode === 'deposit' ? 'selected' : ''}>עם פיקדון</option>
@@ -384,14 +384,23 @@
     function updateCalculatedEntranceFeeRate(trackId) {
         const yearsInput = $(`entranceFeeDepreciationYears_${trackId}`);
         const rateInput = $(`entranceFeeDepreciationRateMonthly_${trackId}`);
-        if (!yearsInput || !rateInput) return;
+        const amountInput = $(`entranceFeeAmount_${trackId}`);
+        if (!yearsInput || !rateInput || !amountInput) return;
 
         const years = unformat(yearsInput.value);
+        const amount = unformat(amountInput.value);
+        
         if (years > 0) {
-            const rate = 100 / (years * 12);
-            rateInput.value = rate.toFixed(3);
+            const ratePercent = 100 / (years * 12);
+            const monthlyDepAmount = amount / (years * 12);
+            
+            if (amount > 0 && isFinite(monthlyDepAmount)) {
+                rateInput.value = `${ratePercent.toFixed(3)}% (${fmt(monthlyDepAmount)} ₪)`;
+            } else {
+                rateInput.value = `${ratePercent.toFixed(3)}%`;
+            }
         } else {
-            rateInput.value = '0.000';
+            rateInput.value = '0.000%';
         }
     }
     
@@ -411,15 +420,15 @@
                         <button type="button" class="spinner-btn" data-step-dir="down" data-target="baseWithDeposit_${trackId}">-</button>
                     </div>
                 </div>
-                <div class="span-3">
-                    <label for="tradeoffAmount_${trackId}" class="tooltip-header">המרת פיקדון (₪)<span class="tooltip-text">תוספת לדמי האחזקה להפחתת הפיקדון. כל 500₪ כאן מפחיתים 50,000₪ מהפיקדון.</span></label>
+                <div class="span-2">
+                    <label for="reducedDepositAmount_${trackId}" class="tooltip-header">פקדון מופחת (₪)<span class="tooltip-text">סכום ההפחתה מהפיקדון. כל 50,000₪ הפחתה מהפיקדון מוסיפים 500₪ לדמי האחזקה החודשיים.</span></label>
                     <div class="spinner-control">
                         <button type="button" class="spinner-btn stepper-btn" data-step-dir="up" data-track-id="${trackId}">+</button>
-                        <input type="text" id="tradeoffAmount_${trackId}" data-track-id="${trackId}" value="0" class="expense" inputmode="decimal">
+                        <input type="text" id="reducedDepositAmount_${trackId}" data-track-id="${trackId}" value="0" class="expense" inputmode="decimal">
                         <button type="button" class="spinner-btn stepper-btn" data-step-dir="down" data-track-id="${trackId}">-</button>
                     </div>
                 </div>
-                <div class="span-3">
+                <div class="span-4">
                     <label for="depositAmount_${trackId}">סכום פיקדון (₪)</label>
                     <div class="spinner-control">
                         <button class="spinner-btn" data-step-dir="up" data-target="depositAmount_${trackId}">+</button>
@@ -434,7 +443,7 @@
                 <div class="span-3"><label for="baseWithEntranceFee_${trackId}">דמי אחזקה (₪)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="baseWithEntranceFee_${trackId}">+</button><input type="text" id="baseWithEntranceFee_${trackId}" value="9500" class="expense" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="baseWithEntranceFee_${trackId}">-</button></div></div>
                 <div class="span-3"><label for="entranceFeeAmount_${trackId}">סכום דמי כניסה (₪)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="entranceFeeAmount_${trackId}">+</button><input type="text" id="entranceFeeAmount_${trackId}" value="450000" class="income" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="entranceFeeAmount_${trackId}">-</button></div></div>
                 <div class="span-3"><label for="entranceFeeDepreciationYears_${trackId}">משך הפחת (שנים)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="entranceFeeDepreciationYears_${trackId}">+</button><input type="text" id="entranceFeeDepreciationYears_${trackId}" value="5" class="expense" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="entranceFeeDepreciationYears_${trackId}">-</button></div></div>
-                <div class="span-3"><label for="entranceFeeDepreciationRateMonthly_${trackId}">פחת חודשי (%) (מחושב)</label><input type="text" id="entranceFeeDepreciationRateMonthly_${trackId}" value="" class="expense" inputmode="decimal" readonly style="background-color: var(--bg); cursor: not-allowed;"></div>`;
+                <div class="span-3"><label for="entranceFeeDepreciationRateMonthly_${trackId}">פחת חודשי (מחושב)</label><input type="text" id="entranceFeeDepreciationRateMonthly_${trackId}" value="" class="expense" inputmode="decimal" readonly style="background-color: var(--bg); cursor: not-allowed;"></div>`;
         } else { // none
             html += `<div class="span-3"><label for="baseNoDeposit_${trackId}">דמי אחזקה (₪)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="baseNoDeposit_${trackId}">+</button><input type="text" id="baseNoDeposit_${trackId}" value="14000" class="expense" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="baseNoDeposit_${trackId}">-</button></div></div>`;
         }
@@ -459,7 +468,7 @@
         };
         
         let table = `<table class="results-table"><thead><tr>
-            <th>מסלול</th>
+            <th>שם החברה-סוג החדר</th>
             <th>סוג מסלול</th>
             <th>סה"כ חודשים (עצמאי / סיעודי)</th>
             <th class="tooltip-header">עלות מצטברת כוללת (₪)<span class="tooltip-text">סך כל ההוצאות (מחייה, דמי אחזקה ותוספת סיעוד) בתוספת הפחת על הפיקדון/דמי כניסה. מציג את העלות הכלכלית המלאה.</span></th>
@@ -581,7 +590,7 @@
             depositDepreciationPct: pMode === 'deposit' ? unformat($(`depositDepreciationPct_${trackId}`).value) / 100 : 0,
             depositRefundPct: pMode === 'deposit' ? unformat($(`depositRefundPct_${trackId}`).value) / 100 : 0,
             entranceFeeAmount: pMode === 'entrance_fee' ? unformat($(`entranceFeeAmount_${trackId}`).value) : 0,
-            entranceFeeDepreciationRateMonthly: pMode === 'entrance_fee' ? unformat($(`entranceFeeDepreciationRateMonthly_${trackId}`).value) / 100 : 0,
+            entranceFeeDepreciationRateMonthly: pMode === 'entrance_fee' ? (parseFloat($(`entranceFeeDepreciationRateMonthly_${trackId}`).value) || 0) / 100 : 0,
             entranceFeeDepreciationYears: pMode === 'entrance_fee' ? unformat($(`entranceFeeDepreciationYears_${trackId}`).value) : 0,
         };
         
@@ -698,26 +707,27 @@
         });
     }
 
-    function updateTradeoffCalculation(trackId) {
-        const tradeoffInput = $(`tradeoffAmount_${trackId}`);
+    function updateDepositReduction(trackId) {
+        const reducedDepositInput = $(`reducedDepositAmount_${trackId}`);
         const maintenanceInput = $(`baseWithDeposit_${trackId}`);
         const depositInput = $(`depositAmount_${trackId}`);
 
-        if (!tradeoffInput || !maintenanceInput || !depositInput) return;
+        if (!reducedDepositInput || !maintenanceInput || !depositInput) return;
         
         const baseMaintenance = unformat(maintenanceInput.dataset.baseValue);
         const baseDeposit = unformat(depositInput.dataset.baseValue);
-        let tradeoffAmount = unformat(tradeoffInput.value);
+        let reducedAmount = unformat(reducedDepositInput.value);
 
-        // Cap tradeoff amount if it would result in negative deposit
-        const maxTradeoff = (baseDeposit / 100);
-        if (tradeoffAmount > maxTradeoff) {
-            tradeoffAmount = maxTradeoff;
-            tradeoffInput.value = formatNumber(tradeoffAmount);
+        // Cap reduction amount if it would result in negative deposit
+        const maxReduction = baseDeposit;
+        if (reducedAmount > maxReduction) {
+            reducedAmount = maxReduction;
+            reducedDepositInput.value = formatNumber(reducedAmount);
         }
-
-        const newMaintenance = baseMaintenance + tradeoffAmount;
-        const newDeposit = baseDeposit - (tradeoffAmount * 100);
+        
+        const maintenanceIncrease = (reducedAmount / 50000) * 500;
+        const newMaintenance = baseMaintenance + maintenanceIncrease;
+        const newDeposit = baseDeposit - reducedAmount;
         
         maintenanceInput.value = formatNumber(Math.max(0, newMaintenance));
         depositInput.value = formatNumber(Math.max(0, newDeposit));
@@ -810,27 +820,23 @@
                 document.querySelector(`.track-card[data-track-id='${trackId}']`).remove();
             } else if (e.target.classList.contains('stepper-btn')) {
                 const { trackId, stepDir } = e.target.dataset;
-                const tradeoffInput = $(`tradeoffAmount_${trackId}`);
+                const reducedDepositInput = $(`reducedDepositAmount_${trackId}`);
                 const depositInput = $(`depositAmount_${trackId}`);
 
-                const currentTradeoff = unformat(tradeoffInput.value);
-                const step = 500;
-                const newTradeoff = currentTradeoff + (stepDir === 'up' ? step : -step);
-
-                if (newTradeoff < 0) {
-                    return; // Don't allow negative tradeoff
-                }
+                const currentReduction = unformat(reducedDepositInput.value);
+                const step = 50000;
+                const newReduction = currentReduction + (stepDir === 'up' ? step : -step);
+                
+                if (newReduction < 0) return;
 
                 const baseDeposit = unformat(depositInput.dataset.baseValue);
-                const prospectiveDeposit = baseDeposit - (newTradeoff * 100);
-                
-                if (stepDir === 'up' && prospectiveDeposit < 0) {
-                    alert('לא ניתן להמיר יותר מהפיקדון הקיים.');
+                if (stepDir === 'up' && (baseDeposit - newReduction) < 0) {
+                    alert('לא ניתן להפחית יותר מסכום הפיקדון המקורי.');
                     return;
                 }
                 
-                tradeoffInput.value = formatNumber(newTradeoff);
-                updateTradeoffCalculation(trackId);
+                reducedDepositInput.value = formatNumber(newReduction);
+                updateDepositReduction(trackId);
             }
         });
 
@@ -842,12 +848,12 @@
         });
 
         $('tracksContainer').addEventListener('input', (e) => {
-            if (e.target.id.startsWith('entranceFeeDepreciationYears_')) {
+            if (e.target.id.startsWith('entranceFeeDepreciationYears_') || e.target.id.startsWith('entranceFeeAmount_')) {
                 const trackId = e.target.id.split('_')[1];
                 updateCalculatedEntranceFeeRate(trackId);
-            } else if (e.target.id.startsWith('tradeoffAmount_')) {
+            } else if (e.target.id.startsWith('reducedDepositAmount_')) {
                 const trackId = e.target.dataset.trackId;
-                updateTradeoffCalculation(trackId);
+                updateDepositReduction(trackId);
             }
 
             const trackId = e.target.dataset.trackId;
@@ -857,14 +863,14 @@
             const isDeposit = e.target.id.startsWith('depositAmount_');
             
             if (isMaintenance || isDeposit) {
-                // User is manually editing a base value, so reset the tradeoff.
+                // User is manually editing a base value, so reset the reduction.
                 e.target.dataset.baseValue = unformat(e.target.value);
-                const tradeoffInput = $(`tradeoffAmount_${trackId}`);
-                if (tradeoffInput.value !== '0' && tradeoffInput.value !== '') {
-                    tradeoffInput.value = formatNumber('0');
+                const reducedDepositInput = $(`reducedDepositAmount_${trackId}`);
+                if (reducedDepositInput.value !== '0' && reducedDepositInput.value !== '') {
+                    reducedDepositInput.value = formatNumber('0');
                     
-                    // After resetting tradeoff, recalculate to bring fields back to their new base values
-                    updateTradeoffCalculation(trackId);
+                    // After resetting reduction, recalculate to bring fields back to their new base values
+                    updateDepositReduction(trackId);
 
                     // Then, update the *other* field's base value to its current value.
                     if (isMaintenance) {
