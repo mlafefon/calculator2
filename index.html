@@ -74,32 +74,43 @@
     #yearSlider { width: 100%; accent-color: var(--accent); }
     #sliderLabels { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--muted); margin-top: 8px; }
 
-    .tradeoff-control { display: flex; align-items: stretch; gap: 4px; }
-    .tradeoff-control > input { flex-grow: 1; }
-    .stepper { display: flex; flex-direction: column; }
-    .stepper-btn {
+    .spinner-control {
+        display: flex;
+        align-items: stretch;
+        max-width: 240px;
+    }
+    .spinner-control input {
         flex-grow: 1;
-        background: var(--border);
+        text-align: center;
+        border-left: none;
+        border-right: none;
+        border-radius: 0;
+    }
+    .spinner-btn {
+        flex: 0 0 40px;
+        background: var(--panel);
         color: var(--text);
-        border: none;
-        border-radius: 4px;
+        border: 1px solid var(--border);
         cursor: pointer;
-        padding: 0 8px;
         font-size: 1.2rem;
         line-height: 1;
-        transition: background .2s;
+        transition: background .2s, border-color .2s;
+        padding: 0;
     }
-    .stepper-btn:hover { background: var(--accent); color: var(--bg); }
-    .tradeoff-input {
-        background: var(--input);
-        color: var(--muted);
-        border: 1px solid var(--border);
-        border-radius: 4px;
-        padding: 4px 8px;
-        font-size: .8rem;
-        width: 60px;
-        text-align: center;
-        margin: 4px 0;
+    .spinner-btn:hover:not(:disabled) {
+        background: var(--accent);
+        color: var(--bg);
+        border-color: var(--accent);
+    }
+    .spinner-control > .spinner-btn:first-child { /* Rightmost in RTL */
+        border-radius: 0 10px 10px 0;
+    }
+    .spinner-control > .spinner-btn:last-child { /* Leftmost in RTL */
+        border-radius: 10px 0 0 10px;
+    }
+    .spinner-control input:focus {
+        position: relative;
+        z-index: 1;
     }
     
     .tooltip-header {
@@ -160,15 +171,15 @@
       <h2>שלב 1: נתונים כלליים ונכס</h2>
       <h3>פרמטרים פיננסיים</h3>
       <div class="row">
-        <div class="span-3"><label for="initCash">הון נזיל התחלתי (₪)</label><input type="text" id="initCash" value="1500000" class="income" inputmode="decimal"/></div>
-        <div class="span-3"><label for="monthlyIncome">הכנסה חודשית קבועה (₪)</label><input type="text" id="monthlyIncome" value="5500" class="income" inputmode="decimal"/></div>
-        <div class="span-3"><label for="monthlyLivingExpenses">הוצאות מחייה חודשיות (₪)</label><input type="text" id="monthlyLivingExpenses" value="1500" class="expense" inputmode="decimal"/></div>
-        <div class="span-3"><label for="oneTimeCosts">עלויות חד־פעמיות (₪)</label><input type="text" id="oneTimeCosts" value="0" class="expense" inputmode="decimal"/></div>
+        <div class="span-3"><label for="initCash">הון נזיל התחלתי (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="initCash">+</button><input type="text" id="initCash" value="1500000" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="initCash">-</button></div></div>
+        <div class="span-3"><label for="monthlyIncome">הכנסה חודשית קבועה (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="monthlyIncome">+</button><input type="text" id="monthlyIncome" value="5500" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="monthlyIncome">-</button></div></div>
+        <div class="span-3"><label for="monthlyLivingExpenses">הוצאות מחייה חודשיות (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="monthlyLivingExpenses">+</button><input type="text" id="monthlyLivingExpenses" value="1500" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="monthlyLivingExpenses">-</button></div></div>
+        <div class="span-3"><label for="oneTimeCosts">עלויות חד־פעמיות (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="oneTimeCosts">+</button><input type="text" id="oneTimeCosts" value="0" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="oneTimeCosts">-</button></div></div>
       </div>
       <div class="row">
-        <div class="span-4"><label for="annualReturn">תשואת ריבית שנתית על היתרה (%)</label><input type="text" id="annualReturn" value="1" class="income" inputmode="decimal"/></div>
-        <div class="span-4"><label for="annualInflation">קצב התייקרות שנתי (מדד) (%)</label><input type="text" id="annualInflation" value="2" class="expense" inputmode="decimal"/></div>
-        <div class="span-4"><label for="maxYears">מגבלת סימולציה (שנים)</label><input type="text" id="maxYears" value="15" inputmode="decimal"/></div>
+        <div class="span-4"><label for="annualReturn">תשואת ריבית שנתית על היתרה (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualReturn">+</button><input type="text" id="annualReturn" value="1" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualReturn">-</button></div></div>
+        <div class="span-4"><label for="annualInflation">קצב התייקרות שנתי (מדד) (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualInflation">+</button><input type="text" id="annualInflation" value="2" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualInflation">-</button></div></div>
+        <div class="span-4"><label for="maxYears">מגבלת סימולציה (שנים)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="maxYears">+</button><input type="text" id="maxYears" value="15" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="maxYears">-</button></div></div>
       </div>
       
       <div class="hr"></div>
@@ -177,9 +188,9 @@
         <div class="span-12"><label class="inline-row"><input id="isNursing" type="checkbox"/> להפעיל תרחיש מצב סיעודי</label></div>
       </div>
       <div class="row" id="nursingFieldsRow" style="display: none;">
-        <div class="span-4"><label for="monthsIndependent">חודשים בתפקוד מלא</label><input type="text" id="monthsIndependent" value="60" inputmode="decimal"/></div>
-        <div class="span-4"><label for="nursingAddon">תוספת חודשית במצב סיעודי (₪)</label><input type="text" id="nursingAddon" value="18000" class="expense" inputmode="decimal"/></div>
-        <div class="span-4"><label for="nursingAllowance">גמלת סיעוד לקיזוז (₪/חודש)</label><input type="text" id="nursingAllowance" value="2000" class="income" inputmode="decimal"/></div>
+        <div class="span-4"><label for="monthsIndependent">חודשים בתפקוד מלא</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="monthsIndependent">+</button><input type="text" id="monthsIndependent" value="60" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="monthsIndependent">-</button></div></div>
+        <div class="span-4"><label for="nursingAddon">תוספת חודשית במצב סיעודי (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="nursingAddon">+</button><input type="text" id="nursingAddon" value="18000" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="nursingAddon">-</button></div></div>
+        <div class="span-4"><label for="nursingAllowance">גמלת סיעוד לקיזוז (₪/חודש)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="nursingAllowance">+</button><input type="text" id="nursingAllowance" value="2000" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="nursingAllowance">-</button></div></div>
       </div>
 
       <div class="hr"></div>
@@ -196,16 +207,16 @@
       </div>
       <div id="sellBlock" style="display: none;">
         <div class="row">
-          <div class="span-6"><label for="salePrice">מחיר מכירה (₪)</label><input type="text" id="salePrice" value="3000000" class="income" inputmode="decimal"/></div>
-          <div class="span-6"><label for="saleCostsPct">עלויות עסקה (% מהמחיר)</label><input type="text" id="saleCostsPct" value="3" class="expense" inputmode="decimal"/></div>
+          <div class="span-6"><label for="salePrice">מחיר מכירה (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="salePrice">+</button><input type="text" id="salePrice" value="3000000" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="salePrice">-</button></div></div>
+          <div class="span-6"><label for="saleCostsPct">עלויות עסקה (% מהמחיר)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="saleCostsPct">+</button><input type="text" id="saleCostsPct" value="3" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="saleCostsPct">-</button></div></div>
         </div>
       </div>
       <div id="rentBlock">
         <div class="row">
-          <div class="span-3"><label for="rentGross">שכ"ד חודשי ברוטו (₪)</label><input type="text" id="rentGross" value="7000" class="income" inputmode="decimal"/></div>
-          <div class="span-3"><label for="rentTaxPct">מס על שכ"ד (%)</label><input type="text" id="rentTaxPct" value="10" class="expense" inputmode="decimal"/></div>
-          <div class="span-3"><label for="vacancyPct">חודשים פנויים בשנה (%)</label><input type="text" id="vacancyPct" value="8" class="expense" inputmode="decimal"/></div>
-          <div class="span-3"><label for="annualMaintenance">תחזוקה שנתית (₪)</label><input type="text" id="annualMaintenance" value="6000" class="expense" inputmode="decimal"/></div>
+          <div class="span-3"><label for="rentGross">שכ"ד חודשי ברוטו (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="rentGross">+</button><input type="text" id="rentGross" value="7000" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="rentGross">-</button></div></div>
+          <div class="span-3"><label for="rentTaxPct">מס על שכ"ד (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="rentTaxPct">+</button><input type="text" id="rentTaxPct" value="10" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="rentTaxPct">-</button></div></div>
+          <div class="span-3"><label for="vacancyPct">חודשים פנויים בשנה (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="vacancyPct">+</button><input type="text" id="vacancyPct" value="8" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="vacancyPct">-</button></div></div>
+          <div class="span-3"><label for="annualMaintenance">תחזוקה שנתית (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualMaintenance">+</button><input type="text" id="annualMaintenance" value="6000" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualMaintenance">-</button></div></div>
         </div>
       </div>
     </div>
@@ -394,26 +405,24 @@
             html += `
                 <div class="span-3">
                     <label for="baseWithDeposit_${trackId}">דמי אחזקה (₪)</label>
-                    <div class="tradeoff-control">
+                    <div class="spinner-control">
+                        <button type="button" class="spinner-btn stepper-btn" data-step-dir="up" data-track-id="${trackId}">+</button>
                         <input type="text" id="baseWithDeposit_${trackId}" data-track-id="${trackId}" data-base-value="9000" value="9000" class="expense" inputmode="decimal">
-                        <input type="text" class="tradeoff-input" id="tradeoffAmount_${trackId}" value="0" readonly>
-                        <div class="stepper">
-                            <button type="button" class="stepper-btn" data-step-dir="up" data-track-id="${trackId}">+</button>
-                            <button type="button" class="stepper-btn" data-step-dir="down" data-track-id="${trackId}">-</button>
-                        </div>
+                        <button type="button" class="spinner-btn stepper-btn" data-step-dir="down" data-track-id="${trackId}">-</button>
                     </div>
+                    <input type="hidden" id="tradeoffAmount_${trackId}" value="0">
                 </div>
-                <div class="span-3"><label for="depositAmount_${trackId}">סכום פיקדון (₪)</label><input type="text" id="depositAmount_${trackId}" data-track-id="${trackId}" data-base-value="1000000" value="1000000" class="income" inputmode="decimal"></div>
-                <div class="span-3"><label for="depositDepreciationPct_${trackId}">פחת פיקדון שנתי (%)</label><input type="text" id="depositDepreciationPct_${trackId}" value="3" class="expense" inputmode="decimal"></div>
-                <div class="span-3"><label for="depositRefundPct_${trackId}">אחוז החזר מינימלי (%)</label><input type="text" id="depositRefundPct_${trackId}" value="80" class="income" inputmode="decimal"></div>`;
+                <div class="span-3"><label for="depositAmount_${trackId}">סכום פיקדון (₪)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="depositAmount_${trackId}">+</button><input type="text" id="depositAmount_${trackId}" data-track-id="${trackId}" data-base-value="1000000" value="1000000" class="income" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="depositAmount_${trackId}">-</button></div></div>
+                <div class="span-3"><label for="depositDepreciationPct_${trackId}">פחת פיקדון שנתי (%)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="depositDepreciationPct_${trackId}">+</button><input type="text" id="depositDepreciationPct_${trackId}" value="3" class="expense" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="depositDepreciationPct_${trackId}">-</button></div></div>
+                <div class="span-3"><label for="depositRefundPct_${trackId}">אחוז החזר מינימלי (%)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="depositRefundPct_${trackId}">+</button><input type="text" id="depositRefundPct_${trackId}" value="80" class="income" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="depositRefundPct_${trackId}">-</button></div></div>`;
         } else if (mode === 'entrance_fee') {
             html += `
-                <div class="span-3"><label for="baseWithEntranceFee_${trackId}">דמי אחזקה (₪)</label><input type="text" id="baseWithEntranceFee_${trackId}" value="9500" class="expense" inputmode="decimal"></div>
-                <div class="span-3"><label for="entranceFeeAmount_${trackId}">סכום דמי כניסה (₪)</label><input type="text" id="entranceFeeAmount_${trackId}" value="450000" class="income" inputmode="decimal"></div>
-                <div class="span-3"><label for="entranceFeeDepreciationYears_${trackId}">משך הפחת (שנים)</label><input type="text" id="entranceFeeDepreciationYears_${trackId}" value="5" class="expense" inputmode="decimal"></div>
+                <div class="span-3"><label for="baseWithEntranceFee_${trackId}">דמי אחזקה (₪)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="baseWithEntranceFee_${trackId}">+</button><input type="text" id="baseWithEntranceFee_${trackId}" value="9500" class="expense" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="baseWithEntranceFee_${trackId}">-</button></div></div>
+                <div class="span-3"><label for="entranceFeeAmount_${trackId}">סכום דמי כניסה (₪)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="entranceFeeAmount_${trackId}">+</button><input type="text" id="entranceFeeAmount_${trackId}" value="450000" class="income" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="entranceFeeAmount_${trackId}">-</button></div></div>
+                <div class="span-3"><label for="entranceFeeDepreciationYears_${trackId}">משך הפחת (שנים)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="entranceFeeDepreciationYears_${trackId}">+</button><input type="text" id="entranceFeeDepreciationYears_${trackId}" value="5" class="expense" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="entranceFeeDepreciationYears_${trackId}">-</button></div></div>
                 <div class="span-3"><label for="entranceFeeDepreciationRateMonthly_${trackId}">פחת חודשי (%) (מחושב)</label><input type="text" id="entranceFeeDepreciationRateMonthly_${trackId}" value="" class="expense" inputmode="decimal" readonly style="background-color: var(--bg); cursor: not-allowed;"></div>`;
         } else { // none
-            html += `<div class="span-3"><label for="baseNoDeposit_${trackId}">דמי אחזקה (₪)</label><input type="text" id="baseNoDeposit_${trackId}" value="14000" class="expense" inputmode="decimal"></div>`;
+            html += `<div class="span-3"><label for="baseNoDeposit_${trackId}">דמי אחזקה (₪)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="baseNoDeposit_${trackId}">+</button><input type="text" id="baseNoDeposit_${trackId}" value="14000" class="expense" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="baseNoDeposit_${trackId}">-</button></div></div>`;
         }
         html += '</div>';
         body.innerHTML = html;
@@ -691,11 +700,54 @@
         depositInput.value = formatNumber(Math.max(0, newDeposit));
     }
 
+    function getStepForInput(input) {
+        const id = input.id || '';
+        if (id.includes('Pct') || id.includes('Return') || id.includes('Inflation')) {
+            return 0.5;
+        }
+        if (id.toLowerCase().includes('years')) return 1;
+        if (id.includes('monthsIndependent')) return 6;
+        
+        const value = Math.abs(unformat(input.value));
+        if (value >= 1000000) return 100000;
+        if (value >= 100000) return 10000;
+        if (value >= 10000) return 1000;
+        return 500;
+    }
+
+    function isSigned(input) {
+        return false; // No negative values allowed for now
+    }
 
     // --- Initial Load ---
     document.addEventListener('DOMContentLoaded', () => { 
         // Initial setup for common inputs
         setupNumberFormattingForContainer(document.body);
+
+        // --- New Spinner Logic ---
+        document.addEventListener('click', (e) => {
+            if (!e.target.matches('.spinner-btn:not(.stepper-btn)')) return;
+
+            const { stepDir, target: targetId } = e.target.dataset;
+            const targetInput = $(targetId);
+            if (!targetInput) return;
+
+            let currentValue = unformat(targetInput.value);
+            const step = getStepForInput(targetInput);
+            const multiplier = stepDir === 'up' ? 1 : -1;
+
+            let newValue = currentValue + (step * multiplier);
+            
+            if (!isSigned(targetInput)) {
+                newValue = Math.max(0, newValue);
+            }
+
+            targetInput.value = formatNumber(newValue);
+
+            targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+            targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+
 
         // Hide results when inputs change
         const hideResults = () => {
@@ -737,7 +789,7 @@
                 const { trackId, stepDir } = e.target.dataset;
                 const tradeoffInput = $(`tradeoffAmount_${trackId}`);
                 const currentVal = unformat(tradeoffInput.value);
-                const newVal = currentVal + (stepDir === 'up' ? 500 : -500);
+                const newVal = currentVal + (stepDir === 'up' ? 500 : -500); // 500 NIS steps for maintenance
                 tradeoffInput.value = formatNumber(newVal);
                 updateTradeoffCalculation(trackId);
             }
@@ -768,11 +820,11 @@
                 const tradeoffInput = $(`tradeoffAmount_${trackId}`);
                 if (tradeoffInput.value !== '0') {
                     tradeoffInput.value = '0';
-                    // If we reset maintenance, we need to update the deposit base value based on the other field.
+                    // If we reset one, we need to update the other field's base value to its current value.
                     if (isMaintenance) {
                         const depositInput = $(`depositAmount_${trackId}`);
                         depositInput.dataset.baseValue = unformat(depositInput.value);
-                    } else { // if we reset deposit, update maintenance base
+                    } else {
                         const maintenanceInput = $(`baseWithDeposit_${trackId}`);
                         maintenanceInput.dataset.baseValue = unformat(maintenanceInput.value);
                     }
