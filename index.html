@@ -270,7 +270,7 @@
         const monthlyLog = [];
 
         if (cash < 0) {
-             const summary = { totalMonths: 0, independentMonths: 0, nursingMonths: 0, refundEnd: p.pricingMode === 'deposit' ? p.depositAmount : p.entranceFeeAmount, finalCash: 0, trackName: p.trackName, maxedOut: false };
+             const summary = { totalMonths: 0, independentMonths: 0, nursingMonths: 0, refundEnd: p.pricingMode === 'deposit' ? p.depositAmount : p.entranceFeeAmount, finalCash: 0, trackName: p.trackName, maxedOut: false, pricingMode: p.pricingMode };
             return { summary, monthlyLog };
         }
 
@@ -336,7 +336,7 @@
             refundEnd = entranceFeeBook;
         }
 
-        const summary = { totalMonths: t, independentMonths, nursingMonths, refundEnd, finalCash: lastPositiveCash, trackName: p.trackName, maxedOut: t >= maxMonths };
+        const summary = { totalMonths: t, independentMonths, nursingMonths, refundEnd, finalCash: lastPositiveCash, trackName: p.trackName, maxedOut: t >= maxMonths, pricingMode: p.pricingMode };
         return { summary, monthlyLog };
     }
 
@@ -407,8 +407,15 @@
         const targetMonths = Math.round(targetYear * 12);
         $('yearSliderLabel').textContent = `הצג תוצאות לאחר: ${targetYear} שנים`;
         
+        const pricingModeMap = {
+            'deposit': 'עם פיקדון',
+            'entrance_fee': 'דמי כניסה',
+            'none': 'ללא'
+        };
+        
         let table = `<table class="results-table"><thead><tr>
             <th>מסלול</th>
+            <th>סוג מסלול</th>
             <th>סה"כ חודשים (עצמאי / סיעודי)</th>
             <th class="tooltip-header">עלות מצטברת כוללת (₪)<span class="tooltip-text">סך כל ההוצאות החודשיות (דמי אחזקה + מחיה + תוספת סיעוד) שנצברו עד לנקודת הזמן שנבחרה.</span></th>
             <th class="tooltip-header">יתרת הון בסיום (₪)<span class="tooltip-text">ההון הנזיל שנותר בחשבון בנקודת הזמן שנבחרה, לאחר כל ההכנסות וההוצאות, ובתוספת התשואה על הכסף.</span></th>
@@ -469,6 +476,7 @@
                 }
             }
             
+            const pricingModeText = pricingModeMap[rSummary.pricingMode] || rSummary.pricingMode;
             const firstMonthParams = readAllInputsForTrack(rSummary.trackName);
             const baseCost = (firstMonthParams.pricingMode === 'deposit') ? firstMonthParams.baseWithDeposit : (firstMonthParams.pricingMode === 'entrance_fee') ? firstMonthParams.baseWithEntranceFee : firstMonthParams.baseNoDeposit;
             const livingExpenses = firstMonthParams.monthlyLivingExpenses;
@@ -478,6 +486,7 @@
 
             table += `<tr class="${rowClass}">
                 <td>${rSummary.trackName}</td>
+                <td>${pricingModeText}</td>
                 <td><b>${fmt(displayMonths)} (${fmt(indMonths)} / ${fmt(nursMonths)})</b>${durationNote || ''}</td>
                 <td>${fmt(cumulativeCost)}</td>
                 <td>${fmt(finalCash)}</td>
