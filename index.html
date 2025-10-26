@@ -74,6 +74,77 @@
     #yearSlider { width: 100%; accent-color: var(--accent); }
     #sliderLabels { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--muted); margin-top: 8px; }
 
+    .tradeoff-control { display: flex; align-items: stretch; gap: 4px; }
+    .tradeoff-control > input { flex-grow: 1; }
+    .stepper { display: flex; flex-direction: column; }
+    .stepper-btn {
+        flex-grow: 1;
+        background: var(--border);
+        color: var(--text);
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        padding: 0 8px;
+        font-size: 1.2rem;
+        line-height: 1;
+        transition: background .2s;
+    }
+    .stepper-btn:hover { background: var(--accent); color: var(--bg); }
+    .tradeoff-input {
+        background: var(--input);
+        color: var(--muted);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: .8rem;
+        width: 60px;
+        text-align: center;
+        margin: 4px 0;
+    }
+    
+    .tooltip-header {
+      position: relative;
+      cursor: help;
+      text-decoration: underline;
+      text-decoration-style: dotted;
+    }
+    .tooltip-text {
+      visibility: hidden;
+      width: 260px;
+      background-color: var(--panel);
+      color: var(--text);
+      text-align: right;
+      border-radius: 8px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      position: absolute;
+      z-index: 9999;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-weight: normal;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      pointer-events: none;
+    }
+    .tooltip-header:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+    .tooltip-text::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: var(--border) transparent transparent transparent;
+    }
+
     @media (max-width: 900px) {
       .span-8, .span-6, .span-4, .span-3 { grid-column: span 12; }
     }
@@ -117,19 +188,19 @@
         <div class="span-4">
             <label for="assetScenarioSelect">בחר תרחיש עבור הדירה</label>
             <select id="assetScenarioSelect">
-                <option value="sell" selected>מכירת הדירה</option>
-                <option value="rent">השכרת הדירה</option>
+                <option value="sell">מכירת הדירה</option>
+                <option value="rent" selected>השכרת הדירה</option>
                 <option value="none">ללא שימוש בדירה</option>
             </select>
         </div>
       </div>
-      <div id="sellBlock">
+      <div id="sellBlock" style="display: none;">
         <div class="row">
           <div class="span-6"><label for="salePrice">מחיר מכירה (₪)</label><input type="text" id="salePrice" value="3000000" class="income" inputmode="decimal"/></div>
           <div class="span-6"><label for="saleCostsPct">עלויות עסקה (% מהמחיר)</label><input type="text" id="saleCostsPct" value="3" class="expense" inputmode="decimal"/></div>
         </div>
       </div>
-      <div id="rentBlock" style="display: none;">
+      <div id="rentBlock">
         <div class="row">
           <div class="span-3"><label for="rentGross">שכ"ד חודשי ברוטו (₪)</label><input type="text" id="rentGross" value="7000" class="income" inputmode="decimal"/></div>
           <div class="span-3"><label for="rentTaxPct">מס על שכ"ד (%)</label><input type="text" id="rentTaxPct" value="10" class="expense" inputmode="decimal"/></div>
@@ -155,14 +226,15 @@
 
         <div id="sliderGroup">
             <label for="yearSlider" id="yearSliderLabel">הצג תוצאות לאחר:</label>
-            <input type="range" id="yearSlider" min="0.5" max="15" value="15" step="0.5" style="width:100%;">
+            <input type="range" id="yearSlider" list="yearTicks" min="0.5" max="15" value="15" step="0.5">
+            <datalist id="yearTicks"></datalist>
             <div id="sliderLabels">
                 <span id="sliderMinLabel">חצי שנה</span>
                 <span id="sliderMaxLabel">שנה 15</span>
             </div>
         </div>
 
-        <div id="resultsTableContainer" style="overflow-x: auto;"></div>
+        <div id="resultsTableContainer"></div>
     </div>
   </div>
 
@@ -301,8 +373,18 @@
         let html = '<div class="row">';
         if (mode === 'deposit') {
             html += `
-                <div class="span-3"><label for="baseWithDeposit_${trackId}">דמי אחזקה (₪)</label><input type="text" id="baseWithDeposit_${trackId}" value="9000" class="expense" inputmode="decimal"></div>
-                <div class="span-3"><label for="depositAmount_${trackId}">סכום פיקדון (₪)</label><input type="text" id="depositAmount_${trackId}" value="1000000" class="income" inputmode="decimal"></div>
+                <div class="span-3">
+                    <label for="baseWithDeposit_${trackId}">דמי אחזקה (₪)</label>
+                    <div class="tradeoff-control">
+                        <input type="text" id="baseWithDeposit_${trackId}" data-track-id="${trackId}" data-base-value="9000" value="9000" class="expense" inputmode="decimal">
+                        <input type="text" class="tradeoff-input" id="tradeoffAmount_${trackId}" value="0" readonly>
+                        <div class="stepper">
+                            <button type="button" class="stepper-btn" data-step-dir="up" data-track-id="${trackId}">+</button>
+                            <button type="button" class="stepper-btn" data-step-dir="down" data-track-id="${trackId}">-</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="span-3"><label for="depositAmount_${trackId}">סכום פיקדון (₪)</label><input type="text" id="depositAmount_${trackId}" data-track-id="${trackId}" data-base-value="1000000" value="1000000" class="income" inputmode="decimal"></div>
                 <div class="span-3"><label for="depositDepreciationPct_${trackId}">פחת פיקדון שנתי (%)</label><input type="text" id="depositDepreciationPct_${trackId}" value="3" class="expense" inputmode="decimal"></div>
                 <div class="span-3"><label for="depositRefundPct_${trackId}">אחוז החזר מינימלי (%)</label><input type="text" id="depositRefundPct_${trackId}" value="80" class="income" inputmode="decimal"></div>`;
         } else if (mode === 'entrance_fee') {
@@ -329,9 +411,9 @@
             <th>מסלול</th>
             <th>סה"כ חודשים</th>
             <th>פירוט חודשים (עצמאי / סיעודי)</th>
-            <th>עלות מצטברת כוללת (₪)</th>
-            <th>יתרת הון בסיום (₪)</th>
-            <th>החזר צפוי (₪)</th>
+            <th class="tooltip-header">עלות מצטברת כוללת (₪)<span class="tooltip-text">סך כל ההוצאות החודשיות (דמי אחזקה + מחיה + תוספת סיעוד) שנצברו עד לנקודת הזמן שנבחרה.</span></th>
+            <th class="tooltip-header">יתרת הון בסיום (₪)<span class="tooltip-text">ההון הנזיל שנותר בחשבון בנקודת הזמן שנבחרה, לאחר כל ההכנסות וההוצאות, ובתוספת התשואה על הכסף.</span></th>
+            <th class="tooltip-header">החזר צפוי (₪)<span class="tooltip-text">הסכום שיתקבל חזרה מהפיקדון או דמי הכניסה בנקודת הזמן שנבחרה, בהתחשב בתנאי הפחת של המסלול.</span></th>
             <th>תזרים חודשי ראשון (₪)</th>
         </tr></thead><tbody>`;
 
@@ -492,6 +574,7 @@
     
     function setupYearSlider() {
         const slider = $('yearSlider');
+        const datalist = $('yearTicks');
         const maxYears = Math.max(0.5, unformat($('maxYears').value) || 15, ...simulationResults.map(r => Math.ceil(r.summary.totalMonths / 12)));
         
         slider.min = 0.5;
@@ -500,6 +583,13 @@
         slider.value = maxYears;
         $('sliderMinLabel').textContent = 'חצי שנה';
         $('sliderMaxLabel').textContent = `שנה ${maxYears}`;
+
+        datalist.innerHTML = '';
+        for (let i = 1; i <= Math.floor(maxYears); i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            datalist.appendChild(option);
+        }
 
         slider.oninput = renderResults;
     }
@@ -543,6 +633,23 @@
         });
     }
 
+    function updateTradeoffCalculation(trackId) {
+        const tradeoffInput = $(`tradeoffAmount_${trackId}`);
+        const maintenanceInput = $(`baseWithDeposit_${trackId}`);
+        const depositInput = $(`depositAmount_${trackId}`);
+        
+        const baseMaintenance = unformat(maintenanceInput.dataset.baseValue);
+        const baseDeposit = unformat(depositInput.dataset.baseValue);
+        const tradeoffAmount = unformat(tradeoffInput.value);
+        
+        const newMaintenance = baseMaintenance + tradeoffAmount;
+        const newDeposit = baseDeposit - (tradeoffAmount / 1000) * 100000;
+        
+        maintenanceInput.value = formatNumber(Math.max(0, newMaintenance));
+        depositInput.value = formatNumber(Math.max(0, newDeposit));
+    }
+
+
     // --- Initial Load ---
     document.addEventListener('DOMContentLoaded', () => { 
         // Initial setup for common inputs
@@ -565,12 +672,45 @@
                 const trackId = e.target.dataset.removeTrackId;
                 tracks = tracks.filter(t => t.id != trackId);
                 document.querySelector(`.track-card[data-track-id='${trackId}']`).remove();
+            } else if (e.target.classList.contains('stepper-btn')) {
+                const { trackId, stepDir } = e.target.dataset;
+                const tradeoffInput = $(`tradeoffAmount_${trackId}`);
+                const currentVal = unformat(tradeoffInput.value);
+                const newVal = currentVal + (stepDir === 'up' ? 500 : -500);
+                tradeoffInput.value = formatNumber(newVal);
+                updateTradeoffCalculation(trackId);
             }
         });
+
         $('tracksContainer').addEventListener('change', (e) => {
             if (e.target.id.startsWith('pricingMode_')) {
                 const trackId = e.target.id.split('_')[1];
                 updateTrackBody(trackId);
+            }
+        });
+
+        $('tracksContainer').addEventListener('input', (e) => {
+            const trackId = e.target.dataset.trackId;
+            if (!trackId) return;
+
+            const isMaintenance = e.target.id.startsWith('baseWithDeposit_');
+            const isDeposit = e.target.id.startsWith('depositAmount_');
+            
+            if (isMaintenance || isDeposit) {
+                // User is manually editing a base value, so reset the tradeoff.
+                e.target.dataset.baseValue = unformat(e.target.value);
+                const tradeoffInput = $(`tradeoffAmount_${trackId}`);
+                if (tradeoffInput.value !== '0') {
+                    tradeoffInput.value = '0';
+                    // If we reset maintenance, we need to update the deposit base value based on the other field.
+                    if (isMaintenance) {
+                        const depositInput = $(`depositAmount_${trackId}`);
+                        depositInput.dataset.baseValue = unformat(depositInput.value);
+                    } else { // if we reset deposit, update maintenance base
+                        const maintenanceInput = $(`baseWithDeposit_${trackId}`);
+                        maintenanceInput.dataset.baseValue = unformat(maintenanceInput.value);
+                    }
+                }
             }
         });
 
