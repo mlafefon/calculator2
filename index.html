@@ -50,6 +50,7 @@
     .btn.danger:hover:not(:disabled) { background: #f43f5e; }
     .btn:disabled { opacity: .6; cursor: not-allowed; }
     .note { font-size: .85rem; color: var(--muted); }
+    .note.danger { color: var(--danger); font-weight: 500; }
     .inline-row { display: flex; align-items: center; gap: 8px; }
     .hr { border-top: 1px dashed var(--border); margin: 24px 0; }
     
@@ -64,11 +65,12 @@
     .results-table td { font-size: 1rem; }
     .results-table tr:last-child td { border-bottom: none; }
     .results-table td:first-child { font-weight: bold; text-align: right; }
+    .results-table tr.insolvent { background-color: rgba(251, 113, 133, 0.1); }
     .breakdown-cell { font-size: .8rem; text-align: right; padding: 4px; }
     .breakdown-cell table { width: 100%; }
     .breakdown-cell td:last-child { text-align: left; direction: ltr; }
     
-    #sliderGroup { margin-top: 24px; padding: 16px; background: var(--panel); border-radius: 12px; }
+    #sliderGroup { margin-bottom: 24px; padding: 16px; background: var(--panel); border-radius: 12px; }
     #yearSlider { width: 100%; accent-color: var(--accent); }
     #sliderLabels { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--muted); margin-top: 8px; }
 
@@ -150,18 +152,17 @@
     <!-- Step 3: Results -->
     <div class="card" id="resultsSection">
         <h2>שלב 3: השוואת תוצאות</h2>
-        <div id="resultsTableContainer" style="overflow-x: auto;"></div>
-        
+
         <div id="sliderGroup">
-            <h3>ניתוח עלות מצטברת לפי שנים</h3>
-            <label for="yearSlider" id="yearSliderLabel">בחר שנה</label>
-            <input type="range" id="yearSlider" min="1" max="15" value="1" style="width:100%;">
+            <label for="yearSlider" id="yearSliderLabel">הצג תוצאות לאחר:</label>
+            <input type="range" id="yearSlider" min="0.5" max="15" value="15" step="0.5" style="width:100%;">
             <div id="sliderLabels">
-                <span id="sliderMinLabel">שנה 1</span>
+                <span id="sliderMinLabel">חצי שנה</span>
                 <span id="sliderMaxLabel">שנה 15</span>
             </div>
-            <div id="cumulativeCostTableContainer" style="margin-top: 16px;"></div>
         </div>
+
+        <div id="resultsTableContainer" style="overflow-x: auto;"></div>
     </div>
   </div>
 
@@ -197,7 +198,7 @@
         const monthlyLog = [];
 
         if (cash < 0) {
-             const summary = { totalMonths: 0, independentMonths: 0, nursingMonths: 0, refundEnd: p.pricingMode === 'deposit' ? p.depositAmount : p.entranceFeeAmount, finalCash: 0, trackName: p.trackName };
+             const summary = { totalMonths: 0, independentMonths: 0, nursingMonths: 0, refundEnd: p.pricingMode === 'deposit' ? p.depositAmount : p.entranceFeeAmount, finalCash: 0, trackName: p.trackName, maxedOut: false };
             return { summary, monthlyLog };
         }
 
@@ -228,8 +229,6 @@
             const income = p.monthlyIncome + rentNetPerMonth(t);
             cash += (income - totalMonthlyCost);
             
-            monthlyLog.push({ month: t + 1, totalCost: totalMonthlyCost });
-
             if (p.pricingMode === 'deposit' && depositBook > 0 && t < (12 * 12)) {
                 const monthlyDep = 1 - Math.pow(1 - (p.depositDepreciationPct || 0), 1/12);
                 depositBook *= (1 - monthlyDep);
@@ -243,6 +242,17 @@
             
             if (t < p.monthsIndependent) independentMonths++; else nursingMonths++;
             lastPositiveCash = cash;
+            
+            let refundCurrent = 0;
+            if (p.pricingMode === 'deposit') {
+                const floor = (p.depositAmount || 0) * (p.depositRefundPct || 0);
+                refundCurrent = Math.max(0, Math.max(depositBook, floor));
+            } else if (p.pricingMode === 'entrance_fee') {
+                refundCurrent = entranceFeeBook;
+            }
+            
+            monthlyLog.push({ month: t + 1, totalCost: totalMonthlyCost, cash: lastPositiveCash, refund: refundCurrent, independentMonths, nursingMonths });
+            
             t++;
         }
 
@@ -311,36 +321,87 @@
     
     function renderResults() {
         const container = $('resultsTableContainer');
-        const results = simulationResults.map(r => r.summary);
+        const targetYear = parseFloat($('yearSlider').value);
+        const targetMonths = Math.round(targetYear * 12);
+        $('yearSliderLabel').textContent = `הצג תוצאות לאחר: ${targetYear} שנים`;
         
         let table = `<table class="results-table"><thead><tr>
             <th>מסלול</th>
             <th>סה"כ חודשים</th>
             <th>פירוט חודשים (עצמאי / סיעודי)</th>
+            <th>עלות מצטברת כוללת (₪)</th>
             <th>יתרת הון בסיום (₪)</th>
             <th>החזר צפוי (₪)</th>
             <th>תזרים חודשי ראשון (₪)</th>
         </tr></thead><tbody>`;
 
-        results.forEach(r => {
-            const years = Math.floor(r.totalMonths / 12), months = r.totalMonths % 12;
-            const durationText = r.maxedOut ? `+${r.totalMonths}` : r.totalMonths;
-            const durationNote = r.totalMonths > 0 ? `<div class="note">${years} שנים ו־${months} חודשים</div>` : '<div class="note">לא מספיק להתחלה</div>';
+        simulationResults.forEach(result => {
+            const rSummary = result.summary;
+            let displayMonths, years, months, durationNote, indMonths, nursMonths, finalCash, refundEnd, cumulativeCost, rowClass = '';
+
+            if (result.monthlyLog.length === 0) {
+                rowClass = 'insolvent';
+                displayMonths = 0;
+                durationNote = '<div class="note danger">לא מספיק הון להתחלה</div>';
+                indMonths = 0;
+                nursMonths = 0;
+                finalCash = 0;
+                refundEnd = 0;
+                cumulativeCost = 0;
+            } else {
+                const ran_out_of_money = !rSummary.maxedOut;
+                const show_as_insolvent = ran_out_of_money && rSummary.totalMonths < targetMonths;
+
+                if (show_as_insolvent) {
+                    rowClass = 'insolvent';
+                    const lastLog = result.monthlyLog[result.monthlyLog.length - 1];
+                    displayMonths = lastLog.month;
+                    indMonths = lastLog.independentMonths;
+                    nursMonths = lastLog.nursingMonths;
+                    finalCash = 0;
+                    refundEnd = lastLog.refund;
+                    cumulativeCost = result.monthlyLog.reduce((sum, log) => sum + log.totalCost, 0);
+
+                    years = Math.floor(displayMonths / 12);
+                    months = displayMonths % 12;
+                    durationNote = `<div class="note danger">ההון אזל לאחר ${years} שנים ו־${months} חודשים</div>`;
+                } else {
+                    const cappedTargetMonths = Math.min(targetMonths, rSummary.totalMonths);
+                    const relevantLogs = result.monthlyLog.slice(0, cappedTargetMonths);
+                    
+                    if (relevantLogs.length > 0) {
+                        const lastLog = relevantLogs[relevantLogs.length - 1];
+                        displayMonths = lastLog.month;
+                        indMonths = lastLog.independentMonths;
+                        nursMonths = lastLog.nursingMonths;
+                        finalCash = lastLog.cash;
+                        refundEnd = lastLog.refund;
+                        cumulativeCost = relevantLogs.reduce((sum, log) => sum + log.totalCost, 0);
+                        
+                        years = Math.floor(displayMonths / 12);
+                        months = displayMonths % 12;
+                        durationNote = `<div class="note">${years} שנים ו־${months} חודשים</div>`;
+                    } else {
+                        displayMonths = 0; indMonths = 0; nursMonths = 0; finalCash = 0; refundEnd = 0; cumulativeCost = 0;
+                        durationNote = '<div class="note">---</div>';
+                    }
+                }
+            }
             
-            // First month cash flow
-            const firstMonthParams = readAllInputsForTrack(r.trackName); // Assuming trackName is unique
+            const firstMonthParams = readAllInputsForTrack(rSummary.trackName);
             const baseCost = (firstMonthParams.pricingMode === 'deposit') ? firstMonthParams.baseWithDeposit : (firstMonthParams.pricingMode === 'entrance_fee') ? firstMonthParams.baseWithEntranceFee : firstMonthParams.baseNoDeposit;
             const livingExpenses = firstMonthParams.monthlyLivingExpenses;
             const fixedIncome = firstMonthParams.monthlyIncome;
             const rentIncome = (firstMonthParams.scenario === 'rent') ? Math.max(0, (firstMonthParams.rentGross * (1 - firstMonthParams.rentTaxPct) * (1 - firstMonthParams.vacancyPct)) - (firstMonthParams.annualMaintenance / 12)) : 0;
             const indNet = (fixedIncome + rentIncome) - (baseCost + livingExpenses);
 
-            table += `<tr>
-                <td>${r.trackName}</td>
-                <td><b>${durationText}</b>${durationNote}</td>
-                <td>${fmt(r.independentMonths)} / ${fmt(r.nursingMonths)}</td>
-                <td>${fmt(r.finalCash)}</td>
-                <td>${fmt(r.refundEnd)}</td>
+            table += `<tr class="${rowClass}">
+                <td>${rSummary.trackName}</td>
+                <td><b>${fmt(displayMonths)}</b>${durationNote || ''}</td>
+                <td>${fmt(indMonths)} / ${fmt(nursMonths)}</td>
+                <td>${fmt(cumulativeCost)}</td>
+                <td>${fmt(finalCash)}</td>
+                <td>${fmt(refundEnd)}</td>
                 <td class="breakdown-cell">
                     <table>
                         <tr><td>הכנסות</td><td class="income">${fmt(fixedIncome + rentIncome)}</td></tr>
@@ -354,26 +415,6 @@
         table += '</tbody></table>';
         container.innerHTML = table;
         $('resultsSection').style.display = 'block';
-    }
-
-    function renderCumulativeCostTable(year) {
-        const container = $('cumulativeCostTableContainer');
-        let table = `<table class="results-table"><thead><tr>
-            <th>מסלול</th>
-            <th>עלות מצטברת כוללת עד סוף שנה ${year} (₪)</th>
-        </tr></thead><tbody>`;
-        
-        simulationResults.forEach(result => {
-            const targetMonths = year * 12;
-            const cumulativeCost = result.monthlyLog
-                .filter(log => log.month <= targetMonths)
-                .reduce((sum, log) => sum + log.totalCost, 0);
-            
-            table += `<tr><td>${result.summary.trackName}</td><td>${fmt(cumulativeCost)}</td></tr>`;
-        });
-        
-        table += '</tbody></table>';
-        container.innerHTML = table;
     }
 
     // --- Input Reading ---
@@ -444,28 +485,23 @@
             const params = readAllInputsForTrack(name);
             return simulate(params);
         });
-
-        renderResults();
+        
         setupYearSlider();
+        renderResults();
     }
     
     function setupYearSlider() {
         const slider = $('yearSlider');
-        const maxYears = Math.max(1, ...simulationResults.map(r => Math.ceil(r.summary.totalMonths / 12)), unformat($('maxYears').value) || 15);
+        const maxYears = Math.max(0.5, unformat($('maxYears').value) || 15, ...simulationResults.map(r => Math.ceil(r.summary.totalMonths / 12)));
         
+        slider.min = 0.5;
+        slider.step = 0.5;
         slider.max = maxYears;
-        slider.value = 1;
-        $('sliderMinLabel').textContent = 'שנה 1';
+        slider.value = maxYears;
+        $('sliderMinLabel').textContent = 'חצי שנה';
         $('sliderMaxLabel').textContent = `שנה ${maxYears}`;
 
-        const updateSliderDisplay = () => {
-            const year = slider.value;
-            $('yearSliderLabel').textContent = `ניתוח עלות מצטברת עד סוף שנה ${year}`;
-            renderCumulativeCostTable(year);
-        };
-
-        slider.oninput = updateSliderDisplay;
-        updateSliderDisplay(); // Initial render
+        slider.oninput = renderResults;
     }
 
     // --- Utilities ---
