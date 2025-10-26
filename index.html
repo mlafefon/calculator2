@@ -249,8 +249,6 @@
 
     // --- Core Simulation Logic ---
     function simulate(p) {
-        if (!p.isNursing) p.monthsIndependent = Infinity;
-
         let cash = p.initCash;
         if (p.scenario === 'sell') cash += Math.max(0, p.salePrice * (1 - p.saleCostsPct));
         
@@ -297,22 +295,29 @@
 
         while (t < maxMonths) {
             cash *= (1 + monthlyReturn);
-            const totalMonthlyCost = baseMonthlyCost(t, p.pricingMode) + ((t < p.monthsIndependent) ? 0 : nursingExtra(t)) + monthlyLivingCost(t);
+            const providerMonthlyCost = baseMonthlyCost(t, p.pricingMode) + (p.isNursing && t >= p.monthsIndependent ? nursingExtra(t) : 0);
+            const totalMonthlyCost = providerMonthlyCost + monthlyLivingCost(t);
             const income = p.monthlyIncome + rentNetPerMonth(t);
             cash += (income - totalMonthlyCost);
             
+            let depreciationThisMonth = 0;
             if (p.pricingMode === 'deposit' && depositBook > 0 && t < (12 * 12)) {
-                const monthlyDep = 1 - Math.pow(1 - (p.depositDepreciationPct || 0), 1/12);
-                depositBook *= (1 - monthlyDep);
+                const monthlyDepRate = 1 - Math.pow(1 - (p.depositDepreciationPct || 0), 1/12);
+                depreciationThisMonth = depositBook * monthlyDepRate;
+                depositBook *= (1 - monthlyDepRate);
             }
             if (p.pricingMode === 'entrance_fee' && entranceFeeBook > 0 && t < (p.entranceFeeDepreciationYears * 12)) {
                 const monthlyDepAmount = p.entranceFeeAmount * (p.entranceFeeDepreciationRateMonthly || 0);
+                const actualDepreciation = Math.min(entranceFeeBook, monthlyDepAmount);
+                depreciationThisMonth = actualDepreciation;
                 entranceFeeBook = Math.max(0, entranceFeeBook - monthlyDepAmount);
             }
+            
+            const providerEconomicCost = providerMonthlyCost + depreciationThisMonth;
 
             if (cash < 0) break;
             
-            if (t < p.monthsIndependent) independentMonths++; else nursingMonths++;
+            if (p.isNursing && t >= p.monthsIndependent) nursingMonths++; else independentMonths++;
             lastPositiveCash = cash;
             
             let refundCurrent = 0;
@@ -323,7 +328,7 @@
                 refundCurrent = entranceFeeBook;
             }
             
-            monthlyLog.push({ month: t + 1, totalCost: totalMonthlyCost, cash: lastPositiveCash, refund: refundCurrent, independentMonths, nursingMonths });
+            monthlyLog.push({ month: t + 1, totalCost: totalMonthlyCost, providerCost: providerMonthlyCost, providerEconomicCost, cash: lastPositiveCash, refund: refundCurrent, independentMonths, nursingMonths });
             
             t++;
         }
@@ -365,6 +370,20 @@
         updateTrackBody(trackId);
     }
     
+    function updateCalculatedEntranceFeeRate(trackId) {
+        const yearsInput = $(`entranceFeeDepreciationYears_${trackId}`);
+        const rateInput = $(`entranceFeeDepreciationRateMonthly_${trackId}`);
+        if (!yearsInput || !rateInput) return;
+
+        const years = unformat(yearsInput.value);
+        if (years > 0) {
+            const rate = 100 / (years * 12);
+            rateInput.value = rate.toFixed(3);
+        } else {
+            rateInput.value = '0.000';
+        }
+    }
+    
     function updateTrackBody(trackId) {
         const card = document.querySelector(`.track-card[data-track-id='${trackId}']`);
         const body = card.querySelector('.track-body');
@@ -391,14 +410,17 @@
             html += `
                 <div class="span-3"><label for="baseWithEntranceFee_${trackId}">דמי אחזקה (₪)</label><input type="text" id="baseWithEntranceFee_${trackId}" value="9500" class="expense" inputmode="decimal"></div>
                 <div class="span-3"><label for="entranceFeeAmount_${trackId}">סכום דמי כניסה (₪)</label><input type="text" id="entranceFeeAmount_${trackId}" value="450000" class="income" inputmode="decimal"></div>
-                <div class="span-3"><label for="entranceFeeDepreciationRateMonthly_${trackId}">פחת חודשי (%)</label><input type="text" id="entranceFeeDepreciationRateMonthly_${trackId}" value="1.5" class="expense" inputmode="decimal"></div>
-                <div class="span-3"><label for="entranceFeeDepreciationYears_${trackId}">משך הפחת (שנים)</label><input type="text" id="entranceFeeDepreciationYears_${trackId}" value="5" class="expense" inputmode="decimal"></div>`;
+                <div class="span-3"><label for="entranceFeeDepreciationYears_${trackId}">משך הפחת (שנים)</label><input type="text" id="entranceFeeDepreciationYears_${trackId}" value="5" class="expense" inputmode="decimal"></div>
+                <div class="span-3"><label for="entranceFeeDepreciationRateMonthly_${trackId}">פחת חודשי (%) (מחושב)</label><input type="text" id="entranceFeeDepreciationRateMonthly_${trackId}" value="" class="expense" inputmode="decimal" readonly style="background-color: var(--bg); cursor: not-allowed;"></div>`;
         } else { // none
             html += `<div class="span-3"><label for="baseNoDeposit_${trackId}">דמי אחזקה (₪)</label><input type="text" id="baseNoDeposit_${trackId}" value="14000" class="expense" inputmode="decimal"></div>`;
         }
         html += '</div>';
         body.innerHTML = html;
         setupNumberFormattingForContainer(body);
+        if (mode === 'entrance_fee') {
+            updateCalculatedEntranceFeeRate(trackId);
+        }
     }
     
     function renderResults() {
@@ -417,7 +439,8 @@
             <th>מסלול</th>
             <th>סוג מסלול</th>
             <th>סה"כ חודשים (עצמאי / סיעודי)</th>
-            <th class="tooltip-header">עלות מצטברת כוללת (₪)<span class="tooltip-text">סך כל ההוצאות החודשיות (דמי אחזקה + מחיה + תוספת סיעוד) שנצברו עד לנקודת הזמן שנבחרה.</span></th>
+            <th class="tooltip-header">עלות מצטברת כוללת (₪)<span class="tooltip-text">סך כל ההוצאות (מחייה, דמי אחזקה ותוספת סיעוד) בתוספת הפחת על הפיקדון/דמי כניסה. מציג את העלות הכלכלית המלאה.</span></th>
+            <th class="tooltip-header">תשלום לספק (₪)<span class="tooltip-text">סך העלות הכלכלית לספק, כולל דמי אחזקה, תוספת סיעודית, ופחת על הפיקדון או דמי הכניסה.</span></th>
             <th class="tooltip-header">יתרת הון בסיום (₪)<span class="tooltip-text">ההון הנזיל שנותר בחשבון בנקודת הזמן שנבחרה, לאחר כל ההכנסות וההוצאות, ובתוספת התשואה על הכסף.</span></th>
             <th class="tooltip-header">החזר צפוי (₪)<span class="tooltip-text">הסכום שיתקבל חזרה מהפיקדון או דמי הכניסה בנקודת הזמן שנבחרה, בהתחשב בתנאי הפחת של המסלול.</span></th>
             <th>תזרים חודשי ראשון (₪)</th>
@@ -425,7 +448,7 @@
 
         simulationResults.forEach(result => {
             const rSummary = result.summary;
-            let displayMonths, years, months, durationNote, indMonths, nursMonths, finalCash, refundEnd, cumulativeCost, rowClass = '';
+            let displayMonths, years, months, durationNote, indMonths, nursMonths, finalCash, refundEnd, cumulativeProviderCost, rowClass = '', totalEconomicCost = 0;
 
             if (result.monthlyLog.length === 0) {
                 rowClass = 'insolvent';
@@ -435,7 +458,8 @@
                 nursMonths = 0;
                 finalCash = 0;
                 refundEnd = 0;
-                cumulativeCost = 0;
+                cumulativeProviderCost = 0;
+                totalEconomicCost = 0;
             } else {
                 const ran_out_of_money = !rSummary.maxedOut;
                 const show_as_insolvent = ran_out_of_money && rSummary.totalMonths < targetMonths;
@@ -448,7 +472,12 @@
                     nursMonths = lastLog.nursingMonths;
                     finalCash = 0;
                     refundEnd = lastLog.refund;
-                    cumulativeCost = result.monthlyLog.reduce((sum, log) => sum + log.totalCost, 0);
+                    
+                    const cumulativeCost = result.monthlyLog.reduce((sum, log) => sum + (log.totalCost || 0), 0);
+                    cumulativeProviderCost = result.monthlyLog.reduce((sum, log) => sum + (log.providerEconomicCost || 0), 0);
+                    const cumulativeProviderCashCost = result.monthlyLog.reduce((sum, log) => sum + (log.providerCost || 0), 0);
+                    const cumulativeLivingCost = cumulativeCost - cumulativeProviderCashCost;
+                    totalEconomicCost = cumulativeProviderCost + cumulativeLivingCost;
 
                     years = Math.floor(displayMonths / 12);
                     months = displayMonths % 12;
@@ -464,13 +493,18 @@
                         nursMonths = lastLog.nursingMonths;
                         finalCash = lastLog.cash;
                         refundEnd = lastLog.refund;
-                        cumulativeCost = relevantLogs.reduce((sum, log) => sum + log.totalCost, 0);
+
+                        const cumulativeCost = relevantLogs.reduce((sum, log) => sum + (log.totalCost || 0), 0);
+                        cumulativeProviderCost = relevantLogs.reduce((sum, log) => sum + (log.providerEconomicCost || 0), 0);
+                        const cumulativeProviderCashCost = relevantLogs.reduce((sum, log) => sum + (log.providerCost || 0), 0);
+                        const cumulativeLivingCost = cumulativeCost - cumulativeProviderCashCost;
+                        totalEconomicCost = cumulativeProviderCost + cumulativeLivingCost;
                         
                         years = Math.floor(displayMonths / 12);
                         months = displayMonths % 12;
                         durationNote = `<div class="note">${years} שנים ו־${months} חודשים</div>`;
                     } else {
-                        displayMonths = 0; indMonths = 0; nursMonths = 0; finalCash = 0; refundEnd = 0; cumulativeCost = 0;
+                        displayMonths = 0; indMonths = 0; nursMonths = 0; finalCash = 0; refundEnd = 0; cumulativeProviderCost = 0; totalEconomicCost = 0;
                         durationNote = '<div class="note">---</div>';
                     }
                 }
@@ -488,7 +522,8 @@
                 <td>${rSummary.trackName}</td>
                 <td>${pricingModeText}</td>
                 <td><b>${fmt(displayMonths)} (${fmt(indMonths)} / ${fmt(nursMonths)})</b>${durationNote || ''}</td>
-                <td>${fmt(cumulativeCost)}</td>
+                <td>${fmt(totalEconomicCost)}</td>
+                <td>${fmt(cumulativeProviderCost)}</td>
                 <td>${fmt(finalCash)}</td>
                 <td>${fmt(refundEnd)}</td>
                 <td class="breakdown-cell">
@@ -697,6 +732,11 @@
         });
 
         $('tracksContainer').addEventListener('input', (e) => {
+            if (e.target.id.startsWith('entranceFeeDepreciationYears_')) {
+                const trackId = e.target.id.split('_')[1];
+                updateCalculatedEntranceFeeRate(trackId);
+            }
+
             const trackId = e.target.dataset.trackId;
             if (!trackId) return;
 
