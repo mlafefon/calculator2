@@ -21,6 +21,7 @@
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, Segoe UI, Arial, "Noto Sans Hebrew", sans-serif; }
+    body { padding-top: 70px; }
     .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
     h1 { font-size: 2.25rem; margin: 0 0 8px; text-align: center; color: var(--accent); }
     h2 { font-size: 1.5rem; margin: 24px 0 16px; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
@@ -59,18 +60,30 @@
     .track-header { display: flex; gap: 16px; margin-bottom: 16px; align-items: center; }
     .track-header .form-group { flex-grow: 1; }
     
-    #resultsSection { display: none; }
-    .results-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    .results-table { width: 100%; border-collapse: collapse; }
     .results-table th, .results-table td { padding: 12px; text-align: center; border-bottom: 1px solid var(--border); }
-    .results-table th { color: var(--accent); font-size: 0.9rem; }
+    .results-table th { color: var(--accent); font-size: 0.9rem; background: var(--panel); }
     .results-table td { font-size: 1rem; }
     .results-table tr:last-child td { border-bottom: none; }
     .results-table tr.insolvent { background-color: rgba(251, 113, 133, 0.1); }
+    .results-table thead {
+      position: sticky;
+      top: 188px; /* Height of modal-header (76px) + slider (~112px) */
+      z-index: 9;
+    }
     .breakdown-cell { font-size: .8rem; text-align: right; padding: 4px; }
     .breakdown-cell table { width: 100%; }
     .breakdown-cell td:last-child { text-align: left; direction: ltr; }
     
-    #sliderGroup { margin-bottom: 24px; padding: 16px; background: var(--panel); border-radius: 12px; }
+    #sliderGroup {
+        margin-bottom: 0;
+        padding: 16px 24px;
+        background: var(--panel);
+        border-radius: 0;
+        position: sticky;
+        top: 76px; /* After modal-header which is ~76px high */
+        z-index: 10;
+    }
     #yearSlider { width: 100%; accent-color: var(--accent); }
     #sliderLabels { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--muted); margin-top: 8px; }
 
@@ -156,12 +169,132 @@
       border-color: var(--border) transparent transparent transparent;
     }
 
+    /* Top Bar */
+    .top-bar {
+        background: var(--panel);
+        padding: 12px 24px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        border-bottom: 1px solid var(--border);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .top-bar-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+    }
+    .top-bar .actions {
+        display: flex;
+        gap: 16px;
+    }
+
+    /* Results Modal */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s, visibility 0.3s;
+    }
+    .modal-overlay.visible {
+        opacity: 1;
+        visibility: visible;
+    }
+    .modal-content {
+        background: var(--bg);
+        padding: 0;
+        border-radius: 0;
+        border: none;
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        max-height: none;
+        overflow-y: auto;
+        position: relative;
+        transform: scale(0.95);
+        transition: transform 0.3s;
+    }
+    .modal-overlay.visible .modal-content {
+        transform: scale(1);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 12;
+    }
+    .modal-header h2 {
+      margin: 0;
+      color: var(--accent);
+    }
+    .modal-close {
+        position: relative;
+        top: auto;
+        left: auto;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-size: 1.5rem;
+        font-weight: bold;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+        box-shadow: none;
+        transition: background-color 0.2s, transform 0.2s;
+        flex-shrink: 0;
+    }
+    .modal-close:hover {
+        color: var(--bg);
+        background-color: var(--accent);
+        transform: scale(1.1);
+    }
+    #resultsTableContainer {
+      padding: 0 24px 24px;
+    }
+
+
     @media (max-width: 900px) {
       .span-8, .span-6, .span-4, .span-3, .span-2 { grid-column: span 12; }
     }
   </style>
 </head>
 <body>
+  <div class="top-bar">
+      <div class="top-bar-container">
+          <div class="actions">
+              <input type="file" id="importFile" accept=".json" style="display:none;">
+              <button id="importBtn" class="btn secondary">ייבוא נתונים</button>
+              <button id="exportBtn" class="btn secondary">ייצוא נתונים</button>
+              <button id="calculateBtn" class="btn">השווה מסלולים</button>
+          </div>
+      </div>
+  </div>
+
   <div class="container">
     <h1>מחשבון השוואת מסלולי דיור מוגן</h1>
     <p class="subtitle">הכלי מאפשר להשוות תרחישים פיננסיים שונים למגורים בדיור מוגן. התחילו בהזנת הנתונים הכלליים, הגדירו את מסלולי התמחור שברצונכם לבחון, ולבסוף השוו את התוצאות כדי לקבל החלטה מושכלת.</p>
@@ -228,33 +361,30 @@
         <button id="addTrackBtn" class="btn secondary" style="margin-top: 16px;">+ הוסף מסלול חדש</button>
     </div>
 
-    <!-- Calculate Button -->
-    <button id="calculateBtn" class="btn" style="width: 100%; padding: 16px; font-size: 1.2rem; margin-top: 16px;">השווה מסלולים</button>
-
-    <!-- Import/Export Buttons -->
-    <div class="actions-container" style="display: flex; justify-content: center; gap: 16px; margin-top: 24px;">
-        <button id="importBtn" class="btn secondary">ייבוא נתונים</button>
-        <button id="exportBtn" class="btn secondary">ייצוא נתונים</button>
-        <input type="file" id="importFile" accept=".json" style="display:none;">
-    </div>
-
-    <!-- Step 3: Results -->
-    <div class="card" id="resultsSection">
-        <h2>שלב 3: השוואת תוצאות</h2>
-
-        <div id="sliderGroup">
-            <label for="yearSlider" id="yearSliderLabel">הצג תוצאות לאחר:</label>
-            <input type="range" id="yearSlider" list="yearTicks" min="0.5" max="15" value="15" step="0.5">
-            <datalist id="yearTicks"></datalist>
-            <div id="sliderLabels">
-                <span id="sliderMinLabel">חצי שנה</span>
-                <span id="sliderMaxLabel">שנה 15</span>
-            </div>
-        </div>
-
-        <div id="resultsTableContainer"></div>
-    </div>
   </div>
+
+  <!-- Results Modal -->
+  <div id="resultsModal" class="modal-overlay">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h2>שלב 3: השוואת תוצאות</h2>
+              <button id="closeModalBtn" class="modal-close" aria-label="סגור חלון">&times;</button>
+          </div>
+
+          <div id="sliderGroup">
+              <label for="yearSlider" id="yearSliderLabel">הצג תוצאות לאחר:</label>
+              <input type="range" id="yearSlider" list="yearTicks" min="0.5" max="15" value="15" step="0.5">
+              <datalist id="yearTicks"></datalist>
+              <div id="sliderLabels">
+                  <span id="sliderMinLabel">חצי שנה</span>
+                  <span id="sliderMaxLabel">שנה 15</span>
+              </div>
+          </div>
+
+          <div id="resultsTableContainer"></div>
+      </div>
+  </div>
+
 
   <script>
     const $ = (id) => document.getElementById(id);
@@ -363,6 +493,14 @@
         return { summary, monthlyLog };
     }
 
+    // --- Modal Management ---
+    function showResultsModal() {
+        $('resultsModal').classList.add('visible');
+    }
+
+    function hideResultsModal() {
+        $('resultsModal').classList.remove('visible');
+    }
 
     // --- UI Rendering ---
     function renderTrackCard(track) {
@@ -577,7 +715,6 @@
 
         table += '</tbody></table>';
         container.innerHTML = table;
-        $('resultsSection').style.display = 'block';
     }
 
     // --- Input Reading ---
@@ -725,7 +862,7 @@
         });
 
         setupNumberFormattingForContainer(document.body);
-        hideResults();
+        hideResultsModal();
         alert('הנתונים יובאו בהצלחה!');
     }
 
@@ -777,6 +914,7 @@
         
         setupYearSlider();
         renderResults();
+        showResultsModal();
     }
     
     function setupYearSlider() {
@@ -913,26 +1051,6 @@
             targetInput.dispatchEvent(new Event('input', { bubbles: true }));
             targetInput.dispatchEvent(new Event('change', { bubbles: true }));
         });
-
-
-        // Hide results when inputs change
-        const hideResults = () => {
-            $('resultsSection').style.display = 'none';
-        };
-        const commonInputsCard = $('commonInputsCard');
-        const tracksCard = $('tracksCard');
-        const resetHandler = () => {
-            hideResults();
-        };
-        commonInputsCard.addEventListener('input', resetHandler);
-        commonInputsCard.addEventListener('change', resetHandler);
-        tracksCard.addEventListener('input', resetHandler);
-        tracksCard.addEventListener('change', resetHandler);
-        tracksCard.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                resetHandler();
-            }
-        });
         
         $('isNursing').addEventListener('change', (e) => {
             $('nursingFieldsRow').style.display = e.target.checked ? 'grid' : 'none';
@@ -1024,6 +1142,14 @@
         $('importBtn').addEventListener('click', () => $('importFile').click());
         $('exportBtn').addEventListener('click', handleExport);
         $('importFile').addEventListener('change', handleImport);
+
+        // Modal Closing
+        $('closeModalBtn').addEventListener('click', hideResultsModal);
+        $('resultsModal').addEventListener('click', (e) => {
+            if (e.target === $('resultsModal')) {
+                hideResultsModal();
+            }
+        });
 
         // Add one track by default
         handleAddTrack();
