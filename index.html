@@ -231,6 +231,13 @@
     <!-- Calculate Button -->
     <button id="calculateBtn" class="btn" style="width: 100%; padding: 16px; font-size: 1.2rem; margin-top: 16px;">השווה מסלולים</button>
 
+    <!-- Import/Export Buttons -->
+    <div class="actions-container" style="display: flex; justify-content: center; gap: 16px; margin-top: 24px;">
+        <button id="importBtn" class="btn secondary">ייבוא נתונים</button>
+        <button id="exportBtn" class="btn secondary">ייצוא נתונים</button>
+        <input type="file" id="importFile" accept=".json" style="display:none;">
+    </div>
+
     <!-- Step 3: Results -->
     <div class="card" id="resultsSection">
         <h2>שלב 3: השוואת תוצאות</h2>
@@ -618,6 +625,132 @@
         return { ...commonParams, ...trackParams };
     }
 
+    // --- Import / Export ---
+    function collectDataForExport() {
+        const data = {
+            common: {},
+            tracks: []
+        };
+        
+        // Collect common inputs
+        const commonInputs = document.querySelectorAll('#commonInputsCard input, #commonInputsCard select');
+        commonInputs.forEach(input => {
+            if (input.type === 'checkbox') {
+                data.common[input.id] = input.checked;
+            } else {
+                data.common[input.id] = input.value;
+            }
+        });
+
+        // Collect tracks
+        document.querySelectorAll('.track-card').forEach(card => {
+            const trackData = {};
+            card.querySelectorAll('input, select').forEach(input => {
+                const key = input.id.split('_')[0]; // e.g., 'trackName' from 'trackName_123'
+                trackData[key] = input.value;
+                if(input.dataset.baseValue) {
+                    trackData[key + '_base'] = input.dataset.baseValue;
+                }
+            });
+            data.tracks.push(trackData);
+        });
+        
+        return data;
+    }
+
+    function handleExport() {
+        try {
+            const data = collectDataForExport();
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const exportFileDefaultName = 'calculator-data.json';
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        } catch (error) {
+            console.error("Error during export:", error);
+            alert("שגיאה בעת ייצוא הנתונים.");
+        }
+    }
+    
+    function applyImportedData(data) {
+        // Apply common inputs
+        for (const id in data.common) {
+            const input = $(id);
+            if (input) {
+                if (input.type === 'checkbox') {
+                    input.checked = data.common[id];
+                } else {
+                    input.value = data.common[id];
+                }
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
+        
+        // Clear existing tracks
+        $('tracksContainer').innerHTML = '';
+        tracks = [];
+
+        // Apply tracks
+        data.tracks.forEach(trackData => {
+            handleAddTrack(); 
+            const newTrack = tracks[tracks.length - 1];
+            const trackId = newTrack.id;
+
+            const modeSelect = $(`pricingMode_${trackId}`);
+            modeSelect.value = trackData.pricingMode;
+            updateTrackBody(trackId);
+
+            for (const key in trackData) {
+                const isBaseValue = key.endsWith('_base');
+                const baseKey = isBaseValue ? key.slice(0, -5) : key;
+                const newId = `${baseKey}_${trackId}`;
+                const input = $(newId);
+                if (input) {
+                    if (isBaseValue) {
+                        input.dataset.baseValue = trackData[key];
+                    } else {
+                        input.value = trackData[key];
+                    }
+                }
+            }
+            
+            if (modeSelect.value === 'deposit') {
+                 updateDepositReduction(trackId);
+            } else if (modeSelect.value === 'entrance_fee') {
+                 updateCalculatedEntranceFeeRate(trackId);
+            }
+        });
+
+        setupNumberFormattingForContainer(document.body);
+        hideResults();
+        alert('הנתונים יובאו בהצלחה!');
+    }
+
+    function handleImport(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data && data.common && data.tracks) {
+                    applyImportedData(data);
+                } else {
+                    throw new Error("Invalid data structure");
+                }
+            } catch (error) {
+                console.error("Error during import:", error);
+                alert("שגיאה בקריאת הקובץ. ודא שזהו קובץ נתונים תקין.");
+            } finally {
+                event.target.value = null;
+            }
+        };
+        reader.readAsText(file);
+    }
 
     // --- Event Handlers & Setup ---
     function handleAddTrack() {
@@ -887,6 +1020,11 @@
         // Calculation
         $('calculateBtn').addEventListener('click', handleCalculate);
         
+        // Import / Export
+        $('importBtn').addEventListener('click', () => $('importFile').click());
+        $('exportBtn').addEventListener('click', handleExport);
+        $('importFile').addEventListener('change', handleImport);
+
         // Add one track by default
         handleAddTrack();
     });
