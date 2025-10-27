@@ -144,7 +144,8 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.4);
       position: absolute;
       z-index: 9999;
-      bottom: 125%;
+      top: 100%;
+      margin-top: 10px;
       left: 50%;
       transform: translateX(-50%);
       opacity: 0;
@@ -161,12 +162,12 @@
     .tooltip-text::after {
       content: "";
       position: absolute;
-      top: 100%;
+      bottom: 100%;
       left: 50%;
       margin-left: -5px;
       border-width: 5px;
       border-style: solid;
-      border-color: var(--border) transparent transparent transparent;
+      border-color: transparent transparent var(--border) transparent;
     }
 
     /* Top Bar */
@@ -317,7 +318,7 @@
         </div>
       </div>
       <div class="row">
-        <div class="span-4"><label for="annualReturn">תשואת ריבית שנתית על היתרה (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualReturn">+</button><input type="text" id="annualReturn" value="1" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualReturn">-</button></div></div>
+        <div class="span-4"><label for="annualReturn">תשואת ריבית שנתית על היתרה (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualReturn">+</button><input type="text" id="annualReturn" value="4.5" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualReturn">-</button></div></div>
         <div class="span-4">
             <label for="annualInflation">
                 <span class="tooltip-header">קצב התייקרות שנתי (מדד) (%)
@@ -362,7 +363,15 @@
         <div class="row">
           <div class="span-3"><label for="rentGross">שכ"ד חודשי ברוטו (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="rentGross">+</button><input type="text" id="rentGross" value="7000" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="rentGross">-</button></div></div>
           <div class="span-3"><label for="rentTaxPct">מס על שכ"ד (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="rentTaxPct">+</button><input type="text" id="rentTaxPct" value="10" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="rentTaxPct">-</button></div></div>
-          <div class="span-3"><label for="vacancyPct">חודשים פנויים בשנה (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="vacancyPct">+</button><input type="text" id="vacancyPct" value="8" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="vacancyPct">-</button></div></div>
+          <div class="span-3">
+            <label for="vacancyPct">
+                <span class="tooltip-header">חודשים פנויים בשנה (%)
+                    <span class="tooltip-text">אחוז הזמן המוערך בשנה בו הנכס יעמוד ריק ולא יניב הכנסה, למשל בתקופות מעבר בין שוכרים. הנתון מפחית את ההכנסה השנתית משכירות כדי לשקף תחזית מציאותית יותר.</span>
+                </span>
+                 <span class="note" id="vacancyMonthsNote" style="display: block; font-weight: normal; line-height: 1.2; margin-top: 2px;"></span>
+            </label>
+            <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="vacancyPct">+</button><input type="text" id="vacancyPct" value="8" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="vacancyPct">-</button></div>
+          </div>
           <div class="span-3"><label for="annualMaintenance">תחזוקה שנתית (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualMaintenance">+</button><input type="text" id="annualMaintenance" value="6000" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualMaintenance">-</button></div></div>
         </div>
       </div>
@@ -627,7 +636,7 @@
                     </label>
                     <div class="spinner-control">
                         <button class="spinner-btn" data-step-dir="up" data-target="depositRefundPct_${trackId}">+</button>
-                        <input type="text" id="depositRefundPct_${trackId}" value="80" class="income" inputmode="decimal">
+                        <input type="text" id="depositRefundPct_${trackId}" value="64" class="income" inputmode="decimal">
                         <button class="spinner-btn" data-step-dir="down" data-target="depositRefundPct_${trackId}">-</button>
                     </div>
                 </div>`;
@@ -1081,6 +1090,22 @@
         });
     }
 
+    function updateVacancyMonthsNote() {
+        const vacancyPctInput = $('vacancyPct');
+        const vacancyMonthsNote = $('vacancyMonthsNote');
+        if (!vacancyPctInput || !vacancyMonthsNote) return;
+
+        const pct = unformat(vacancyPctInput.value);
+        if (isNaN(pct) || pct < 0 || pct === '') {
+            vacancyMonthsNote.textContent = '';
+            return;
+        }
+        
+        const months = (pct / 100) * 12;
+        const formattedMonths = months % 1 === 0 ? months.toFixed(0) : months.toFixed(1);
+        vacancyMonthsNote.textContent = `(שווה ערך לכ-${formattedMonths} חודשים)`;
+    }
+
     function updateDepositReduction(trackId) {
         const reducedDepositInput = $(`reducedDepositAmount_${trackId}`);
         const maintenanceInput = $(`baseWithDeposit_${trackId}`);
@@ -1130,6 +1155,13 @@
     document.addEventListener('DOMContentLoaded', () => { 
         // Initial setup for common inputs
         setupNumberFormattingForContainer(document.body);
+
+        const vacancyInput = $('vacancyPct');
+        if (vacancyInput) {
+            vacancyInput.addEventListener('input', updateVacancyMonthsNote);
+            vacancyInput.addEventListener('change', updateVacancyMonthsNote);
+            updateVacancyMonthsNote();
+        }
 
         // --- New Spinner Logic ---
         document.addEventListener('click', (e) => {
