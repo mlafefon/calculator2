@@ -702,8 +702,45 @@
             const rentIncome = (firstMonthParams.scenario === 'rent') ? Math.max(0, (firstMonthParams.rentGross * (1 - firstMonthParams.rentTaxPct) * (1 - firstMonthParams.vacancyPct)) - (firstMonthParams.annualMaintenance / 12)) : 0;
             const indNet = (fixedIncome + rentIncome) - (baseCost + livingExpenses);
 
+            const trackParams = readAllInputsForTrack(rSummary.trackId);
+            let tooltipDetails = '';
+
+            if (trackParams) {
+                if (trackParams.pricingMode === 'deposit') {
+                    tooltipDetails = `
+                        <div style="font-weight: bold; margin-bottom: 5px; color: var(--accent);">פרטי מסלול פיקדון</div>
+                        <div>דמי אחזקה: <b>${fmt(trackParams.baseWithDeposit)} ₪</b></div>
+                        <div>סכום פיקדון: <b>${fmt(trackParams.depositAmount)} ₪</b></div>
+                        <div>פחת שנתי: <b>${trackParams.depositDepreciationPct * 100}%</b></div>
+                        <div>החזר מינימלי: <b>${trackParams.depositRefundPct * 100}%</b></div>
+                    `;
+                } else if (trackParams.pricingMode === 'entrance_fee') {
+                    const rateInput = $(`entranceFeeDepreciationRateMonthly_${trackParams.id}`);
+                    const calculatedRateDisplay = rateInput ? rateInput.value : 'N/A';
+
+                    tooltipDetails = `
+                        <div style="font-weight: bold; margin-bottom: 5px; color: var(--accent);">פרטי מסלול דמי כניסה</div>
+                        <div>דמי אחזקה: <b>${fmt(trackParams.baseWithEntranceFee)} ₪</b></div>
+                        <div>דמי כניסה: <b>${fmt(trackParams.entranceFeeAmount)} ₪</b></div>
+                        <div>משך הפחת: <b>${trackParams.entranceFeeDepreciationYears} שנים</b></div>
+                        <div>פחת חודשי: <b>${calculatedRateDisplay}</b></div>
+                    `;
+                } else if (trackParams.pricingMode === 'none') {
+                    tooltipDetails = `
+                        <div style="font-weight: bold; margin-bottom: 5px; color: var(--accent);">פרטי מסלול שכירות</div>
+                        <div>דמי אחזקה: <b>${fmt(trackParams.baseNoDeposit)} ₪</b></div>
+                    `;
+                }
+            }
+
             table += `<tr class="${rowClass}">
-                <td>${rSummary.trackName}</td>
+                <td>
+                    <span class="tooltip-header">${rSummary.trackName}
+                        <span class="tooltip-text" style="width: auto; white-space: nowrap; text-align: right; line-height: 1.6;">
+                            ${tooltipDetails}
+                        </span>
+                    </span>
+                </td>
                 <td>${pricingModeText}</td>
                 <td><b>${fmt(displayMonths)} (${fmt(indMonths)} / ${fmt(nursMonths)})</b>${durationNote || ''}</td>
                 <td>${fmt(totalEconomicCost)}</td>
