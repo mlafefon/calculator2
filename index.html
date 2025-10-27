@@ -41,8 +41,8 @@
     label .help-icon:hover { background: var(--accent); color: var(--card); border-color: var(--accent); }
     input, select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--input); color: var(--text); font-size: 0.95rem; transition: border-color 0.2s, box-shadow 0.2s; }
     input:focus, select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(34,211,238,.15); }
-    input.income, select.income { color: var(--ok); }
-    input.expense, select.expense { color: var(--danger); }
+    .income, .ok { color: var(--ok); }
+    .expense, .danger { color: var(--danger); }
     input[type="checkbox"] { width: auto; accent-color: var(--accent); }
     .btn { cursor: pointer; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #001018; border: none; padding: 12px 16px; border-radius: 12px; font-weight: 700; transition: transform 0.2s, box-shadow 0.2s; }
     .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
@@ -144,7 +144,7 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.4);
       position: absolute;
       z-index: 9999;
-      bottom: 125%;
+      top: 125%;
       left: 50%;
       transform: translateX(-50%);
       opacity: 0;
@@ -161,12 +161,12 @@
     .tooltip-text::after {
       content: "";
       position: absolute;
-      top: 100%;
+      bottom: 100%;
       left: 50%;
       margin-left: -5px;
       border-width: 5px;
       border-style: solid;
-      border-color: var(--border) transparent transparent transparent;
+      border-color: transparent transparent var(--border) transparent;
     }
 
     /* Top Bar */
@@ -416,7 +416,7 @@
         const monthlyLog = [];
 
         if (cash < 0) {
-             const summary = { totalMonths: 0, independentMonths: 0, nursingMonths: 0, refundEnd: p.pricingMode === 'deposit' ? p.depositAmount : p.entranceFeeAmount, finalCash: 0, trackName: p.trackName, maxedOut: false, pricingMode: p.pricingMode };
+             const summary = { totalMonths: 0, independentMonths: 0, nursingMonths: 0, refundEnd: p.pricingMode === 'deposit' ? p.depositAmount : p.entranceFeeAmount, finalCash: 0, trackId: p.id, trackName: p.trackName, maxedOut: false, pricingMode: p.pricingMode };
             return { summary, monthlyLog };
         }
 
@@ -489,7 +489,7 @@
             refundEnd = entranceFeeBook;
         }
 
-        const summary = { totalMonths: t, independentMonths, nursingMonths, refundEnd, finalCash: lastPositiveCash, trackName: p.trackName, maxedOut: t >= maxMonths, pricingMode: p.pricingMode };
+        const summary = { totalMonths: t, independentMonths, nursingMonths, refundEnd, finalCash: lastPositiveCash, trackId: p.id, trackName: p.trackName, maxedOut: t >= maxMonths, pricingMode: p.pricingMode };
         return { summary, monthlyLog };
     }
 
@@ -620,7 +620,7 @@
             <th class="tooltip-header">תשלום לספק (₪)<span class="tooltip-text">סך העלות הכלכלית לספק, כולל דמי אחזקה, תוספת סיעודית, ופחת על הפיקדון או דמי הכניסה.</span></th>
             <th class="tooltip-header">יתרת הון בסיום (₪)<span class="tooltip-text">ההון הנזיל שנותר בחשבון בנקודת הזמן שנבחרה, לאחר כל ההכנסות וההוצאות, ובתוספת התשואה על הכסף.</span></th>
             <th class="tooltip-header">החזר צפוי (₪)<span class="tooltip-text">הסכום שיתקבל חזרה מהפיקדון או דמי הכניסה בנקודת הזמן שנבחרה, בהתחשב בתנאי הפחת של המסלול.</span></th>
-            <th>תזרים חודשי ראשון (₪)</th>
+            <th>תזרים חודשי ראשון (₪)<div style="font-size: 0.8em; color: var(--muted); font-weight: normal;">הכנסות / הוצאות / יתרה</div></th>
         </tr></thead><tbody>`;
 
         simulationResults.forEach(result => {
@@ -688,7 +688,7 @@
             }
             
             const pricingModeText = pricingModeMap[rSummary.pricingMode] || rSummary.pricingMode;
-            const firstMonthParams = readAllInputsForTrack(rSummary.trackName);
+            const firstMonthParams = readAllInputsForTrack(rSummary.trackId);
             const baseCost = (firstMonthParams.pricingMode === 'deposit') ? firstMonthParams.baseWithDeposit : (firstMonthParams.pricingMode === 'entrance_fee') ? firstMonthParams.baseWithEntranceFee : firstMonthParams.baseNoDeposit;
             const livingExpenses = firstMonthParams.monthlyLivingExpenses;
             const fixedIncome = firstMonthParams.monthlyIncome;
@@ -703,12 +703,10 @@
                 <td>${fmt(cumulativeProviderCost)}</td>
                 <td>${fmt(finalCash)}</td>
                 <td>${fmt(refundEnd)}</td>
-                <td class="breakdown-cell">
-                    <table>
-                        <tr><td>הכנסות</td><td class="income">${fmt(fixedIncome + rentIncome)}</td></tr>
-                        <tr><td>הוצאות</td><td class="expense">${fmt(baseCost + livingExpenses)}</td></tr>
-                        <tr><td><b>יתרה</b></td><td class="${indNet >= 0 ? 'ok' : 'danger'}"><b>${fmt(indNet)}</b></td></tr>
-                    </table>
+                <td>
+                    <span class="income">${fmt(fixedIncome + rentIncome)}</span> /
+                    <span class="expense">${fmt(baseCost + livingExpenses)}</span> /
+                    <b class="${indNet >= 0 ? 'ok' : 'danger'}">${fmt(indNet)}</b>
                 </td>
             </tr>`;
         });
@@ -718,13 +716,15 @@
     }
 
     // --- Input Reading ---
-    function readAllInputsForTrack(trackName) {
-        const trackCard = Array.from(document.querySelectorAll('.track-card')).find(c => c.querySelector('input[id^="trackName"]').value === trackName);
+    function readAllInputsForTrack(trackId) {
+        const trackCard = document.querySelector(`.track-card[data-track-id='${trackId}']`);
         if (!trackCard) return null;
-        const trackId = trackCard.dataset.trackId;
+        
         const pMode = $(`pricingMode_${trackId}`).value;
+        const trackName = $(`trackName_${trackId}`).value;
 
         const trackParams = {
+            id: trackId,
             trackName: trackName,
             pricingMode: pMode,
             baseWithDeposit: pMode === 'deposit' ? unformat($(`baseWithDeposit_${trackId}`).value) : 0,
@@ -901,14 +901,15 @@
     }
     
     function handleCalculate() {
-        const trackNames = Array.from(document.querySelectorAll('input[id^="trackName"]')).map(input => input.value);
-        if (trackNames.length === 0) {
+        const trackCards = document.querySelectorAll('.track-card');
+        if (trackCards.length === 0) {
             alert('יש להוסיף לפחות מסלול אחד להשוואה.');
             return;
         }
 
-        simulationResults = trackNames.map(name => {
-            const params = readAllInputsForTrack(name);
+        simulationResults = Array.from(trackCards).map(card => {
+            const trackId = card.dataset.trackId;
+            const params = readAllInputsForTrack(trackId);
             return simulate(params);
         });
         
