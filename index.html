@@ -318,7 +318,14 @@
       </div>
       <div class="row">
         <div class="span-4"><label for="annualReturn">תשואת ריבית שנתית על היתרה (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualReturn">+</button><input type="text" id="annualReturn" value="1" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualReturn">-</button></div></div>
-        <div class="span-4"><label for="annualInflation">קצב התייקרות שנתי (מדד) (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualInflation">+</button><input type="text" id="annualInflation" value="2" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualInflation">-</button></div></div>
+        <div class="span-4">
+            <label for="annualInflation">
+                <span class="tooltip-header">קצב התייקרות שנתי (מדד) (%)
+                    <span class="tooltip-text">שיעור האינפלציה השנתי הצפוי. משפיע על התייקרות דמי האחזקה, הוצאות המחייה, וההכנסה משכר דירה לאורך זמן, כדי לדמות את עליית יוקר המחיה.</span>
+                </span>
+            </label>
+            <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualInflation">+</button><input type="text" id="annualInflation" value="2" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualInflation">-</button></div>
+        </div>
         <div class="span-4"><label for="maxYears">מגבלת סימולציה (שנים)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="maxYears">+</button><input type="text" id="maxYears" value="15" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="maxYears">-</button></div></div>
       </div>
       
@@ -555,6 +562,29 @@
             rateInput.value = '0.000%';
         }
     }
+
+    function updateRefundYearsNote(trackId) {
+        const refundPctInput = $(`depositRefundPct_${trackId}`);
+        const depreciationPctInput = $(`depositDepreciationPct_${trackId}`);
+        const yearsNote = $(`refundYearsNote_${trackId}`);
+
+        if (!refundPctInput || !depreciationPctInput || !yearsNote) return;
+
+        const refundPct = unformat(refundPctInput.value);
+        const depreciationPct = unformat(depreciationPctInput.value);
+
+        if (depreciationPct > 0) {
+            const depreciableTotal = 100 - refundPct;
+            if (depreciableTotal <= 0) {
+                yearsNote.textContent = '(ללא שחיקה)';
+            } else {
+                const yearsToFloor = depreciableTotal / depreciationPct;
+                yearsNote.textContent = `(שווה ערך ל-${yearsToFloor.toFixed(1)} שנות שחיקה)`;
+            }
+        } else {
+            yearsNote.textContent = '(ללא שחיקה)';
+        }
+    }
     
     function updateTrackBody(trackId) {
         const card = document.querySelector(`.track-card[data-track-id='${trackId}']`);
@@ -589,7 +619,18 @@
                     </div>
                 </div>
                 <div class="span-2"><label for="depositDepreciationPct_${trackId}">פחת פיקדון שנתי (%)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="depositDepreciationPct_${trackId}">+</button><input type="text" id="depositDepreciationPct_${trackId}" value="3" class="expense" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="depositDepreciationPct_${trackId}">-</button></div></div>
-                <div class="span-2"><label for="depositRefundPct_${trackId}">אחוז החזר מינימלי (%)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="depositRefundPct_${trackId}">+</button><input type="text" id="depositRefundPct_${trackId}" value="80" class="income" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="depositRefundPct_${trackId}">-</button></div></div>`;
+                <div class="span-2">
+                    <label for="depositRefundPct_${trackId}" class="tooltip-header">
+                        אחוז החזר מינימלי (%)
+                        <span class="tooltip-text">רשת הביטחון לפיקדון: הסכום המינימלי (כאחוז מהפיקדון המקורי) שיוחזר תמיד, ללא קשר למשך המגורים. שחיקת הפיקדון תיעצר כשתגיע לרצפה זו.</span>
+                        <span class="note" id="refundYearsNote_${trackId}" style="display: block; font-weight: normal; line-height: 1.2; margin-top: 2px;"></span>
+                    </label>
+                    <div class="spinner-control">
+                        <button class="spinner-btn" data-step-dir="up" data-target="depositRefundPct_${trackId}">+</button>
+                        <input type="text" id="depositRefundPct_${trackId}" value="80" class="income" inputmode="decimal">
+                        <button class="spinner-btn" data-step-dir="down" data-target="depositRefundPct_${trackId}">-</button>
+                    </div>
+                </div>`;
         } else if (mode === 'entrance_fee') {
             html += `
                 <div class="span-3"><label for="baseWithEntranceFee_${trackId}">דמי אחזקה (₪)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="baseWithEntranceFee_${trackId}">+</button><input type="text" id="baseWithEntranceFee_${trackId}" value="9500" class="expense" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="baseWithEntranceFee_${trackId}">-</button></div></div>
@@ -602,6 +643,9 @@
         html += '</div>';
         body.innerHTML = html;
         setupNumberFormattingForContainer(body);
+        if (mode === 'deposit') {
+            updateRefundYearsNote(trackId);
+        }
         if (mode === 'entrance_fee') {
             updateCalculatedEntranceFeeRate(trackId);
         }
@@ -911,6 +955,7 @@
                 if (reducedDepositInput) {
                     reducedDepositInput.dispatchEvent(new Event('input', { bubbles: true }));
                 }
+                updateRefundYearsNote(trackId);
             } else if (modeSelect.value === 'entrance_fee') {
                 const yearsInput = $(`entranceFeeDepreciationYears_${trackId}`);
                 if (yearsInput) {
@@ -1157,13 +1202,18 @@
         });
 
         $('tracksContainer').addEventListener('input', (e) => {
-            if (e.target.id.startsWith('entranceFeeDepreciationYears_') || e.target.id.startsWith('entranceFeeAmount_')) {
-                const trackId = e.target.id.split('_')[1];
+            const targetId = e.target.id;
+            if (targetId.startsWith('entranceFeeDepreciationYears_') || targetId.startsWith('entranceFeeAmount_')) {
+                const trackId = targetId.split('_')[1];
                 updateCalculatedEntranceFeeRate(trackId);
-            } else if (e.target.id.startsWith('reducedDepositAmount_')) {
+            } else if (targetId.startsWith('reducedDepositAmount_')) {
                 const trackId = e.target.dataset.trackId;
                 updateDepositReduction(trackId);
+            } else if (targetId.startsWith('depositDepreciationPct_') || targetId.startsWith('depositRefundPct_')) {
+                const trackId = targetId.split('_')[1];
+                updateRefundYearsNote(trackId);
             }
+
 
             const trackId = e.target.dataset.trackId;
             if (!trackId) return;
