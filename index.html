@@ -864,7 +864,7 @@
                 if (input.type === 'checkbox') {
                     input.checked = data.common[id];
                 } else {
-                    input.value = data.common[id];
+                    input.value = data.common[id] || '';
                 }
                 input.dispatchEvent(new Event('change', { bubbles: true }));
             }
@@ -879,6 +879,7 @@
             handleAddTrack(); 
             const newTrack = tracks[tracks.length - 1];
             const trackId = newTrack.id;
+            const trackCard = document.querySelector(`.track-card[data-track-id='${trackId}']`);
 
             const modeSelect = $(`pricingMode_${trackId}`);
             modeSelect.value = trackData.pricingMode;
@@ -893,19 +894,31 @@
                     if (isBaseValue) {
                         input.dataset.baseValue = trackData[key];
                     } else {
-                        input.value = trackData[key];
+                        input.value = trackData[key] || '';
                     }
                 }
             }
+
+            // This is crucial: apply number formatting to all the newly loaded values.
+            if (trackCard) {
+                setupNumberFormattingForContainer(trackCard);
+            }
             
+            // Now, trigger the calculation logic by simulating user input.
+            // This is more robust than calling the functions directly as it uses the existing event pathways.
             if (modeSelect.value === 'deposit') {
-                 updateDepositReduction(trackId);
+                const reducedDepositInput = $(`reducedDepositAmount_${trackId}`);
+                if (reducedDepositInput) {
+                    reducedDepositInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
             } else if (modeSelect.value === 'entrance_fee') {
-                 updateCalculatedEntranceFeeRate(trackId);
+                const yearsInput = $(`entranceFeeDepreciationYears_${trackId}`);
+                if (yearsInput) {
+                    yearsInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
             }
         });
 
-        setupNumberFormattingForContainer(document.body);
         hideResultsModal();
         alert('הנתונים יובאו בהצלחה!');
     }
