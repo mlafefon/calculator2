@@ -756,6 +756,7 @@
 
     // --- Event Handlers & Setup ---
     function handleAddTrack() {
+        const isUserAdd = tracks.length > 0; // Check if it's not the first track
         const newTrack = {
             id: Date.now(),
             name: `מסלול ${tracks.length + 1}`,
@@ -763,6 +764,14 @@
         };
         tracks.push(newTrack);
         renderTrackCard(newTrack);
+
+        const newCard = document.querySelector(`.track-card[data-track-id='${newTrack.id}']`);
+        // Only scroll if it was a user action (not the initial track) and on mobile
+        if (isUserAdd && newCard && window.innerWidth <= 600) {
+            setTimeout(() => {
+                newCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
     }
     
     function handleCalculate() {
