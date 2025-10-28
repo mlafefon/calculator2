@@ -849,6 +849,19 @@
             'החזר צפוי (₪)',
             'תזרים חודשי ראשון (₪)'
         ];
+
+        const mobileHeaders = [
+            headers[0],
+            headers[1],
+            'סה"כ חודשים',
+            headers[3],
+            headers[4],
+            headers[5],
+            headers[6],
+            headers[7]
+        ];
+
+        const escapedMobileHeaders = mobileHeaders.map(h => h.replace(/"/g, '&quot;'));
         
         let table = `<table class="results-table"><thead><tr>
             <th>שם החברה-סוג החדר</th>
@@ -965,20 +978,20 @@
             }
 
             table += `<tr class="${rowClass}">
-                <td data-label="${headers[0]}">
+                <td data-label="${escapedMobileHeaders[0]}">
                     <span class="tooltip-header">${rSummary.trackName}
                         <span class="tooltip-text" style="width: auto; white-space: nowrap; text-align: right; line-height: 1.6;">
                             ${tooltipDetails}
                         </span>
                     </span>
                 </td>
-                <td data-label="${headers[1]}">${pricingModeText}</td>
-                <td data-label="${headers[2]}"><b>${fmt(displayMonths)} (${fmt(indMonths)} / ${fmt(nursMonths)})</b>${durationNote || ''}</td>
-                <td data-label="${headers[3]}">${fmt(totalEconomicCost)}</td>
-                <td data-label="${headers[4]}">${fmt(cumulativeProviderCost)}</td>
-                <td data-label="${headers[5]}">${fmt(finalCash)}</td>
-                <td data-label="${headers[6]}">${fmt(refundEnd)}</td>
-                <td data-label="${headers[7]}">
+                <td data-label="${escapedMobileHeaders[1]}">${pricingModeText}</td>
+                <td data-label="${escapedMobileHeaders[2]}"><b>${fmt(displayMonths)} (${fmt(indMonths)} / ${fmt(nursMonths)})</b>${durationNote || ''}</td>
+                <td data-label="${escapedMobileHeaders[3]}">${fmt(totalEconomicCost)}</td>
+                <td data-label="${escapedMobileHeaders[4]}">${fmt(cumulativeProviderCost)}</td>
+                <td data-label="${escapedMobileHeaders[5]}">${fmt(finalCash)}</td>
+                <td data-label="${escapedMobileHeaders[6]}">${fmt(refundEnd)}</td>
+                <td data-label="${escapedMobileHeaders[7]}">
                     <span class="income">${fmt(fixedIncome + rentIncome)}</span> /
                     <span class="expense">${fmt(baseCost + livingExpenses)}</span> /
                     <b class="${indNet >= 0 ? 'ok' : 'danger'}">${fmt(indNet)}</b>
