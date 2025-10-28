@@ -572,4 +572,15 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
     .track-header {
         padding-left: 0; /* Align with other content */
     }
+
+    /* Change track name to be on two lines on mobile */
+    .track-header .form-group:first-child {
+        display: block;
+    }
+    .track-header .form-group:first-child label {
+        margin-bottom: 6px;
+    }
+    .track-header .form-group:first-child input {
+        width: 100%;
+    }
 }
