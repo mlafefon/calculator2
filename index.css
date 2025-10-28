@@ -538,4 +538,38 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
     .results-table td:first-child::before {
         display: none;
     }
+
+    /* NEW STYLES for inline form elements */
+    #commonInputsCard .row > [class*="span-"],
+    .track-card .row > [class*="span-"],
+    .track-header .form-group {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+    }
+
+    #commonInputsCard .row > [class*="span-"] label,
+    .track-card .row > [class*="span-"] label,
+    .track-header .form-group label {
+        margin-bottom: 0;
+    }
+    
+    #commonInputsCard .row > [class*="span-"] .spinner-control,
+    #commonInputsCard .row > [class*="span-"] select,
+    .track-card .row > [class*="span-"] .spinner-control,
+    .track-header .form-group input,
+    .track-header .form-group select {
+        width: 180px; /* Set a consistent width for controls */
+        flex-shrink: 0; /* Prevent from shrinking */
+    }
+
+    /* Exception for the nursing checkbox toggle */
+    #commonInputsCard .row > .span-12 {
+        display: block;
+    }
+    
+    .track-header {
+        padding-left: 0; /* Align with other content */
+    }
 }
