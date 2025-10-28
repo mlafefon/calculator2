@@ -57,8 +57,8 @@
     .hr { border-top: 1px dashed var(--border); margin: 24px 0; }
     
     #tracksContainer .track-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; position: relative; }
-    .track-header { display: flex; gap: 16px; margin-bottom: 16px; align-items: center; }
-    .track-header .form-group { flex-grow: 1; }
+    .track-header { display: flex; gap: 16px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+    .track-header .form-group { flex-grow: 1; min-width: 200px; }
     
     .results-table { width: 100%; border-collapse: collapse; }
     .results-table th, .results-table td { padding: 12px; text-align: center; border-bottom: 1px solid var(--border); }
@@ -84,8 +84,102 @@
         top: 76px; /* After modal-header which is ~76px high */
         z-index: 10;
     }
-    #yearSlider { width: 100%; accent-color: var(--accent); }
-    #sliderLabels { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--muted); margin-top: 8px; }
+    
+    .slider-container {
+        position: relative;
+        padding-top: 20px;
+        margin-top: 20px; /* Space for the bubble */
+    }
+
+    #yearSlider {
+        width: 100%;
+        -webkit-appearance: none;
+        appearance: none;
+        height: 8px;
+        background: var(--border);
+        border-radius: 4px;
+        outline: none;
+        padding: 0;
+        margin: 0;
+        cursor: pointer;
+    }
+
+    #yearSlider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: var(--accent);
+        cursor: pointer;
+        border-radius: 50%;
+        border: 3px solid var(--panel);
+        margin-top: -6px; /* (thumb-height - track-height) / 2 */
+        box-shadow: 0 0 5px rgba(34,211,238,.5);
+    }
+
+    #yearSlider::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: var(--accent);
+        cursor: pointer;
+        border-radius: 50%;
+        border: 3px solid var(--panel);
+        box-shadow: 0 0 5px rgba(34,211,238,.5);
+    }
+    
+    #sliderValueBubble {
+        position: absolute;
+        top: -15px;
+        background: var(--accent);
+        color: var(--bg);
+        padding: 4px 8px;
+        border-radius: 5px;
+        font-size: 0.85rem;
+        font-weight: bold;
+        transform: translateX(50%);
+        pointer-events: none;
+        white-space: nowrap;
+        transition: opacity 0.2s;
+        opacity: 0;
+    }
+    .slider-container:hover #sliderValueBubble {
+        opacity: 1;
+    }
+    
+    #sliderValueBubble::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        right: 50%;
+        margin-right: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: var(--accent) transparent transparent transparent;
+    }
+
+    #sliderTicksContainer {
+        position: relative;
+        height: 20px;
+        margin-top: 4px;
+        pointer-events: none;
+    }
+
+    .slider-tick {
+        position: absolute;
+        width: 1px;
+        height: 8px;
+        background: var(--muted);
+        top: 0;
+        transform: translateX(50%);
+    }
+
+    .slider-tick-label {
+        position: absolute;
+        top: 12px;
+        font-size: 0.8rem;
+        color: var(--muted);
+        transform: translateX(50%);
+    }
 
     .spinner-control {
         display: flex;
@@ -281,6 +375,81 @@
 
     @media (max-width: 900px) {
       .span-8, .span-6, .span-4, .span-3, .span-2 { grid-column: span 12; }
+      .row > .span-12, .row > .span-8, .row > .span-6, .row > .span-4, .row > .span-3, .row > .span-2 { grid-column: span 12; }
+    }
+    
+    @media (max-width: 600px) {
+        body { padding-top: 60px; }
+        .container { padding: 16px; }
+        h1 { font-size: 1.8rem; }
+        p.subtitle { font-size: 0.95rem; }
+        .card { padding: 16px; }
+        .top-bar { padding: 8px 16px; }
+        .top-bar-container { justify-content: center; }
+        .top-bar .actions .btn { padding: 10px 12px; font-size: 0.9rem; }
+        .modal-header h2 { font-size: 1.25rem; }
+        .modal-header { padding: 12px 16px; }
+        .modal-close { width: 36px; height: 36px; font-size: 1.2rem; }
+        
+        #sliderGroup {
+          padding: 12px 16px;
+          top: 61px;
+        }
+        .results-table thead {
+          top: 172px; 
+        }
+        #resultsTableContainer {
+          padding: 16px;
+        }
+
+        /* Responsive Table */
+        .results-table {
+            border: none;
+        }
+        .results-table thead {
+            display: none;
+        }
+        .results-table tr {
+            display: block;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 16px;
+            background: var(--panel);
+        }
+        .results-table tr.insolvent {
+            background-color: rgba(251, 113, 133, 0.2);
+            border-color: var(--danger);
+        }
+        .results-table td {
+            display: block;
+            text-align: left;
+            padding: 10px 16px;
+            border-bottom: 1px dashed var(--border);
+            position: relative;
+        }
+        .results-table td:last-child {
+            border-bottom: none;
+        }
+        .results-table td::before {
+            content: attr(data-label);
+            float: right;
+            font-weight: bold;
+            color: var(--accent);
+            margin-left: 16px;
+        }
+        .results-table td:first-child { 
+            font-size: 1.1rem;
+            font-weight: bold;
+            padding-top: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px 12px 0 0;
+            text-align: center;
+        }
+        .results-table td:first-child::before {
+            display: none;
+        }
     }
   </style>
 </head>
@@ -396,11 +565,10 @@
 
           <div id="sliderGroup">
               <label for="yearSlider" id="yearSliderLabel">הצג תוצאות לאחר:</label>
-              <input type="range" id="yearSlider" list="yearTicks" min="0.5" max="15" value="15" step="0.5">
-              <datalist id="yearTicks"></datalist>
-              <div id="sliderLabels">
-                  <span id="sliderMinLabel">חצי שנה</span>
-                  <span id="sliderMaxLabel">שנה 15</span>
+              <div class="slider-container">
+                  <output for="yearSlider" id="sliderValueBubble"></output>
+                  <input type="range" id="yearSlider" min="0.5" max="15" value="15" step="0.5">
+                  <div id="sliderTicksContainer"></div>
               </div>
           </div>
 
@@ -664,13 +832,23 @@
         const container = $('resultsTableContainer');
         const targetYear = parseFloat($('yearSlider').value);
         const targetMonths = Math.round(targetYear * 12);
-        $('yearSliderLabel').textContent = `הצג תוצאות לאחר: ${targetYear} שנים`;
         
         const pricingModeMap = {
             'deposit': 'עם פיקדון',
             'entrance_fee': 'דמי כניסה',
             'none': 'ללא'
         };
+
+        const headers = [
+            'שם החברה-סוג החדר', 
+            'סוג מסלול',
+            'סה"כ חודשים (עצמאי / סיעודי)',
+            'עלות מצטברת כוללת (₪)',
+            'תשלום לספק (₪)',
+            'יתרת הון בסיום (₪)',
+            'החזר צפוי (₪)',
+            'תזרים חודשי ראשון (₪)'
+        ];
         
         let table = `<table class="results-table"><thead><tr>
             <th>שם החברה-סוג החדר</th>
@@ -787,20 +965,20 @@
             }
 
             table += `<tr class="${rowClass}">
-                <td>
+                <td data-label="${headers[0]}">
                     <span class="tooltip-header">${rSummary.trackName}
                         <span class="tooltip-text" style="width: auto; white-space: nowrap; text-align: right; line-height: 1.6;">
                             ${tooltipDetails}
                         </span>
                     </span>
                 </td>
-                <td>${pricingModeText}</td>
-                <td><b>${fmt(displayMonths)} (${fmt(indMonths)} / ${fmt(nursMonths)})</b>${durationNote || ''}</td>
-                <td>${fmt(totalEconomicCost)}</td>
-                <td>${fmt(cumulativeProviderCost)}</td>
-                <td>${fmt(finalCash)}</td>
-                <td>${fmt(refundEnd)}</td>
-                <td>
+                <td data-label="${headers[1]}">${pricingModeText}</td>
+                <td data-label="${headers[2]}"><b>${fmt(displayMonths)} (${fmt(indMonths)} / ${fmt(nursMonths)})</b>${durationNote || ''}</td>
+                <td data-label="${headers[3]}">${fmt(totalEconomicCost)}</td>
+                <td data-label="${headers[4]}">${fmt(cumulativeProviderCost)}</td>
+                <td data-label="${headers[5]}">${fmt(finalCash)}</td>
+                <td data-label="${headers[6]}">${fmt(refundEnd)}</td>
+                <td data-label="${headers[7]}">
                     <span class="income">${fmt(fixedIncome + rentIncome)}</span> /
                     <span class="expense">${fmt(baseCost + livingExpenses)}</span> /
                     <b class="${indNet >= 0 ? 'ok' : 'danger'}">${fmt(indNet)}</b>
@@ -1029,26 +1207,64 @@
         showResultsModal();
     }
     
+    function updateSliderUI(slider) {
+        const bubble = $('sliderValueBubble');
+        if (!slider || !bubble) return;
+
+        const val = parseFloat(slider.value);
+        const min = parseFloat(slider.min);
+        const max = parseFloat(slider.max);
+        
+        $('yearSliderLabel').textContent = `הצג תוצאות לאחר: ${val} שנים`;
+        
+        bubble.innerHTML = `${val} שנים`;
+        const percent = ((val - min) / (max - min)) * 100;
+        bubble.style.right = `${percent}%`;
+    }
+
     function setupYearSlider() {
         const slider = $('yearSlider');
-        const datalist = $('yearTicks');
+        const ticksContainer = $('sliderTicksContainer');
         const maxYears = Math.max(0.5, unformat($('maxYears').value) || 15, ...simulationResults.map(r => Math.ceil(r.summary.totalMonths / 12)));
         
-        slider.min = 0.5;
+        const min = 0.5;
+        slider.min = min;
         slider.step = 0.5;
         slider.max = maxYears;
         slider.value = maxYears;
-        $('sliderMinLabel').textContent = 'חצי שנה';
-        $('sliderMaxLabel').textContent = `שנה ${maxYears}`;
+        
+        ticksContainer.innerHTML = '';
+        const numTicks = Math.floor(maxYears);
+        
+        let step = 1;
+        if (numTicks > 20) step = 5;
+        if (numTicks > 50) step = 10;
 
-        datalist.innerHTML = '';
-        for (let i = 1; i <= Math.floor(maxYears); i++) {
-            const option = document.createElement('option');
-            option.value = i;
-            datalist.appendChild(option);
+        for (let i = 1; i <= numTicks; i++) {
+            if (i > 0 && i % step !== 0 && i !== numTicks && numTicks > 10) continue;
+
+            const percent = ((i - min) / (maxYears - min)) * 100;
+            
+            if (percent >= 0 && percent <= 100) {
+                const tick = document.createElement('div');
+                tick.className = 'slider-tick';
+                tick.style.right = `${percent}%`;
+                ticksContainer.appendChild(tick);
+                
+                const label = document.createElement('span');
+                label.className = 'slider-tick-label';
+                label.textContent = i;
+                label.style.right = `${percent}%`;
+                ticksContainer.appendChild(label);
+            }
         }
+        
+        slider.oninput = () => {
+            updateSliderUI(slider);
+            renderResults();
+        };
 
-        slider.oninput = renderResults;
+        updateSliderUI(slider);
     }
 
     // --- Utilities ---
