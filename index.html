@@ -755,8 +755,7 @@
     }
 
     // --- Event Handlers & Setup ---
-    function handleAddTrack() {
-        const isUserAdd = tracks.length > 0; // Check if it's not the first track
+    function handleAddTrack(isUserAction = false) {
         const newTrack = {
             id: Date.now(),
             name: `מסלול ${tracks.length + 1}`,
@@ -767,7 +766,7 @@
 
         const newCard = document.querySelector(`.track-card[data-track-id='${newTrack.id}']`);
         // Only scroll if it was a user action (not the initial track) and on mobile
-        if (isUserAdd && newCard && window.innerWidth <= 600) {
+        if (isUserAction && newCard && window.innerWidth <= 600) {
             setTimeout(() => {
                 newCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }, 100);
@@ -1000,7 +999,7 @@
         });
 
         // Track management
-        $('addTrackBtn').addEventListener('click', handleAddTrack);
+        $('addTrackBtn').addEventListener('click', () => handleAddTrack(true));
         $('tracksContainer').addEventListener('click', (e) => {
             if (e.target.dataset.removeTrackId) {
                 const trackId = e.target.dataset.removeTrackId;
