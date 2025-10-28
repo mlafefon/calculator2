@@ -253,6 +253,7 @@
         card.className = 'track-card';
         card.dataset.trackId = trackId;
         card.innerHTML = `
+            <button class="remove-track-btn" data-remove-track-id="${trackId}" aria-label="הסר מסלול">&times;</button>
             <div class="track-header">
                 <div class="form-group"><label for="trackName_${trackId}">שם החברה-סוג החדר</label><input type="text" id="trackName_${trackId}" value="${track.name}" placeholder="לדוגמה: פאלאס - דירת 2 חדרים"></div>
                 <div class="form-group"><label for="pricingMode_${trackId}">סוג המסלול</label>
@@ -262,7 +263,6 @@
                         <option value="none" ${track.pricingMode === 'none' ? 'selected' : ''}>ללא</option>
                     </select>
                 </div>
-                <button class="btn danger" data-remove-track-id="${trackId}" style="align-self: flex-end;">הסר</button>
             </div>
             <div class="track-body"></div>`;
 
