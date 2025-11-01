@@ -70,7 +70,14 @@
       <div class="row" id="nursingFieldsRow" style="display: none;">
         <div class="span-4"><label for="monthsIndependent">חודשים בתפקוד מלא</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="monthsIndependent">+</button><input type="text" id="monthsIndependent" value="60" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="monthsIndependent">-</button></div></div>
         <div class="span-4"><label for="nursingAddon">תוספת חודשית במצב סיעודי (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="nursingAddon">+</button><input type="text" id="nursingAddon" value="18000" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="nursingAddon">-</button></div></div>
-        <div class="span-4"><label for="nursingAllowance">גמלת סיעוד לקיזוז (₪/חודש)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="nursingAllowance">+</button><input type="text" id="nursingAllowance" value="2000" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="nursingAllowance">-</button></div></div>
+        <div class="span-4">
+            <label for="nursingAllowance">
+                <span class="tooltip-header">גמלת סיעוד לקיזוז (₪/חודש)
+                    <span class="tooltip-text">סכום חודשי הצפוי להתקבל ממקור חיצוני (כגון ביטוח לאומי או פוליסה פרטית) למימון הטיפול הסיעודי. סכום זה מופחת מה'תוספת החודשית במצב סיעודי' כדי לחשב את ההוצאה נטו שלכם.</span>
+                </span>
+            </label>
+            <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="nursingAllowance">+</button><input type="text" id="nursingAllowance" value="2000" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="nursingAllowance">-</button></div>
+        </div>
       </div>
 
       <div class="hr"></div>
