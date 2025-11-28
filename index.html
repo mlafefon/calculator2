@@ -5,10 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>מחשבון השוואת מסלולי דיור מוגן</title>
   <link rel="stylesheet" href="index.css" />
+<link rel="stylesheet" href="/index.css">
 </head>
 <body>
   <div class="top-bar">
       <div class="top-bar-container">
+          <div class="top-bar-settings" id="topBarSettings">
+              <label for="maxYears">
+                  <span class="desktop-text">מגבלת סימולציה (שנים)</span>
+                  <span class="mobile-text">שנים</span>
+              </label>
+              <div class="spinner-control">
+                  <button type="button" class="spinner-btn" data-step-dir="up" data-target="maxYears">+</button>
+                  <input type="text" id="maxYears" value="15" inputmode="decimal"/>
+                  <button type="button" class="spinner-btn" data-step-dir="down" data-target="maxYears">-</button>
+              </div>
+          </div>
           <div class="actions">
               <div class="tooltip-container">
                   <input type="file" id="importFile" accept=".json" style="display:none;">
@@ -50,8 +62,8 @@
         </div>
       </div>
       <div class="row">
-        <div class="span-4"><label for="annualReturn">תשואת ריבית שנתית על היתרה (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualReturn">+</button><input type="text" id="annualReturn" value="4.5" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualReturn">-</button></div></div>
-        <div class="span-4">
+        <div class="span-6"><label for="annualReturn">תשואת ריבית שנתית על היתרה (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualReturn">+</button><input type="text" id="annualReturn" value="4.5" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualReturn">-</button></div></div>
+        <div class="span-6">
             <label for="annualInflation">
                 <span class="tooltip-header">קצב התייקרות שנתי (מדד) (%)
                     <span class="tooltip-text">שיעור האינפלציה השנתי הצפוי. משפיע על התייקרות דמי האחזקה, הוצאות המחייה, וההכנסה משכר דירה לאורך זמן, כדי לדמות את עליית יוקר המחיה.</span>
@@ -59,7 +71,6 @@
             </label>
             <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualInflation">+</button><input type="text" id="annualInflation" value="2" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualInflation">-</button></div>
         </div>
-        <div class="span-4"><label for="maxYears">מגבלת סימולציה (שנים)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="maxYears">+</button><input type="text" id="maxYears" value="15" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="maxYears">-</button></div></div>
       </div>
       
       <div class="hr"></div>
@@ -202,6 +213,10 @@
 
         let t = 0, independentMonths = 0, nursingMonths = 0, lastPositiveCash = cash;
 
+        // Pre-calculate deposit depreciation floor and monthly amount (straight-line)
+        const depositFloor = (p.pricingMode === 'deposit') ? (p.depositAmount || 0) * (p.depositRefundPct || 0) : 0;
+        const depositMonthlyDepreciation = (p.pricingMode === 'deposit') ? (p.depositAmount || 0) * ((p.depositDepreciationPct || 0) / 12) : 0;
+
         while (t < maxMonths) {
             cash *= (1 + monthlyReturn);
             const providerMonthlyCost = baseMonthlyCost(t, p.pricingMode) + (p.isNursing && t >= p.monthsIndependent ? nursingExtra(t) : 0);
@@ -210,10 +225,12 @@
             cash += (income - totalMonthlyCost);
             
             let depreciationThisMonth = 0;
-            if (p.pricingMode === 'deposit' && depositBook > 0 && t < (12 * 12)) {
-                const monthlyDepRate = 1 - Math.pow(1 - (p.depositDepreciationPct || 0), 1/12);
-                depreciationThisMonth = depositBook * monthlyDepRate;
-                depositBook *= (1 - monthlyDepRate);
+            if (p.pricingMode === 'deposit' && depositBook > depositFloor) {
+                // Straight line depreciation capped at floor
+                const maxDeductible = Math.max(0, depositBook - depositFloor);
+                const actualDeduction = Math.min(depositMonthlyDepreciation, maxDeductible);
+                depreciationThisMonth = actualDeduction;
+                depositBook -= actualDeduction;
             }
             if (p.pricingMode === 'entrance_fee' && entranceFeeBook > 0 && t < (p.entranceFeeDepreciationYears * 12)) {
                 const monthlyDepAmount = p.entranceFeeAmount * (p.entranceFeeDepreciationRateMonthly || 0);
@@ -231,8 +248,7 @@
             
             let refundCurrent = 0;
             if (p.pricingMode === 'deposit') {
-                const floor = (p.depositAmount || 0) * (p.depositRefundPct || 0);
-                refundCurrent = Math.max(0, Math.max(depositBook, floor));
+                refundCurrent = depositBook;
             } else if (p.pricingMode === 'entrance_fee') {
                 refundCurrent = entranceFeeBook;
             }
@@ -244,8 +260,7 @@
 
         let refundEnd = 0;
         if (p.pricingMode === 'deposit') {
-            const floor = (p.depositAmount || 0) * (p.depositRefundPct || 0);
-            refundEnd = Math.max(0, Math.max(depositBook, floor));
+            refundEnd = depositBook;
         } else if (p.pricingMode === 'entrance_fee') {
             refundEnd = entranceFeeBook;
         }
@@ -281,7 +296,8 @@
                     </select>
                 </div>
             </div>
-            <div class="track-body"></div>`;
+            <div class="track-body"></div>
+            <div class="track-preview" id="trackPreview_${trackId}"></div>`;
 
         $('tracksContainer').appendChild(card);
         updateTrackBody(trackId);
@@ -310,27 +326,21 @@
         }
     }
 
-    function updateRefundYearsNote(trackId) {
-        const refundPctInput = $(`depositRefundPct_${trackId}`);
+    function updateRefundPctNote(trackId) {
+        const yearsInput = $(`depositDepreciationYears_${trackId}`);
         const depreciationPctInput = $(`depositDepreciationPct_${trackId}`);
-        const yearsNote = $(`refundYearsNote_${trackId}`);
+        const pctNote = $(`refundPctNote_${trackId}`);
 
-        if (!refundPctInput || !depreciationPctInput || !yearsNote) return;
+        if (!yearsInput || !depreciationPctInput || !pctNote) return;
 
-        const refundPct = unformat(refundPctInput.value);
+        const years = unformat(yearsInput.value);
         const depreciationPct = unformat(depreciationPctInput.value);
 
-        if (depreciationPct > 0) {
-            const depreciableTotal = 100 - refundPct;
-            if (depreciableTotal <= 0) {
-                yearsNote.textContent = '(ללא שחיקה)';
-            } else {
-                const yearsToFloor = depreciableTotal / depreciationPct;
-                yearsNote.textContent = `(שווה ערך ל-${yearsToFloor.toFixed(1)} שנות שחיקה)`;
-            }
-        } else {
-            yearsNote.textContent = '(ללא שחיקה)';
-        }
+        const totalDepreciation = years * depreciationPct;
+        let refundPct = 100 - totalDepreciation;
+        if (refundPct < 0) refundPct = 0;
+        
+        pctNote.textContent = `(החזר מינימלי: ${refundPct.toFixed(1)}%)`;
     }
     
     function updateTrackBody(trackId) {
@@ -367,15 +377,15 @@
                 </div>
                 <div class="span-2"><label for="depositDepreciationPct_${trackId}">פחת פיקדון שנתי (%)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="depositDepreciationPct_${trackId}">+</button><input type="text" id="depositDepreciationPct_${trackId}" value="3" class="expense" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="depositDepreciationPct_${trackId}">-</button></div></div>
                 <div class="span-2">
-                    <label for="depositRefundPct_${trackId}" class="tooltip-header">
-                        אחוז החזר מינימלי (%)
-                        <span class="tooltip-text">רשת הביטחון לפיקדון: הסכום המינימלי (כאחוז מהפיקדון המקורי) שיוחזר תמיד, ללא קשר למשך המגורים. שחיקת הפיקדון תיעצר כשתגיע לרצפה זו.</span>
-                        <span class="note" id="refundYearsNote_${trackId}" style="display: block; font-weight: normal; line-height: 1.2; margin-top: 2px;"></span>
+                    <label for="depositDepreciationYears_${trackId}" class="tooltip-header">
+                        תקופת שחיקה (שנים)
+                        <span class="tooltip-text">תקופת השחיקה המקסימלית של הפיקדון. לאחר תקופה זו, גביית הפחת נפסקת ויתרת הפיקדון נשמרת.</span>
+                        <span class="note" id="refundPctNote_${trackId}" style="display: block; font-weight: normal; line-height: 1.2; margin-top: 2px;"></span>
                     </label>
                     <div class="spinner-control">
-                        <button class="spinner-btn" data-step-dir="up" data-target="depositRefundPct_${trackId}">+</button>
-                        <input type="text" id="depositRefundPct_${trackId}" value="64" class="income" inputmode="decimal">
-                        <button class="spinner-btn" data-step-dir="down" data-target="depositRefundPct_${trackId}">-</button>
+                        <button class="spinner-btn" data-step-dir="up" data-target="depositDepreciationYears_${trackId}">+</button>
+                        <input type="text" id="depositDepreciationYears_${trackId}" value="12" class="income" inputmode="decimal">
+                        <button class="spinner-btn" data-step-dir="down" data-target="depositDepreciationYears_${trackId}">-</button>
                     </div>
                 </div>`;
         } else if (mode === 'entrance_fee') {
@@ -391,11 +401,83 @@
         body.innerHTML = html;
         setupNumberFormattingForContainer(body);
         if (mode === 'deposit') {
-            updateRefundYearsNote(trackId);
+            updateRefundPctNote(trackId);
         }
         if (mode === 'entrance_fee') {
             updateCalculatedEntranceFeeRate(trackId);
         }
+        updateTrackPreview(trackId);
+    }
+    
+    function updateTrackPreview(trackId) {
+        const previewEl = $(`trackPreview_${trackId}`);
+        if (!previewEl) return;
+        
+        const params = readAllInputsForTrack(trackId);
+        if (!params) return;
+
+        const result = simulate(params);
+        const log = result.monthlyLog;
+        
+        if (!log || log.length === 0) {
+            previewEl.innerHTML = '';
+            return;
+        }
+        
+        const totalProviderCash = log.reduce((sum, item) => sum + (item.providerCost || 0), 0);
+        const totalProviderEconomic = log.reduce((sum, item) => sum + (item.providerEconomicCost || 0), 0);
+        const depreciation = totalProviderEconomic - totalProviderCash;
+        
+        const summary = result.summary;
+        
+        let depLabel = `(ל-${params.maxYears} שנים)`;
+        if (params.pricingMode === 'deposit') {
+            depLabel = `(ל-${params.depositDepreciationYears} שנים)`;
+        } else if (params.pricingMode === 'entrance_fee') {
+            depLabel = `(ל-${params.entranceFeeDepreciationYears} שנים)`;
+        }
+
+        let refundLabel = 'יתרת הפיקדון';
+        if (params.pricingMode === 'entrance_fee') refundLabel = 'יתרת דמי כניסה';
+
+        let refundHtml = '';
+        if (params.pricingMode !== 'none') {
+             refundHtml = `
+            <div class="preview-item">
+                <span class="preview-label">${refundLabel} (סוף תקופה)</span>
+                <span class="preview-value">${fmt(summary.refundEnd)} ₪</span>
+            </div>`;
+        }
+
+        let insolvencyHtml = '';
+        if (!summary.maxedOut) {
+             const years = Math.floor(summary.totalMonths / 12);
+             const months = summary.totalMonths % 12;
+             insolvencyHtml = `
+            <div class="preview-item insolvency-alert">
+                <span class="preview-label" style="color: var(--danger);">חדלות פירעון</span>
+                <span class="preview-value" style="color: var(--danger); direction: rtl;">${years} שנים ו-${months} חודשים</span>
+            </div>`;
+        }
+
+        previewEl.innerHTML = `
+            <div class="preview-item">
+                <span class="preview-label">צפי אחזקה (ל-${params.maxYears} שנים)</span>
+                <span class="preview-value">${fmt(totalProviderCash)} ₪</span>
+            </div>
+            <div class="preview-item">
+                <span class="preview-label">צפי שחיקה ${depLabel}</span>
+                <span class="preview-value">${fmt(depreciation)} ₪</span>
+            </div>
+            ${refundHtml}
+            <div class="preview-item">
+                <span class="preview-label">יתרת החשבון (סוף תקופה)</span>
+                <span class="preview-value">${fmt(summary.finalCash)} ₪</span>
+            </div>
+            <div class="preview-end-group">
+                ${insolvencyHtml}
+            </div>
+        `;
     }
     
     function renderResults() {
@@ -414,7 +496,8 @@
             'סוג מסלול',
             'סה"כ חודשים (עצמאי / סיעודי)',
             'עלות מצטברת כוללת (₪)',
-            'תשלום לספק (₪)',
+            'עלות השחיקה (₪)',
+            'עלות דמי אחזקה (₪)',
             'יתרת הון בסיום (₪)',
             'החזר צפוי (₪)',
             'תזרים חודשי ראשון (₪)'
@@ -428,7 +511,8 @@
             headers[4],
             headers[5],
             headers[6],
-            headers[7]
+            headers[7],
+            headers[8]
         ];
 
         const escapedMobileHeaders = mobileHeaders.map(h => h.replace(/"/g, '&quot;'));
@@ -438,7 +522,8 @@
             <th>סוג מסלול</th>
             <th>סה"כ חודשים (עצמאי / סיעודי)</th>
             <th class="tooltip-header">עלות מצטברת כוללת (₪)<span class="tooltip-text">סך כל ההוצאות (מחייה, דמי אחזקה ותוספת סיעוד) בתוספת הפחת על הפיקדון/דמי כניסה. מציג את העלות הכלכלית המלאה.</span></th>
-            <th class="tooltip-header">תשלום לספק (₪)<span class="tooltip-text">סך העלות הכלכלית לספק, כולל דמי אחזקה, תוספת סיעודית, ופחת על הפיקדון או דמי הכניסה.</span></th>
+            <th class="tooltip-header">עלות השחיקה (₪)<span class="tooltip-text">החלק היחסי של הפיקדון או דמי הכניסה שנשחק (נזקף כהוצאה) לאורך התקופה.</span></th>
+            <th class="tooltip-header">עלות דמי אחזקה (₪)<span class="tooltip-text">סך התשלומים השוטפים ששולמו לספק (דמי אחזקה חודשיים + תוספות סיעוד אם היו).</span></th>
             <th class="tooltip-header">יתרת הון בסיום (₪)<span class="tooltip-text">ההון הנזיל שנותר בחשבון בנקודת הזמן שנבחרה, לאחר כל ההכנסות וההוצאות, ובתוספת התשואה על הכסף.</span></th>
             <th class="tooltip-header">החזר צפוי (₪)<span class="tooltip-text">הסכום שיתקבל חזרה מהפיקדון או דמי הכניסה בנקודת הזמן שנבחרה, בהתחשב בתנאי הפחת של המסלול.</span></th>
             <th>תזרים חודשי ראשון (₪)<div style="font-size: 0.8em; color: var(--muted); font-weight: normal;">הכנסות / הוצאות / יתרה</div></th>
@@ -446,7 +531,7 @@
 
         simulationResults.forEach(result => {
             const rSummary = result.summary;
-            let displayMonths, years, months, durationNote, indMonths, nursMonths, finalCash, refundEnd, cumulativeProviderCost, rowClass = '', totalEconomicCost = 0;
+            let displayMonths, years, months, durationNote, indMonths, nursMonths, finalCash, refundEnd, cumulativeDepreciation, cumulativeMaintenance, rowClass = '', totalEconomicCost = 0;
 
             if (result.monthlyLog.length === 0) {
                 rowClass = 'insolvent';
@@ -456,7 +541,8 @@
                 nursMonths = 0;
                 finalCash = 0;
                 refundEnd = 0;
-                cumulativeProviderCost = 0;
+                cumulativeDepreciation = 0;
+                cumulativeMaintenance = 0;
                 totalEconomicCost = 0;
             } else {
                 const ran_out_of_money = !rSummary.maxedOut;
@@ -472,10 +558,14 @@
                     refundEnd = lastLog.refund;
                     
                     const cumulativeCost = result.monthlyLog.reduce((sum, log) => sum + (log.totalCost || 0), 0);
-                    cumulativeProviderCost = result.monthlyLog.reduce((sum, log) => sum + (log.providerEconomicCost || 0), 0);
-                    const cumulativeProviderCashCost = result.monthlyLog.reduce((sum, log) => sum + (log.providerCost || 0), 0);
-                    const cumulativeLivingCost = cumulativeCost - cumulativeProviderCashCost;
-                    totalEconomicCost = cumulativeProviderCost + cumulativeLivingCost;
+                    const totalProviderEconomic = result.monthlyLog.reduce((sum, log) => sum + (log.providerEconomicCost || 0), 0);
+                    const totalProviderCash = result.monthlyLog.reduce((sum, log) => sum + (log.providerCost || 0), 0);
+                    
+                    cumulativeDepreciation = totalProviderEconomic - totalProviderCash;
+                    cumulativeMaintenance = totalProviderCash;
+                    
+                    const cumulativeLivingCost = cumulativeCost - totalProviderCash;
+                    totalEconomicCost = totalProviderEconomic + cumulativeLivingCost;
 
                     years = Math.floor(displayMonths / 12);
                     months = displayMonths % 12;
@@ -493,16 +583,20 @@
                         refundEnd = lastLog.refund;
 
                         const cumulativeCost = relevantLogs.reduce((sum, log) => sum + (log.totalCost || 0), 0);
-                        cumulativeProviderCost = relevantLogs.reduce((sum, log) => sum + (log.providerEconomicCost || 0), 0);
-                        const cumulativeProviderCashCost = relevantLogs.reduce((sum, log) => sum + (log.providerCost || 0), 0);
-                        const cumulativeLivingCost = cumulativeCost - cumulativeProviderCashCost;
-                        totalEconomicCost = cumulativeProviderCost + cumulativeLivingCost;
+                        const totalProviderEconomic = relevantLogs.reduce((sum, log) => sum + (log.providerEconomicCost || 0), 0);
+                        const totalProviderCash = relevantLogs.reduce((sum, log) => sum + (log.providerCost || 0), 0);
+                        
+                        cumulativeDepreciation = totalProviderEconomic - totalProviderCash;
+                        cumulativeMaintenance = totalProviderCash;
+                        
+                        const cumulativeLivingCost = cumulativeCost - totalProviderCash;
+                        totalEconomicCost = totalProviderEconomic + cumulativeLivingCost;
                         
                         years = Math.floor(displayMonths / 12);
                         months = displayMonths % 12;
                         durationNote = `<div class="note">${years} שנים ו־${months} חודשים</div>`;
                     } else {
-                        displayMonths = 0; indMonths = 0; nursMonths = 0; finalCash = 0; refundEnd = 0; cumulativeProviderCost = 0; totalEconomicCost = 0;
+                        displayMonths = 0; indMonths = 0; nursMonths = 0; finalCash = 0; refundEnd = 0; cumulativeDepreciation = 0; cumulativeMaintenance = 0; totalEconomicCost = 0;
                         durationNote = '<div class="note">---</div>';
                     }
                 }
@@ -525,8 +619,9 @@
                         <div style="font-weight: bold; margin-bottom: 5px; color: var(--accent);">פרטי מסלול פיקדון</div>
                         <div>דמי אחזקה: <b>${fmt(trackParams.baseWithDeposit)} ₪</b></div>
                         <div>סכום פיקדון: <b>${fmt(trackParams.depositAmount)} ₪</b></div>
-                        <div>פחת שנתי: <b>${trackParams.depositDepreciationPct * 100}%</b></div>
-                        <div>החזר מינימלי: <b>${trackParams.depositRefundPct * 100}%</b></div>
+                        <div>פחת פיקדון שנתי: <b>${(trackParams.depositDepreciationPct * 100).toFixed(1)}%</b></div>
+                        <div>תקופת שחיקה: <b>${trackParams.depositDepreciationYears} שנים</b></div>
+                        <div>החזר מינימלי: <b>${(trackParams.depositRefundPct * 100).toFixed(1)}%</b></div>
                     `;
                 } else if (trackParams.pricingMode === 'entrance_fee') {
                     const rateInput = $(`entranceFeeDepreciationRateMonthly_${trackParams.id}`);
@@ -558,10 +653,11 @@
                 <td data-label="${escapedMobileHeaders[1]}">${pricingModeText}</td>
                 <td data-label="${escapedMobileHeaders[2]}"><b>${fmt(displayMonths)} (${fmt(indMonths)} / ${fmt(nursMonths)})</b>${durationNote || ''}</td>
                 <td data-label="${escapedMobileHeaders[3]}">${fmt(totalEconomicCost)}</td>
-                <td data-label="${escapedMobileHeaders[4]}">${fmt(cumulativeProviderCost)}</td>
-                <td data-label="${escapedMobileHeaders[5]}">${fmt(finalCash)}</td>
-                <td data-label="${escapedMobileHeaders[6]}">${fmt(refundEnd)}</td>
-                <td data-label="${escapedMobileHeaders[7]}">
+                <td data-label="${escapedMobileHeaders[4]}">${fmt(cumulativeDepreciation)}</td>
+                <td data-label="${escapedMobileHeaders[5]}">${fmt(cumulativeMaintenance)}</td>
+                <td data-label="${escapedMobileHeaders[6]}">${fmt(finalCash)}</td>
+                <td data-label="${escapedMobileHeaders[7]}">${fmt(refundEnd)}</td>
+                <td data-label="${escapedMobileHeaders[8]}">
                     <span class="income">${fmt(fixedIncome + rentIncome)}</span> /
                     <span class="expense">${fmt(baseCost + livingExpenses)}</span> /
                     <b class="${indNet >= 0 ? 'ok' : 'danger'}">${fmt(indNet)}</b>
@@ -581,6 +677,10 @@
         const pMode = $(`pricingMode_${trackId}`).value;
         const trackName = $(`trackName_${trackId}`).value;
 
+        // Calculate refund pct from years
+        const depPctVal = pMode === 'deposit' ? unformat($(`depositDepreciationPct_${trackId}`).value) : 0;
+        const depYearsVal = pMode === 'deposit' ? unformat($(`depositDepreciationYears_${trackId}`).value) : 0;
+        
         const trackParams = {
             id: trackId,
             trackName: trackName,
@@ -589,8 +689,9 @@
             baseWithEntranceFee: pMode === 'entrance_fee' ? unformat($(`baseWithEntranceFee_${trackId}`).value) : 0,
             baseNoDeposit: pMode === 'none' ? unformat($(`baseNoDeposit_${trackId}`).value) : 0,
             depositAmount: pMode === 'deposit' ? unformat($(`depositAmount_${trackId}`).value) : 0,
-            depositDepreciationPct: pMode === 'deposit' ? unformat($(`depositDepreciationPct_${trackId}`).value) / 100 : 0,
-            depositRefundPct: pMode === 'deposit' ? unformat($(`depositRefundPct_${trackId}`).value) / 100 : 0,
+            depositDepreciationPct: depPctVal / 100,
+            depositDepreciationYears: depYearsVal,
+            depositRefundPct: pMode === 'deposit' ? Math.max(0, (100 - (depYearsVal * depPctVal)) / 100) : 0,
             entranceFeeAmount: pMode === 'entrance_fee' ? unformat($(`entranceFeeAmount_${trackId}`).value) : 0,
             entranceFeeDepreciationRateMonthly: pMode === 'entrance_fee' ? (parseFloat($(`entranceFeeDepreciationRateMonthly_${trackId}`).value) || 0) / 100 : 0,
             entranceFeeDepreciationYears: pMode === 'entrance_fee' ? unformat($(`entranceFeeDepreciationYears_${trackId}`).value) : 0,
@@ -628,7 +729,7 @@
         };
         
         // Collect common inputs
-        const commonInputs = document.querySelectorAll('#commonInputsCard input, #commonInputsCard select');
+        const commonInputs = document.querySelectorAll('#commonInputsCard input, #commonInputsCard select, .top-bar-settings input');
         commonInputs.forEach(input => {
             if (input.type === 'checkbox') {
                 data.common[input.id] = input.checked;
@@ -713,19 +814,34 @@
                 }
             }
 
+            // Migration logic for old data (refund pct -> years)
+            if (modeSelect.value === 'deposit' && trackData.depositRefundPct !== undefined && trackData.depositDepreciationYears === undefined) {
+                 const yearsInput = $(`depositDepreciationYears_${trackId}`);
+                 const depPctInput = $(`depositDepreciationPct_${trackId}`);
+                 if (yearsInput && depPctInput) {
+                     const refundPct = parseFloat(trackData.depositRefundPct); // e.g. 64
+                     const depPct = parseFloat(trackData.depositDepreciationPct || 3); // e.g. 3
+                     if (depPct > 0) {
+                         const years = (100 - refundPct) / depPct;
+                         yearsInput.value = formatNumber(years);
+                     } else {
+                         yearsInput.value = '0';
+                     }
+                 }
+            }
+
             // This is crucial: apply number formatting to all the newly loaded values.
             if (trackCard) {
                 setupNumberFormattingForContainer(trackCard);
             }
             
             // Now, trigger the calculation logic by simulating user input.
-            // This is more robust than calling the functions directly as it uses the existing event pathways.
             if (modeSelect.value === 'deposit') {
                 const reducedDepositInput = $(`reducedDepositAmount_${trackId}`);
                 if (reducedDepositInput) {
                     reducedDepositInput.dispatchEvent(new Event('input', { bubbles: true }));
                 }
-                updateRefundYearsNote(trackId);
+                updateRefundPctNote(trackId);
             } else if (modeSelect.value === 'entrance_fee') {
                 const yearsInput = $(`entranceFeeDepreciationYears_${trackId}`);
                 if (yearsInput) {
@@ -1031,6 +1147,7 @@
                 
                 reducedDepositInput.value = formatNumber(newReduction);
                 updateDepositReduction(trackId);
+                updateTrackPreview(trackId);
             }
         });
 
@@ -1049,14 +1166,21 @@
             } else if (targetId.startsWith('reducedDepositAmount_')) {
                 const trackId = e.target.dataset.trackId;
                 updateDepositReduction(trackId);
-            } else if (targetId.startsWith('depositDepreciationPct_') || targetId.startsWith('depositRefundPct_')) {
+            } else if (targetId.startsWith('depositDepreciationPct_') || targetId.startsWith('depositDepreciationYears_')) {
                 const trackId = targetId.split('_')[1];
-                updateRefundYearsNote(trackId);
+                updateRefundPctNote(trackId);
             }
 
 
             const trackId = e.target.dataset.trackId;
-            if (!trackId) return;
+            if (!trackId) {
+                const closest = e.target.closest('.track-card');
+                if(closest) updateTrackPreview(closest.dataset.trackId);
+                return;
+            }
+
+            // Update preview on input
+            updateTrackPreview(trackId);
 
             const isMaintenance = e.target.id.startsWith('baseWithDeposit_');
             const isDeposit = e.target.id.startsWith('depositAmount_');
@@ -1083,6 +1207,26 @@
             }
         });
 
+        // Listen for common inputs changes to update all previews
+        $('commonInputsCard').addEventListener('input', () => {
+             document.querySelectorAll('.track-card').forEach(card => {
+                 updateTrackPreview(card.dataset.trackId);
+             });
+        });
+        
+        // Listen to the top bar input changes for maxYears
+        $('topBarSettings').addEventListener('input', () => {
+             document.querySelectorAll('.track-card').forEach(card => {
+                 updateTrackPreview(card.dataset.trackId);
+             });
+        });
+        
+         $('commonInputsCard').addEventListener('change', () => {
+             document.querySelectorAll('.track-card').forEach(card => {
+                 updateTrackPreview(card.dataset.trackId);
+             });
+        });
+
         // Calculation
         $('calculateBtn').addEventListener('click', handleCalculate);
         
@@ -1103,5 +1247,6 @@
         handleAddTrack();
     });
   </script>
+<script type="module" src="/index.tsx"></script>
 </body>
 </html>
