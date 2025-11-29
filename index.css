@@ -51,6 +51,25 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
 .inline-row { display: flex; align-items: center; gap: 8px; }
 .hr { border-top: 1px dashed var(--border); margin: 24px 0; }
 
+.header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    margin: 24px 0 16px;
+}
+.header-row h2 {
+    border-bottom: none;
+    margin: 0;
+    padding: 0;
+}
+.header-row .btn:not(.icon-btn) {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    height: auto;
+}
+
 #tracksCard {
     position: relative;
     z-index: 5;

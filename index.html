@@ -128,7 +128,15 @@
     
     <!-- Step 2: Tracks Definition -->
     <div class="card" id="tracksCard">
-        <h2>שלב 2: הגדרת מסלולים להשוואה</h2>
+        <div class="header-row">
+            <h2>שלב 2: הגדרת מסלולים להשוואה</h2>
+            <div class="tooltip-container">
+                <button id="toggleAllTracksBtn" class="btn secondary icon-btn" aria-label="כווץ הכל">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 12 6 7 11"></polyline><polyline points="17 18 12 13 7 18"></polyline></svg>
+                </button>
+                <span class="tooltip-text-topbar" id="toggleAllTooltip">כווץ הכל</span>
+            </div>
+        </div>
         <div id="tracksContainer"></div>
         <button id="addTrackBtn" class="btn secondary" style="margin-top: 16px;">+ הוסף מסלול חדש</button>
     </div>
@@ -161,6 +169,11 @@
     const $ = (id) => document.getElementById(id);
     const fmt = (n) => n === null || isNaN(n) ? '—' : new Intl.NumberFormat('he-IL').format(Math.round(n));
     const unformat = (val) => +(val || '0').toString().replace(/,/g, '');
+    
+    const ICONS = {
+        collapse: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 12 6 7 11"></polyline><polyline points="17 18 12 13 7 18"></polyline></svg>`,
+        expand: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"></polyline><polyline points="7 6 12 11 17 6"></polyline></svg>`
+    };
 
     // --- State Management ---
     let tracks = [];
@@ -894,6 +907,15 @@
             }
         });
 
+        // Reset collapse button state
+        const btn = $('toggleAllTracksBtn');
+        const tooltip = $('toggleAllTooltip');
+        if(btn && tooltip) {
+             btn.innerHTML = ICONS.collapse;
+             btn.setAttribute('aria-label', 'כווץ הכל');
+             tooltip.textContent = 'כווץ הכל';
+        }
+
         hideResultsModal();
         alert('הנתונים יובאו בהצלחה!');
     }
@@ -1163,6 +1185,36 @@
             const scenario = e.target.value;
             $('sellBlock').style.display = scenario === 'sell' ? 'block' : 'none';
             $('rentBlock').style.display = scenario === 'rent' ? 'block' : 'none';
+        });
+
+        // Toggle All Tracks
+        $('toggleAllTracksBtn').addEventListener('click', () => {
+            const cards = document.querySelectorAll('.track-card');
+            if (cards.length === 0) return;
+            
+            const anyExpanded = Array.from(cards).some(c => !c.classList.contains('collapsed'));
+            const btn = $('toggleAllTracksBtn');
+            const tooltip = $('toggleAllTooltip');
+            
+            cards.forEach(card => {
+                if (anyExpanded) {
+                    card.classList.add('collapsed');
+                } else {
+                    card.classList.remove('collapsed');
+                }
+            });
+            
+            if (anyExpanded) {
+                // Now they are all collapsed, so button should show "Expand All"
+                btn.innerHTML = ICONS.expand;
+                btn.setAttribute('aria-label', 'הרחב הכל');
+                if(tooltip) tooltip.textContent = 'הרחב הכל';
+            } else {
+                // Now they are expanded, so button should show "Collapse All"
+                btn.innerHTML = ICONS.collapse;
+                btn.setAttribute('aria-label', 'כווץ הכל');
+                if(tooltip) tooltip.textContent = 'כווץ הכל';
+            }
         });
 
         // Track management
