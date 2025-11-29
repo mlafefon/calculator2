@@ -371,7 +371,8 @@
             addTrack: () => {
                 const newTrack = {
                     id: Date.now(),
-                    name: `מסלול ${State.tracks.length + 1}`,
+                    company: `מסלול ${State.tracks.length + 1}`,
+                    room: '',
                     pricingMode: 'deposit'
                 };
                 State.tracks.push(newTrack);
@@ -420,7 +421,10 @@
 
             readTrackInputs: (trackId) => {
                 const pMode = Utils.$(`pricingMode_${trackId}`).value;
-                const trackName = Utils.$(`trackName_${trackId}`).value;
+                const company = Utils.$(`trackCompany_${trackId}`).value;
+                const room = Utils.$(`trackRoom_${trackId}`).value;
+                // Construct trackName for simulation logic compatibility
+                const trackName = `${company}${room ? ' - ' + room : ''}`;
 
                 // Helper for safe fetching
                 const getVal = (id) => {
@@ -434,6 +438,8 @@
                 return {
                     id: trackId,
                     trackName: trackName,
+                    company: company,
+                    room: room,
                     pricingMode: pMode,
                     baseWithDeposit: pMode === 'deposit' ? getVal(`baseWithDeposit_${trackId}`) : 0,
                     baseWithEntranceFee: pMode === 'entrance_fee' ? getVal(`baseWithEntranceFee_${trackId}`) : 0,
@@ -510,7 +516,9 @@
                 card.dataset.trackId = trackId;
                 
                 // Safe values
-                const safeName = Utils.escapeHtml(track.name);
+                // Support legacy 'name' property if company not set
+                const safeCompany = Utils.escapeHtml(track.company || track.name || '');
+                const safeRoom = Utils.escapeHtml(track.room || '');
                 const isSelected = (val) => track.pricingMode === val ? 'selected' : '';
 
                 card.innerHTML = `
@@ -519,7 +527,8 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
                     </button>
                     <div class="track-header">
-                        <div class="form-group"><label for="trackName_${trackId}">שם החברה-סוג החדר</label><input type="text" id="trackName_${trackId}" value="${safeName}" placeholder="לדוגמה: פאלאס - דירת 2 חדרים"></div>
+                        <div class="form-group full-width-mobile"><label for="trackCompany_${trackId}">שם חברה וכתובת</label><input type="text" id="trackCompany_${trackId}" value="${safeCompany}" placeholder="לדוגמה: אחוזת בית, רעננה"></div>
+                        <div class="form-group full-width-mobile"><label for="trackRoom_${trackId}">סוג חדר וגודל</label><input type="text" id="trackRoom_${trackId}" value="${safeRoom}" placeholder="לדוגמה: 2 חדרים, 60 מ&quot;ר"></div>
                         <div class="form-group"><label for="pricingMode_${trackId}">סוג המסלול</label>
                             <select id="pricingMode_${trackId}">
                                 <option value="deposit" ${isSelected('deposit')}>עם פיקדון</option>
@@ -1159,6 +1168,12 @@
                             Utils.$(`pricingMode_${t.id}`).value = td.pricingMode;
                             UI.updateTrackBody(t.id);
                             
+                            // Legacy mapping for files where trackName existed but company/room didn't
+                            if (td.trackName && !td.trackCompany) {
+                                const compEl = Utils.$(`trackCompany_${t.id}`);
+                                if (compEl) compEl.value = td.trackName;
+                            }
+
                             Object.keys(td).forEach(k => {
                                 const isBase = k.endsWith('_base');
                                 const realK = isBase ? k.replace('_base','') : k;

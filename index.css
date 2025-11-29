@@ -776,14 +776,14 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
         padding-left: 0; /* Align with other content */
     }
 
-    /* Change track name to be on two lines on mobile */
-    .track-header .form-group:first-child {
+    /* Mobile styles for text inputs in header */
+    .track-header .form-group.full-width-mobile {
         display: block;
     }
-    .track-header .form-group:first-child label {
+    .track-header .form-group.full-width-mobile label {
         margin-bottom: 6px;
     }
-    .track-header .form-group:first-child input {
+    .track-header .form-group.full-width-mobile input {
         width: 100%;
     }
 
