@@ -167,7 +167,9 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 250px;
+    /* Removed max-width to allow filling space */
+    flex: 1;
+    min-width: 0; 
 }
 
 .track-collapsed-view .collapsed-stats {
@@ -175,8 +177,9 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
     gap: 20px;
     font-size: 0.9rem;
     color: var(--muted);
-    flex-grow: 1;
+    flex-shrink: 0;
     justify-content: flex-end;
+    margin-right: 16px;
 }
 .track-collapsed-view .collapsed-stat-item {
     display: flex;

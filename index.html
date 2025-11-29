@@ -166,1194 +166,1045 @@
 
 
   <script>
-    const $ = (id) => document.getElementById(id);
-    const fmt = (n) => n === null || isNaN(n) ? '—' : new Intl.NumberFormat('he-IL').format(Math.round(n));
-    const unformat = (val) => +(val || '0').toString().replace(/,/g, '');
-    
-    const ICONS = {
-        collapse: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 12 6 7 11"></polyline><polyline points="17 18 12 13 7 18"></polyline></svg>`,
-        expand: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"></polyline><polyline points="7 6 12 11 17 6"></polyline></svg>`
-    };
-
-    // --- State Management ---
-    let tracks = [];
-    let simulationResults = [];
-
-    // --- Core Simulation Logic ---
-    function simulate(p) {
-        let cash = p.initCash;
-        if (p.scenario === 'sell') cash += Math.max(0, p.salePrice * (1 - p.saleCostsPct));
-        
-        let depositBook = 0;
-        let entranceFeeBook = 0;
-
-        if (p.pricingMode === 'deposit' && p.depositAmount > 0) {
-            cash -= p.depositAmount;
-            depositBook = p.depositAmount;
-        }
-        if (p.pricingMode === 'entrance_fee' && p.entranceFeeAmount > 0) {
-            cash -= p.entranceFeeAmount;
-            entranceFeeBook = p.entranceFeeAmount;
-        }
-        cash -= p.oneTimeCosts;
-
-        const monthlyLog = [];
-
-        if (cash < 0) {
-             const summary = { totalMonths: 0, independentMonths: 0, nursingMonths: 0, refundEnd: p.pricingMode === 'deposit' ? p.depositAmount : p.entranceFeeAmount, finalCash: 0, trackId: p.id, trackName: p.trackName, maxedOut: false, pricingMode: p.pricingMode };
-            return { summary, monthlyLog };
-        }
-
-        const monthlyReturn = Math.pow(1 + p.annualReturn, 1/12) - 1;
-        const monthlyInfl = Math.pow(1 + p.annualInflation, 1/12) - 1;
-        const maxMonths = p.maxYears > 0 ? p.maxYears * 12 : 50 * 12;
-
-        const baseMonthlyCost = (t, mode) => {
-            let base;
-            if (mode === 'deposit') base = p.baseWithDeposit;
-            else if (mode === 'entrance_fee') base = p.baseWithEntranceFee;
-            else base = p.baseNoDeposit;
-            return base * Math.pow(1 + monthlyInfl, t);
-        };
-        const nursingExtra = (t) => (Math.max(0, p.nursingAddon - p.nursingAllowance)) * Math.pow(1 + monthlyInfl, t);
-        const rentNetPerMonth = (t) => {
-            if (p.scenario !== 'rent') return 0;
-            const gross = p.rentGross * Math.pow(1 + monthlyInfl, t);
-            return Math.max(0, (gross * (1 - p.rentTaxPct) * (1 - p.vacancyPct)) - (p.annualMaintenance / 12));
-        };
-        const monthlyLivingCost = (t) => p.monthlyLivingExpenses * Math.pow(1 + monthlyInfl, t);
-
-        let t = 0, independentMonths = 0, nursingMonths = 0, lastPositiveCash = cash;
-
-        // Pre-calculate deposit depreciation floor and monthly amount (straight-line)
-        const depositFloor = (p.pricingMode === 'deposit') ? (p.depositAmount || 0) * (p.depositRefundPct || 0) : 0;
-        const depositMonthlyDepreciation = (p.pricingMode === 'deposit') ? (p.depositAmount || 0) * ((p.depositDepreciationPct || 0) / 12) : 0;
-
-        while (t < maxMonths) {
-            cash *= (1 + monthlyReturn);
-            const providerMonthlyCost = baseMonthlyCost(t, p.pricingMode) + (p.isNursing && t >= p.monthsIndependent ? nursingExtra(t) : 0);
-            const totalMonthlyCost = providerMonthlyCost + monthlyLivingCost(t);
-            const income = p.monthlyIncome + rentNetPerMonth(t);
-            cash += (income - totalMonthlyCost);
-            
-            let depreciationThisMonth = 0;
-            if (p.pricingMode === 'deposit' && depositBook > depositFloor) {
-                // Straight line depreciation capped at floor
-                const maxDeductible = Math.max(0, depositBook - depositFloor);
-                const actualDeduction = Math.min(depositMonthlyDepreciation, maxDeductible);
-                depreciationThisMonth = actualDeduction;
-                depositBook -= actualDeduction;
-            }
-            if (p.pricingMode === 'entrance_fee' && entranceFeeBook > 0 && t < (p.entranceFeeDepreciationYears * 12)) {
-                const monthlyDepAmount = p.entranceFeeAmount * (p.entranceFeeDepreciationRateMonthly || 0);
-                const actualDepreciation = Math.min(entranceFeeBook, monthlyDepAmount);
-                depreciationThisMonth = actualDepreciation;
-                entranceFeeBook = Math.max(0, entranceFeeBook - monthlyDepAmount);
-            }
-            
-            const providerEconomicCost = providerMonthlyCost + depreciationThisMonth;
-
-            if (cash < 0) break;
-            
-            if (p.isNursing && t >= p.monthsIndependent) nursingMonths++; else independentMonths++;
-            lastPositiveCash = cash;
-            
-            let refundCurrent = 0;
-            if (p.pricingMode === 'deposit') {
-                refundCurrent = depositBook;
-            } else if (p.pricingMode === 'entrance_fee') {
-                refundCurrent = entranceFeeBook;
-            }
-            
-            monthlyLog.push({ month: t + 1, totalCost: totalMonthlyCost, providerCost: providerMonthlyCost, providerEconomicCost, cash: lastPositiveCash, refund: refundCurrent, independentMonths, nursingMonths });
-            
-            t++;
-        }
-
-        let refundEnd = 0;
-        if (p.pricingMode === 'deposit') {
-            refundEnd = depositBook;
-        } else if (p.pricingMode === 'entrance_fee') {
-            refundEnd = entranceFeeBook;
-        }
-
-        const summary = { totalMonths: t, independentMonths, nursingMonths, refundEnd, finalCash: lastPositiveCash, trackId: p.id, trackName: p.trackName, maxedOut: t >= maxMonths, pricingMode: p.pricingMode };
-        return { summary, monthlyLog };
-    }
-
-    // --- Modal Management ---
-    function showResultsModal() {
-        $('resultsModal').classList.add('visible');
-    }
-
-    function hideResultsModal() {
-        $('resultsModal').classList.remove('visible');
-    }
-
-    // --- UI Rendering ---
-    function renderTrackCard(track) {
-        const trackId = track.id;
-        const card = document.createElement('div');
-        card.className = 'track-card';
-        card.dataset.trackId = trackId;
-        card.innerHTML = `
-            <button class="remove-track-btn" data-remove-track-id="${trackId}" aria-label="הסר מסלול">&times;</button>
-            <button class="toggle-track-btn" data-toggle-track-id="${trackId}" aria-label="מזער/הרחב">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
-            </button>
-            <div class="track-header">
-                <div class="form-group"><label for="trackName_${trackId}">שם החברה-סוג החדר</label><input type="text" id="trackName_${trackId}" value="${track.name}" placeholder="לדוגמה: פאלאס - דירת 2 חדרים"></div>
-                <div class="form-group"><label for="pricingMode_${trackId}">סוג המסלול</label>
-                    <select id="pricingMode_${trackId}">
-                        <option value="deposit" ${track.pricingMode === 'deposit' ? 'selected' : ''}>עם פיקדון</option>
-                        <option value="entrance_fee" ${track.pricingMode === 'entrance_fee' ? 'selected' : ''}>דמי כניסה</option>
-                        <option value="none" ${track.pricingMode === 'none' ? 'selected' : ''}>ללא</option>
-                    </select>
-                </div>
-            </div>
-            <div class="track-body"></div>
-            <div class="track-preview" id="trackPreview_${trackId}"></div>
-            <div class="track-collapsed-view" id="trackCollapsed_${trackId}"></div>`;
-
-        $('tracksContainer').appendChild(card);
-        updateTrackBody(trackId);
-    }
-    
-    function updateCalculatedEntranceFeeRate(trackId) {
-        const yearsInput = $(`entranceFeeDepreciationYears_${trackId}`);
-        const rateInput = $(`entranceFeeDepreciationRateMonthly_${trackId}`);
-        const amountInput = $(`entranceFeeAmount_${trackId}`);
-        if (!yearsInput || !rateInput || !amountInput) return;
-
-        const years = unformat(yearsInput.value);
-        const amount = unformat(amountInput.value);
-        
-        if (years > 0) {
-            const ratePercent = 100 / (years * 12);
-            const monthlyDepAmount = amount / (years * 12);
-            
-            if (amount > 0 && isFinite(monthlyDepAmount)) {
-                rateInput.value = `${ratePercent.toFixed(3)}% (${fmt(monthlyDepAmount)} ₪)`;
-            } else {
-                rateInput.value = `${ratePercent.toFixed(3)}%`;
-            }
-        } else {
-            rateInput.value = '0.000%';
-        }
-    }
-
-    function updateRefundPctNote(trackId) {
-        const yearsInput = $(`depositDepreciationYears_${trackId}`);
-        const depreciationPctInput = $(`depositDepreciationPct_${trackId}`);
-        const pctNote = $(`refundPctNote_${trackId}`);
-
-        if (!yearsInput || !depreciationPctInput || !pctNote) return;
-
-        const years = unformat(yearsInput.value);
-        const depreciationPct = unformat(depreciationPctInput.value);
-
-        const totalDepreciation = years * depreciationPct;
-        let refundPct = 100 - totalDepreciation;
-        if (refundPct < 0) refundPct = 0;
-        
-        pctNote.textContent = `(החזר מינימלי: ${refundPct.toFixed(1)}%)`;
-    }
-    
-    function updateTrackBody(trackId) {
-        const card = document.querySelector(`.track-card[data-track-id='${trackId}']`);
-        const body = card.querySelector('.track-body');
-        const mode = card.querySelector(`#pricingMode_${trackId}`).value;
-
-        let html = '<div class="row">';
-        if (mode === 'deposit') {
-            html += `
-                <div class="span-2">
-                    <label for="baseWithDeposit_${trackId}">דמי אחזקה (₪)</label>
-                    <div class="spinner-control">
-                        <button type="button" class="spinner-btn" data-step-dir="up" data-target="baseWithDeposit_${trackId}">+</button>
-                        <input type="text" id="baseWithDeposit_${trackId}" data-track-id="${trackId}" data-base-value="9000" value="9000" class="expense" inputmode="decimal">
-                        <button type="button" class="spinner-btn" data-step-dir="down" data-target="baseWithDeposit_${trackId}">-</button>
-                    </div>
-                </div>
-                <div class="span-2">
-                    <label for="reducedDepositAmount_${trackId}" class="tooltip-header">פקדון מופחת (₪)<span class="tooltip-text">סכום ההפחתה מהפיקדון. כל 50,000₪ הפחתה מהפיקדון מוסיפים 500₪ לדמי האחזקה החודשיים.</span></label>
-                    <div class="spinner-control">
-                        <button type="button" class="spinner-btn stepper-btn" data-step-dir="up" data-track-id="${trackId}">+</button>
-                        <input type="text" id="reducedDepositAmount_${trackId}" data-track-id="${trackId}" value="0" class="expense" inputmode="decimal">
-                        <button type="button" class="spinner-btn stepper-btn" data-step-dir="down" data-track-id="${trackId}">-</button>
-                    </div>
-                </div>
-                <div class="span-4">
-                    <label for="depositAmount_${trackId}">סכום פיקדון (₪)</label>
-                    <div class="spinner-control">
-                        <button class="spinner-btn" data-step-dir="up" data-target="depositAmount_${trackId}">+</button>
-                        <input type="text" id="depositAmount_${trackId}" data-track-id="${trackId}" data-base-value="1000000" value="1000000" class="income" inputmode="decimal">
-                        <button class="spinner-btn" data-step-dir="down" data-target="depositAmount_${trackId}">-</button>
-                    </div>
-                </div>
-                <div class="span-2"><label for="depositDepreciationPct_${trackId}">פחת פיקדון שנתי (%)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="depositDepreciationPct_${trackId}">+</button><input type="text" id="depositDepreciationPct_${trackId}" value="3" class="expense" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="depositDepreciationPct_${trackId}">-</button></div></div>
-                <div class="span-2">
-                    <label for="depositDepreciationYears_${trackId}" class="tooltip-header">
-                        תקופת שחיקה (שנים)
-                        <span class="tooltip-text">תקופת השחיקה המקסימלית של הפיקדון. לאחר תקופה זו, גביית הפחת נפסקת ויתרת הפיקדון נשמרת.</span>
-                        <span class="note" id="refundPctNote_${trackId}" style="display: block; font-weight: normal; line-height: 1.2; margin-top: 2px;"></span>
-                    </label>
-                    <div class="spinner-control">
-                        <button class="spinner-btn" data-step-dir="up" data-target="depositDepreciationYears_${trackId}">+</button>
-                        <input type="text" id="depositDepreciationYears_${trackId}" value="12" class="income" inputmode="decimal">
-                        <button class="spinner-btn" data-step-dir="down" data-target="depositDepreciationYears_${trackId}">-</button>
-                    </div>
-                </div>`;
-        } else if (mode === 'entrance_fee') {
-            html += `
-                <div class="span-3"><label for="baseWithEntranceFee_${trackId}">דמי אחזקה (₪)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="baseWithEntranceFee_${trackId}">+</button><input type="text" id="baseWithEntranceFee_${trackId}" value="9500" class="expense" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="baseWithEntranceFee_${trackId}">-</button></div></div>
-                <div class="span-3"><label for="entranceFeeAmount_${trackId}">סכום דמי כניסה (₪)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="entranceFeeAmount_${trackId}">+</button><input type="text" id="entranceFeeAmount_${trackId}" value="450000" class="income" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="entranceFeeAmount_${trackId}">-</button></div></div>
-                <div class="span-3"><label for="entranceFeeDepreciationYears_${trackId}">משך הפחת (שנים)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="entranceFeeDepreciationYears_${trackId}">+</button><input type="text" id="entranceFeeDepreciationYears_${trackId}" value="5" class="expense" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="entranceFeeDepreciationYears_${trackId}">-</button></div></div>
-                <div class="span-3"><label for="entranceFeeDepreciationRateMonthly_${trackId}">פחת חודשי (מחושב)</label><input type="text" id="entranceFeeDepreciationRateMonthly_${trackId}" value="" class="expense" inputmode="decimal" readonly style="background-color: var(--bg); cursor: not-allowed;"></div>`;
-        } else { // none
-            html += `<div class="span-3"><label for="baseNoDeposit_${trackId}">דמי אחזקה (₪)</label><div class="spinner-control"><button class="spinner-btn" data-step-dir="up" data-target="baseNoDeposit_${trackId}">+</button><input type="text" id="baseNoDeposit_${trackId}" value="14000" class="expense" inputmode="decimal"><button class="spinner-btn" data-step-dir="down" data-target="baseNoDeposit_${trackId}">-</button></div></div>`;
-        }
-        html += '</div>';
-        body.innerHTML = html;
-        setupNumberFormattingForContainer(body);
-        if (mode === 'deposit') {
-            updateRefundPctNote(trackId);
-        }
-        if (mode === 'entrance_fee') {
-            updateCalculatedEntranceFeeRate(trackId);
-        }
-        updateTrackPreview(trackId);
-    }
-    
-    function updateTrackPreview(trackId) {
-        const previewEl = $(`trackPreview_${trackId}`);
-        const collapsedEl = $(`trackCollapsed_${trackId}`);
-        if (!previewEl) return;
-        
-        const params = readAllInputsForTrack(trackId);
-        if (!params) return;
-
-        const result = simulate(params);
-        const log = result.monthlyLog;
-        
-        if (!log || log.length === 0) {
-            previewEl.innerHTML = '';
-             if (collapsedEl) collapsedEl.innerHTML = `
-                <div class="collapsed-title">${params.trackName || 'מסלול ללא שם'}</div>
-                <div class="collapsed-stats" style="justify-content: center; opacity: 0.5;">נתונים חסרים</div>
-             `;
-            return;
-        }
-        
-        const totalProviderCash = log.reduce((sum, item) => sum + (item.providerCost || 0), 0);
-        const totalProviderEconomic = log.reduce((sum, item) => sum + (item.providerEconomicCost || 0), 0);
-        const depreciation = totalProviderEconomic - totalProviderCash;
-        
-        const summary = result.summary;
-        const totalBalance = summary.finalCash + summary.refundEnd;
-        
-        let depLabel = `(ל-${params.maxYears} שנים)`;
-        if (params.pricingMode === 'deposit') {
-            depLabel = `(ל-${params.depositDepreciationYears} שנים)`;
-        } else if (params.pricingMode === 'entrance_fee') {
-            depLabel = `(ל-${params.entranceFeeDepreciationYears} שנים)`;
-        }
-
-        let refundLabel = 'יתרת הפיקדון';
-        if (params.pricingMode === 'entrance_fee') refundLabel = 'יתרת דמי כניסה';
-
-        let refundHtml = '';
-        if (params.pricingMode !== 'none') {
-             refundHtml = `
-            <div class="preview-item">
-                <span class="preview-label">${refundLabel} (סוף תקופה)</span>
-                <span class="preview-value">${fmt(summary.refundEnd)} ₪</span>
-            </div>`;
-        }
-
-        let insolvencyHtml = '';
-        if (!summary.maxedOut) {
-             const years = Math.floor(summary.totalMonths / 12);
-             const months = summary.totalMonths % 12;
-             insolvencyHtml = `
-            <div class="preview-item insolvency-alert">
-                <span class="preview-label" style="color: var(--danger);">חדלות פירעון</span>
-                <span class="preview-value" style="color: var(--danger); direction: rtl;">${years} שנים ו-${months} חודשים</span>
-            </div>`;
-        }
-
-        previewEl.innerHTML = `
-            <div class="preview-item">
-                <span class="preview-label">צפי אחזקה (ל-${params.maxYears} שנים)</span>
-                <span class="preview-value">${fmt(totalProviderCash)} ₪</span>
-            </div>
-            <div class="preview-item">
-                <span class="preview-label">צפי שחיקה ${depLabel}</span>
-                <span class="preview-value">${fmt(depreciation)} ₪</span>
-            </div>
-            ${refundHtml}
-            <div class="preview-item">
-                <span class="preview-label">יתרת החשבון (סוף תקופה)</span>
-                <span class="preview-value">${fmt(summary.finalCash)} ₪</span>
-            </div>
-            <div class="preview-item">
-                <span class="preview-label">סה"כ יתרה (הון + החזר)</span>
-                <span class="preview-value ok" style="font-weight: 800;">${fmt(totalBalance)} ₪</span>
-            </div>
-            <div class="preview-end-group">
-                ${insolvencyHtml}
-            </div>
-        `;
-
-        // Update collapsed view
-        if(collapsedEl) {
-            collapsedEl.innerHTML = `
-                <div class="collapsed-title">${params.trackName || 'מסלול ללא שם'}</div>
-                <div class="collapsed-stats">
-                    <div class="collapsed-stat-item" title="צפי אחזקה">
-                        <span class="collapsed-stat-label">אחזקה</span>
-                        <span class="collapsed-stat-value">${fmt(totalProviderCash)}</span>
-                    </div>
-                    <div class="collapsed-stat-item" title="צפי שחיקה">
-                        <span class="collapsed-stat-label">שחיקה</span>
-                        <span class="collapsed-stat-value">${fmt(depreciation)}</span>
-                    </div>
-                    ${params.pricingMode !== 'none' ? `
-                    <div class="collapsed-stat-item" title="${refundLabel}">
-                        <span class="collapsed-stat-label">החזר</span>
-                        <span class="collapsed-stat-value">${fmt(summary.refundEnd)}</span>
-                    </div>` : ''}
-                    <div class="collapsed-stat-item" title="יתרה לסיום">
-                        <span class="collapsed-stat-label">יתרה</span>
-                        <span class="collapsed-stat-value">${fmt(summary.finalCash)}</span>
-                    </div>
-                    <div class="collapsed-stat-item" title="סה&quot;כ יתרה">
-                        <span class="collapsed-stat-label">סה"כ</span>
-                        <span class="collapsed-stat-value ok" style="font-weight: 800;">${fmt(totalBalance)}</span>
-                    </div>
-                </div>
-                <div style="margin-right: auto; color: var(--muted);"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
-            `;
-        }
-    }
-    
-    function renderResults() {
-        const container = $('resultsTableContainer');
-        const targetYear = parseFloat($('yearSlider').value);
-        const targetMonths = Math.round(targetYear * 12);
-        
-        const pricingModeMap = {
-            'deposit': 'עם פיקדון',
-            'entrance_fee': 'דמי כניסה',
-            'none': 'ללא'
+    /**
+     * Senior Living Calculator
+     * Optimized Version: Caches DOM Access, Batches Layout Updates, Uses Shared Formatters
+     */
+    const App = (function() {
+        // --- Constants & Config ---
+        const Constants = {
+            ICONS: {
+                collapse: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 12 6 7 11"></polyline><polyline points="17 18 12 13 7 18"></polyline></svg>`,
+                expand: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"></polyline><polyline points="7 6 12 11 17 6"></polyline></svg>`
+            },
+            // Cached Formatter to avoid reinstantiating on every keystroke
+            FMT: new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }) 
         };
 
-        const headers = [
-            'שם החברה-סוג החדר', 
-            'סוג מסלול',
-            'סה"כ חודשים (עצמאי / סיעודי)',
-            'עלות מצטברת כוללת (₪)',
-            'עלות השחיקה (₪)',
-            'עלות דמי אחזקה (₪)',
-            'יתרת הון בסיום (₪)',
-            'החזר צפוי (₪)',
-            'תזרים חודשי ראשון (₪)'
-        ];
+        // --- Utilities ---
+        const Utils = {
+            $: (id) => document.getElementById(id),
+            
+            fmt: (n) => n === null || isNaN(n) ? '—' : Constants.FMT.format(Math.round(n)),
+            
+            unformat: (val) => +(val || '0').toString().replace(/,/g, ''),
+            
+            formatNumber: (v) => {
+                if (v === '' || v === null || v === undefined) return '';
+                const clean = v.toString().replace(/[^0-9.]/g, '');
+                if (clean === '') return '';
+                const parts = clean.split('.');
+                // Use cached formatter
+                const integerPart = Constants.FMT.format(Number(parts[0]));
+                return parts.length > 1 ? `${integerPart}.${parts[1]}` : integerPart;
+            },
 
-        const mobileHeaders = [
-            headers[0],
-            headers[1],
-            'סה"כ חודשים',
-            headers[3],
-            headers[4],
-            headers[5],
-            headers[6],
-            headers[7],
-            headers[8]
-        ];
+            debounce: (func, wait) => {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            },
 
-        const escapedMobileHeaders = mobileHeaders.map(h => h.replace(/"/g, '&quot;'));
-        
-        let table = `<table class="results-table"><thead><tr>
-            <th>שם החברה-סוג החדר</th>
-            <th>סוג מסלול</th>
-            <th>סה"כ חודשים (עצמאי / סיעודי)</th>
-            <th class="tooltip-header">עלות מצטברת כוללת (₪)<span class="tooltip-text">סך כל ההוצאות (מחייה, דמי אחזקה ותוספת סיעוד) בתוספת הפחת על הפיקדון/דמי כניסה. מציג את העלות הכלכלית המלאה.</span></th>
-            <th class="tooltip-header">עלות השחיקה (₪)<span class="tooltip-text">החלק היחסי של הפיקדון או דמי הכניסה שנשחק (נזקף כהוצאה) לאורך התקופה.</span></th>
-            <th class="tooltip-header">עלות דמי אחזקה (₪)<span class="tooltip-text">סך התשלומים השוטפים ששולמו לספק (דמי אחזקה חודשיים + תוספות סיעוד אם היו).</span></th>
-            <th class="tooltip-header">יתרת הון בסיום (₪)<span class="tooltip-text">ההון הנזיל שנותר בחשבון בנקודת הזמן שנבחרה, לאחר כל ההכנסות וההוצאות, ובתוספת התשואה על הכסף.</span></th>
-            <th class="tooltip-header">החזר צפוי (₪)<span class="tooltip-text">הסכום שיתקבל חזרה מהפיקדון או דמי הכניסה בנקודת הזמן שנבחרה, בהתחשב בתנאי הפחת של המסלול.</span></th>
-            <th>תזרים חודשי ראשון (₪)<div style="font-size: 0.8em; color: var(--muted); font-weight: normal;">הכנסות / הוצאות / יתרה</div></th>
-        </tr></thead><tbody>`;
+            escapeHtml: (unsafe) => {
+                return (unsafe || '')
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+        };
 
-        simulationResults.forEach(result => {
-            const rSummary = result.summary;
-            let displayMonths, years, months, durationNote, indMonths, nursMonths, finalCash, refundEnd, cumulativeDepreciation, cumulativeMaintenance, rowClass = '', totalEconomicCost = 0;
+        // --- Simulation Engine (Pure Logic) ---
+        const Calculator = {
+            simulate: (p) => {
+                // Initialize cash flow based on scenario
+                let cash = p.initCash;
+                if (p.scenario === 'sell') cash += Math.max(0, p.salePrice * (1 - p.saleCostsPct));
+                
+                let depositBook = 0;
+                let entranceFeeBook = 0;
 
-            if (result.monthlyLog.length === 0) {
-                rowClass = 'insolvent';
-                displayMonths = 0;
-                durationNote = '<div class="note danger">לא מספיק הון להתחלה</div>';
-                indMonths = 0;
-                nursMonths = 0;
-                finalCash = 0;
-                refundEnd = 0;
-                cumulativeDepreciation = 0;
-                cumulativeMaintenance = 0;
-                totalEconomicCost = 0;
-            } else {
-                const ran_out_of_money = !rSummary.maxedOut;
-                const show_as_insolvent = ran_out_of_money && rSummary.totalMonths < targetMonths;
+                // Deduct initial costs
+                if (p.pricingMode === 'deposit' && p.depositAmount > 0) {
+                    cash -= p.depositAmount;
+                    depositBook = p.depositAmount;
+                }
+                if (p.pricingMode === 'entrance_fee' && p.entranceFeeAmount > 0) {
+                    cash -= p.entranceFeeAmount;
+                    entranceFeeBook = p.entranceFeeAmount;
+                }
+                cash -= p.oneTimeCosts;
 
-                if (show_as_insolvent) {
-                    rowClass = 'insolvent';
-                    const lastLog = result.monthlyLog[result.monthlyLog.length - 1];
-                    displayMonths = lastLog.month;
-                    indMonths = lastLog.independentMonths;
-                    nursMonths = lastLog.nursingMonths;
-                    finalCash = 0;
-                    refundEnd = lastLog.refund;
+                const monthlyLog = [];
+
+                // Immediate Insolvency Check
+                if (cash < 0) {
+                     return { 
+                         summary: { 
+                             totalMonths: 0, independentMonths: 0, nursingMonths: 0, 
+                             refundEnd: p.pricingMode === 'deposit' ? p.depositAmount : p.entranceFeeAmount, 
+                             finalCash: 0, trackId: p.id, trackName: p.trackName, 
+                             maxedOut: false, pricingMode: p.pricingMode 
+                        }, 
+                        monthlyLog 
+                    };
+                }
+
+                // Constants for calculation
+                const monthlyReturn = Math.pow(1 + p.annualReturn, 1/12) - 1;
+                const monthlyInfl = Math.pow(1 + p.annualInflation, 1/12) - 1;
+                const maxMonths = p.maxYears > 0 ? p.maxYears * 12 : 50 * 12;
+
+                // Pre-calculate constants to avoid repeated logic in loop
+                const isDeposit = p.pricingMode === 'deposit';
+                const isEntrance = p.pricingMode === 'entrance_fee';
+                
+                // Depreciation config
+                const depositFloor = isDeposit ? (p.depositAmount || 0) * (p.depositRefundPct || 0) : 0;
+                const depositMonthlyDepreciation = isDeposit ? (p.depositAmount || 0) * ((p.depositDepreciationPct || 0) / 12) : 0;
+                const entranceFeeMonthlyDep = isEntrance ? p.entranceFeeAmount * (p.entranceFeeDepreciationRateMonthly || 0) : 0;
+                const entranceFeeMaxMonths = isEntrance ? p.entranceFeeDepreciationYears * 12 : 0;
+
+                // Rent constants
+                const maintenanceMonthly = p.annualMaintenance / 12;
+                const rentNetFactor = (1 - p.rentTaxPct) * (1 - p.vacancyPct);
+
+                // Loop Vars
+                let t = 0, independentMonths = 0, nursingMonths = 0, lastPositiveCash = cash;
+                
+                while (t < maxMonths) {
+                    // Optimized Inflation pow
+                    const inflationFactor = Math.pow(1 + monthlyInfl, t);
                     
-                    const cumulativeCost = result.monthlyLog.reduce((sum, log) => sum + (log.totalCost || 0), 0);
-                    const totalProviderEconomic = result.monthlyLog.reduce((sum, log) => sum + (log.providerEconomicCost || 0), 0);
-                    const totalProviderCash = result.monthlyLog.reduce((sum, log) => sum + (log.providerCost || 0), 0);
-                    
-                    cumulativeDepreciation = totalProviderEconomic - totalProviderCash;
-                    cumulativeMaintenance = totalProviderCash;
-                    
-                    const cumulativeLivingCost = cumulativeCost - totalProviderCash;
-                    totalEconomicCost = totalProviderEconomic + cumulativeLivingCost;
+                    // Cash Return
+                    cash *= (1 + monthlyReturn);
 
-                    years = Math.floor(displayMonths / 12);
-                    months = displayMonths % 12;
-                    durationNote = `<div class="note danger">ההון אזל לאחר ${years} שנים ו־${months} חודשים</div>`;
-                } else {
-                    const cappedTargetMonths = Math.min(targetMonths, rSummary.totalMonths);
-                    const relevantLogs = result.monthlyLog.slice(0, cappedTargetMonths);
+                    // Expenses
+                    let base;
+                    if (isDeposit) base = p.baseWithDeposit;
+                    else if (isEntrance) base = p.baseWithEntranceFee;
+                    else base = p.baseNoDeposit;
                     
-                    if (relevantLogs.length > 0) {
-                        const lastLog = relevantLogs[relevantLogs.length - 1];
-                        displayMonths = lastLog.month;
-                        indMonths = lastLog.independentMonths;
-                        nursMonths = lastLog.nursingMonths;
-                        finalCash = lastLog.cash;
-                        refundEnd = lastLog.refund;
-
-                        const cumulativeCost = relevantLogs.reduce((sum, log) => sum + (log.totalCost || 0), 0);
-                        const totalProviderEconomic = relevantLogs.reduce((sum, log) => sum + (log.providerEconomicCost || 0), 0);
-                        const totalProviderCash = relevantLogs.reduce((sum, log) => sum + (log.providerCost || 0), 0);
+                    const currentBaseCost = base * inflationFactor;
+                    const currentNursingCost = (p.isNursing && t >= p.monthsIndependent) 
+                        ? (Math.max(0, p.nursingAddon - p.nursingAllowance) * inflationFactor) 
+                        : 0;
                         
-                        cumulativeDepreciation = totalProviderEconomic - totalProviderCash;
-                        cumulativeMaintenance = totalProviderCash;
+                    const providerMonthlyCost = currentBaseCost + currentNursingCost;
+                    const totalMonthlyCost = providerMonthlyCost + (p.monthlyLivingExpenses * inflationFactor);
+
+                    // Income
+                    let rentIncome = 0;
+                    if (p.scenario === 'rent') {
+                        const gross = p.rentGross * inflationFactor;
+                        rentIncome = Math.max(0, (gross * rentNetFactor) - maintenanceMonthly);
+                    }
+                    const income = p.monthlyIncome + rentIncome;
+
+                    // Net Flow
+                    cash += (income - totalMonthlyCost);
+                    
+                    // Bookkeeping: Depreciation
+                    let depreciationThisMonth = 0;
+                    
+                    if (isDeposit && depositBook > depositFloor) {
+                        const maxDeductible = Math.max(0, depositBook - depositFloor);
+                        const actualDeduction = Math.min(depositMonthlyDepreciation, maxDeductible);
+                        depreciationThisMonth = actualDeduction;
+                        depositBook -= actualDeduction;
+                    }
+                    
+                    if (isEntrance && entranceFeeBook > 0 && t < entranceFeeMaxMonths) {
+                        const actualDepreciation = Math.min(entranceFeeBook, entranceFeeMonthlyDep);
+                        depreciationThisMonth = actualDepreciation;
+                        entranceFeeBook = Math.max(0, entranceFeeBook - entranceFeeMonthlyDep);
+                    }
+                    
+                    const providerEconomicCost = providerMonthlyCost + depreciationThisMonth;
+
+                    if (cash < 0) break;
+                    
+                    if (p.isNursing && t >= p.monthsIndependent) nursingMonths++; else independentMonths++;
+                    lastPositiveCash = cash;
+                    
+                    const refundCurrent = isDeposit ? depositBook : (isEntrance ? entranceFeeBook : 0);
+                    
+                    monthlyLog.push({ 
+                        month: t + 1, 
+                        totalCost: totalMonthlyCost, 
+                        providerCost: providerMonthlyCost, 
+                        providerEconomicCost, 
+                        cash: lastPositiveCash, 
+                        refund: refundCurrent, 
+                        independentMonths, 
+                        nursingMonths 
+                    });
+                    
+                    t++;
+                }
+
+                const refundEnd = isDeposit ? depositBook : (isEntrance ? entranceFeeBook : 0);
+
+                return { 
+                    summary: { 
+                        totalMonths: t, independentMonths, nursingMonths, refundEnd, 
+                        finalCash: lastPositiveCash, trackId: p.id, trackName: p.trackName, 
+                        maxedOut: t >= maxMonths, pricingMode: p.pricingMode 
+                    }, 
+                    monthlyLog 
+                };
+            }
+        };
+
+        // --- State Management ---
+        const State = {
+            tracks: [],
+            simulationResults: [],
+            
+            addTrack: () => {
+                const newTrack = {
+                    id: Date.now(),
+                    name: `מסלול ${State.tracks.length + 1}`,
+                    pricingMode: 'deposit'
+                };
+                State.tracks.push(newTrack);
+                return newTrack;
+            },
+            
+            removeTrack: (id) => {
+                State.tracks = State.tracks.filter(t => t.id != id);
+            },
+            
+            clearTracks: () => {
+                State.tracks = [];
+            }
+        };
+
+        // --- UI Manager ---
+        const UI = {
+            // Split reading inputs to optimize batch updates
+            readCommonInputs: () => {
+                 const getVal = (id) => {
+                    const el = Utils.$(id);
+                    return el ? Utils.unformat(el.value) : 0;
+                };
+
+                return {
+                    isNursing: Utils.$('isNursing').checked,
+                    initCash: getVal('initCash'),
+                    monthlyIncome: getVal('monthlyIncome'),
+                    monthlyLivingExpenses: getVal('monthlyLivingExpenses'),
+                    oneTimeCosts: getVal('oneTimeCosts'),
+                    annualReturn: getVal('annualReturn') / 100,
+                    annualInflation: getVal('annualInflation') / 100,
+                    maxYears: getVal('maxYears'),
+                    monthsIndependent: getVal('monthsIndependent'),
+                    nursingAddon: getVal('nursingAddon'),
+                    nursingAllowance: getVal('nursingAllowance'),
+                    scenario: Utils.$('assetScenarioSelect').value,
+                    salePrice: getVal('salePrice'),
+                    saleCostsPct: getVal('saleCostsPct') / 100,
+                    rentGross: getVal('rentGross'),
+                    rentTaxPct: getVal('rentTaxPct') / 100,
+                    vacancyPct: getVal('vacancyPct') / 100,
+                    annualMaintenance: getVal('annualMaintenance'),
+                };
+            },
+
+            readTrackInputs: (trackId) => {
+                const pMode = Utils.$(`pricingMode_${trackId}`).value;
+                const trackName = Utils.$(`trackName_${trackId}`).value;
+
+                // Helper for safe fetching
+                const getVal = (id) => {
+                    const el = Utils.$(id);
+                    return el ? Utils.unformat(el.value) : 0;
+                };
+
+                const depPctVal = pMode === 'deposit' ? getVal(`depositDepreciationPct_${trackId}`) : 0;
+                const depYearsVal = pMode === 'deposit' ? getVal(`depositDepreciationYears_${trackId}`) : 0;
+
+                return {
+                    id: trackId,
+                    trackName: trackName,
+                    pricingMode: pMode,
+                    baseWithDeposit: pMode === 'deposit' ? getVal(`baseWithDeposit_${trackId}`) : 0,
+                    baseWithEntranceFee: pMode === 'entrance_fee' ? getVal(`baseWithEntranceFee_${trackId}`) : 0,
+                    baseNoDeposit: pMode === 'none' ? getVal(`baseNoDeposit_${trackId}`) : 0,
+                    depositAmount: pMode === 'deposit' ? getVal(`depositAmount_${trackId}`) : 0,
+                    depositDepreciationPct: depPctVal / 100,
+                    depositDepreciationYears: depYearsVal,
+                    depositRefundPct: pMode === 'deposit' ? Math.max(0, (100 - (depYearsVal * depPctVal)) / 100) : 0,
+                    entranceFeeAmount: pMode === 'entrance_fee' ? getVal(`entranceFeeAmount_${trackId}`) : 0,
+                    entranceFeeDepreciationRateMonthly: pMode === 'entrance_fee' ? (parseFloat(Utils.$(`entranceFeeDepreciationRateMonthly_${trackId}`)?.value || 0) / 100) : 0,
+                    entranceFeeDepreciationYears: pMode === 'entrance_fee' ? getVal(`entranceFeeDepreciationYears_${trackId}`) : 0,
+                };
+            },
+
+            readAllInputsForTrack: (trackId) => {
+                // Wrapper for single track reads (less efficient but convenient)
+                return { ...UI.readCommonInputs(), ...UI.readTrackInputs(trackId) };
+            },
+
+            // -- Rendering Components --
+            Templates: {
+                spinner: (id, val, cls = '', attrs = '') => `
+                    <div class="spinner-control">
+                        <button type="button" class="spinner-btn" data-step-dir="up" data-target="${id}">+</button>
+                        <input type="text" id="${id}" value="${val}" class="${cls}" inputmode="decimal" ${attrs}/>
+                        <button type="button" class="spinner-btn" data-step-dir="down" data-target="${id}">-</button>
+                    </div>`,
+                
+                depositModeInputs: (id) => `
+                    <div class="row">
+                        <div class="span-2">
+                            <label for="baseWithDeposit_${id}">דמי אחזקה (₪)</label>
+                            ${UI.Templates.spinner(`baseWithDeposit_${id}`, '9000', 'expense', `data-track-id="${id}" data-base-value="9000"`)}
+                        </div>
+                        <div class="span-2">
+                            <label for="reducedDepositAmount_${id}" class="tooltip-header">פקדון מופחת (₪)<span class="tooltip-text">סכום ההפחתה מהפיקדון. כל 50,000₪ הפחתה מהפיקדון מוסיפים 500₪ לדמי האחזקה החודשיים.</span></label>
+                            <div class="spinner-control">
+                                <button type="button" class="spinner-btn stepper-btn" data-step-dir="up" data-track-id="${id}">+</button>
+                                <input type="text" id="reducedDepositAmount_${id}" data-track-id="${id}" value="0" class="expense" inputmode="decimal">
+                                <button type="button" class="spinner-btn stepper-btn" data-step-dir="down" data-track-id="${id}">-</button>
+                            </div>
+                        </div>
+                        <div class="span-4">
+                            <label for="depositAmount_${id}">סכום פיקדון (₪)</label>
+                            ${UI.Templates.spinner(`depositAmount_${id}`, '1000000', 'income', `data-track-id="${id}" data-base-value="1000000"`)}
+                        </div>
+                        <div class="span-2"><label for="depositDepreciationPct_${id}">פחת פיקדון שנתי (%)</label>${UI.Templates.spinner(`depositDepreciationPct_${id}`, '3', 'expense')}</div>
+                        <div class="span-2">
+                            <label for="depositDepreciationYears_${id}" class="tooltip-header">
+                                תקופת שחיקה (שנים)
+                                <span class="tooltip-text">תקופת השחיקה המקסימלית של הפיקדון. לאחר תקופה זו, גביית הפחת נפסקת ויתרת הפיקדון נשמרת.</span>
+                                <span class="note" id="refundPctNote_${id}" style="display: block; font-weight: normal; line-height: 1.2; margin-top: 2px;"></span>
+                            </label>
+                            ${UI.Templates.spinner(`depositDepreciationYears_${id}`, '12', 'income')}
+                        </div>
+                    </div>`,
+
+                entranceModeInputs: (id) => `
+                    <div class="row">
+                        <div class="span-3"><label for="baseWithEntranceFee_${id}">דמי אחזקה (₪)</label>${UI.Templates.spinner(`baseWithEntranceFee_${id}`, '9500', 'expense')}</div>
+                        <div class="span-3"><label for="entranceFeeAmount_${id}">סכום דמי כניסה (₪)</label>${UI.Templates.spinner(`entranceFeeAmount_${id}`, '450000', 'income')}</div>
+                        <div class="span-3"><label for="entranceFeeDepreciationYears_${id}">משך הפחת (שנים)</label>${UI.Templates.spinner(`entranceFeeDepreciationYears_${id}`, '5', 'expense')}</div>
+                        <div class="span-3"><label for="entranceFeeDepreciationRateMonthly_${id}">פחת חודשי (מחושב)</label><input type="text" id="entranceFeeDepreciationRateMonthly_${id}" value="" class="expense" inputmode="decimal" readonly style="background-color: var(--bg); cursor: not-allowed;"></div>
+                    </div>`,
+                
+                noneModeInputs: (id) => `
+                     <div class="row"><div class="span-3"><label for="baseNoDeposit_${id}">דמי אחזקה (₪)</label>${UI.Templates.spinner(`baseNoDeposit_${id}`, '14000', 'expense')}</div></div>`
+            },
+
+            renderTrackCard: (track) => {
+                const trackId = track.id;
+                const card = document.createElement('div');
+                card.className = 'track-card';
+                card.dataset.trackId = trackId;
+                
+                // Safe values
+                const safeName = Utils.escapeHtml(track.name);
+                const isSelected = (val) => track.pricingMode === val ? 'selected' : '';
+
+                card.innerHTML = `
+                    <button class="remove-track-btn" data-remove-track-id="${trackId}" aria-label="הסר מסלול">&times;</button>
+                    <button class="toggle-track-btn" data-toggle-track-id="${trackId}" aria-label="מזער/הרחב">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                    </button>
+                    <div class="track-header">
+                        <div class="form-group"><label for="trackName_${trackId}">שם החברה-סוג החדר</label><input type="text" id="trackName_${trackId}" value="${safeName}" placeholder="לדוגמה: פאלאס - דירת 2 חדרים"></div>
+                        <div class="form-group"><label for="pricingMode_${trackId}">סוג המסלול</label>
+                            <select id="pricingMode_${trackId}">
+                                <option value="deposit" ${isSelected('deposit')}>עם פיקדון</option>
+                                <option value="entrance_fee" ${isSelected('entrance_fee')}>דמי כניסה</option>
+                                <option value="none" ${isSelected('none')}>ללא</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="track-body"></div>
+                    <div class="track-preview" id="trackPreview_${trackId}"></div>
+                    <div class="track-collapsed-view" id="trackCollapsed_${trackId}"></div>`;
+
+                Utils.$('tracksContainer').appendChild(card);
+                UI.updateTrackBody(trackId);
+            },
+
+            updateTrackBody: (trackId) => {
+                const card = document.querySelector(`.track-card[data-track-id='${trackId}']`);
+                const body = card.querySelector('.track-body');
+                const mode = card.querySelector(`#pricingMode_${trackId}`).value;
+
+                let html = '';
+                if (mode === 'deposit') html = UI.Templates.depositModeInputs(trackId);
+                else if (mode === 'entrance_fee') html = UI.Templates.entranceModeInputs(trackId);
+                else html = UI.Templates.noneModeInputs(trackId);
+                
+                body.innerHTML = html;
+                UI.setupNumberFormatting(body);
+                
+                if (mode === 'deposit') UI.updateRefundPctNote(trackId);
+                if (mode === 'entrance_fee') UI.updateCalculatedEntranceFeeRate(trackId);
+                UI.updateTrackPreview(trackId);
+            },
+
+            // Pure HTML generator to separate logic from DOM updates
+            generatePreviewHTML: (result, params) => {
+                const log = result.monthlyLog;
+                
+                if (!log || log.length === 0) {
+                    return {
+                        preview: '',
+                        collapsed: `
+                        <div class="collapsed-title">${Utils.escapeHtml(params.trackName) || 'מסלול ללא שם'}</div>
+                        <div class="collapsed-stats" style="justify-content: center; opacity: 0.5;">נתונים חסרים</div>`
+                    };
+                }
+                
+                const summary = result.summary;
+                const totalBalance = summary.finalCash + summary.refundEnd;
+                
+                // Calculate aggregated values
+                const totalProviderCash = log.reduce((sum, item) => sum + (item.providerCost || 0), 0);
+                const totalProviderEconomic = log.reduce((sum, item) => sum + (item.providerEconomicCost || 0), 0);
+                const depreciation = totalProviderEconomic - totalProviderCash;
+
+                // Label Logic
+                let depLabel = `(ל-${params.maxYears} שנים)`;
+                if (params.pricingMode === 'deposit') depLabel = `(ל-${params.depositDepreciationYears} שנים)`;
+                else if (params.pricingMode === 'entrance_fee') depLabel = `(ל-${params.entranceFeeDepreciationYears} שנים)`;
+
+                // Tooltip Texts
+                const refundTooltip = params.pricingMode === 'entrance_fee'
+                    ? 'יתרת דמי הכניסה שנותרה להחזר לאחר ניכוי הפחת המוגדר בחוזה.'
+                    : 'סכום הפיקדון שנותר להחזר לאחר ניכוי הפחת השנתי המצטבר.';
+                
+                const finalCashTooltip = 'יתרת ההון הנזיל בבנק בסיום התקופה. החישוב: הון התחלתי + סך הכנסות (פנסיה, ריבית, שכירות) פחות סך הוצאות (דמי אחזקה, מחייה) לאורך השנים.';
+
+                let refundLabel = params.pricingMode === 'entrance_fee' ? 'יתרת דמי כניסה' : 'יתרת הפיקדון';
+                let refundHtml = params.pricingMode !== 'none' ? `
+                    <div class="preview-item">
+                        <span class="preview-label tooltip-header">${refundLabel} (סוף תקופה)<span class="tooltip-text">${refundTooltip}</span></span>
+                        <span class="preview-value">${Utils.fmt(summary.refundEnd)} ₪</span>
+                    </div>` : '';
+
+                let insolvencyHtml = '';
+                if (!summary.maxedOut) {
+                     const years = Math.floor(summary.totalMonths / 12);
+                     const months = summary.totalMonths % 12;
+                     insolvencyHtml = `
+                    <div class="preview-item insolvency-alert">
+                        <span class="preview-label" style="color: var(--danger);">חדלות פירעון</span>
+                        <span class="preview-value" style="color: var(--danger); direction: rtl;">${years} שנים ו-${months} חודשים</span>
+                    </div>`;
+                }
+
+                const previewHtml = `
+                    <div class="preview-item"><span class="preview-label">צפי אחזקה (ל-${params.maxYears} שנים)</span><span class="preview-value">${Utils.fmt(totalProviderCash)} ₪</span></div>
+                    <div class="preview-item"><span class="preview-label">צפי שחיקה ${depLabel}</span><span class="preview-value">${Utils.fmt(depreciation)} ₪</span></div>
+                    ${refundHtml}
+                    <div class="preview-item"><span class="preview-label tooltip-header">יתרת החשבון (סוף תקופה)<span class="tooltip-text">${finalCashTooltip}</span></span><span class="preview-value">${Utils.fmt(summary.finalCash)} ₪</span></div>
+                    <div class="preview-item"><span class="preview-label">סה"כ יתרה (הון + החזר)</span><span class="preview-value ok" style="font-weight: 800;">${Utils.fmt(totalBalance)} ₪</span></div>
+                    <div class="preview-end-group">${insolvencyHtml}</div>`;
+
+                const modeLabels = { 'deposit': 'מסלול פיקדון', 'entrance_fee': 'דמי כניסה', 'none': 'ללא פיקדון' };
+                const typeLabel = modeLabels[params.pricingMode] || '';
+
+                const collapsedHtml = `
+                        <div class="collapsed-title">
+                            ${Utils.escapeHtml(params.trackName) || 'מסלול ללא שם'}
+                            <span style="font-weight:normal; opacity:0.7; font-size:0.9em; margin-right:8px;">• ${typeLabel}</span>
+                        </div>
+                        <div class="collapsed-stats">
+                            <div class="collapsed-stat-item" title="צפי אחזקה"><span class="collapsed-stat-label">אחזקה</span><span class="collapsed-stat-value">${Utils.fmt(totalProviderCash)}</span></div>
+                            <div class="collapsed-stat-item" title="צפי שחיקה"><span class="collapsed-stat-label">שחיקה</span><span class="collapsed-stat-value">${Utils.fmt(depreciation)}</span></div>
+                            ${params.pricingMode !== 'none' ? `<div class="collapsed-stat-item" title="${refundLabel}"><span class="collapsed-stat-label">החזר</span><span class="collapsed-stat-value">${Utils.fmt(summary.refundEnd)}</span></div>` : ''}
+                            <div class="collapsed-stat-item" title="יתרה לסיום"><span class="collapsed-stat-label">יתרה</span><span class="collapsed-stat-value">${Utils.fmt(summary.finalCash)}</span></div>
+                            <div class="collapsed-stat-item" title="סה&quot;כ יתרה"><span class="collapsed-stat-label">סה"כ</span><span class="collapsed-stat-value ok" style="font-weight: 800;">${Utils.fmt(totalBalance)}</span></div>
+                        </div>
+                        <div style="margin-right: auto; color: var(--muted);"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></div>`;
+                
+                return { preview: previewHtml, collapsed: collapsedHtml };
+            },
+
+            // Updates a specific track's preview in DOM
+            updateTrackPreview: (trackId) => {
+                const params = UI.readAllInputsForTrack(trackId);
+                if (!params) return;
+                const result = Calculator.simulate(params);
+                const html = UI.generatePreviewHTML(result, params);
+                
+                const previewEl = Utils.$(`trackPreview_${trackId}`);
+                if (previewEl) previewEl.innerHTML = html.preview;
+                
+                const collapsedEl = Utils.$(`trackCollapsed_${trackId}`);
+                if (collapsedEl) collapsedEl.innerHTML = html.collapsed;
+            },
+
+            // Batch update for all tracks to avoid layout thrashing
+            updateAllPreviews: () => {
+                const common = UI.readCommonInputs();
+                const cards = document.querySelectorAll('.track-card');
+                
+                // Phase 1: Read and Calculate (JS only)
+                const updates = Array.from(cards).map(card => {
+                    const trackId = card.dataset.trackId;
+                    const trackParams = UI.readTrackInputs(trackId);
+                    const params = { ...common, ...trackParams };
+                    const result = Calculator.simulate(params);
+                    const html = UI.generatePreviewHTML(result, params);
+                    return { trackId, html };
+                });
+
+                // Phase 2: Write to DOM (One reflow pass ideally)
+                updates.forEach(({ trackId, html }) => {
+                    const previewEl = Utils.$(`trackPreview_${trackId}`);
+                    if (previewEl) previewEl.innerHTML = html.preview;
+                    
+                    const collapsedEl = Utils.$(`trackCollapsed_${trackId}`);
+                    if (collapsedEl) collapsedEl.innerHTML = html.collapsed;
+                });
+            },
+
+            // -- Logic Helpers within UI --
+            updateCalculatedEntranceFeeRate: (trackId) => {
+                const years = Utils.unformat(Utils.$(`entranceFeeDepreciationYears_${trackId}`)?.value);
+                const amount = Utils.unformat(Utils.$(`entranceFeeAmount_${trackId}`)?.value);
+                const rateInput = Utils.$(`entranceFeeDepreciationRateMonthly_${trackId}`);
+                
+                if (rateInput && years > 0) {
+                    const ratePercent = 100 / (years * 12);
+                    const monthlyDepAmount = amount / (years * 12);
+                    rateInput.value = (amount > 0 && isFinite(monthlyDepAmount)) 
+                        ? `${ratePercent.toFixed(3)}% (${Utils.fmt(monthlyDepAmount)} ₪)` 
+                        : `${ratePercent.toFixed(3)}%`;
+                } else if (rateInput) {
+                    rateInput.value = '0.000%';
+                }
+            },
+
+            updateRefundPctNote: (trackId) => {
+                const years = Utils.unformat(Utils.$(`depositDepreciationYears_${trackId}`)?.value);
+                const depPct = Utils.unformat(Utils.$(`depositDepreciationPct_${trackId}`)?.value);
+                const note = Utils.$(`refundPctNote_${trackId}`);
+                
+                if (note) {
+                    let refundPct = Math.max(0, 100 - (years * depPct));
+                    note.textContent = `(החזר מינימלי: ${refundPct.toFixed(1)}%)`;
+                }
+            },
+            
+            updateDepositReduction: (trackId) => {
+                const reducedDepositInput = Utils.$(`reducedDepositAmount_${trackId}`);
+                const maintenanceInput = Utils.$(`baseWithDeposit_${trackId}`);
+                const depositInput = Utils.$(`depositAmount_${trackId}`);
+
+                if (!reducedDepositInput || !maintenanceInput || !depositInput) return;
+                
+                const baseMaintenance = Utils.unformat(maintenanceInput.dataset.baseValue);
+                const baseDeposit = Utils.unformat(depositInput.dataset.baseValue);
+                let reducedAmount = Utils.unformat(reducedDepositInput.value);
+
+                // Cap reduction amount
+                if (reducedAmount > baseDeposit) {
+                    reducedAmount = baseDeposit;
+                    reducedDepositInput.value = Utils.formatNumber(reducedAmount);
+                }
+                
+                const maintenanceIncrease = (reducedAmount / 50000) * 500;
+                maintenanceInput.value = Utils.formatNumber(Math.max(0, baseMaintenance + maintenanceIncrease));
+                depositInput.value = Utils.formatNumber(Math.max(0, baseDeposit - reducedAmount));
+            },
+
+            updateVacancyMonthsNote: () => {
+                const note = Utils.$('vacancyMonthsNote');
+                const pct = Utils.unformat(Utils.$('vacancyPct')?.value);
+                if (note && !isNaN(pct) && pct !== '') {
+                     const months = (pct / 100) * 12;
+                     note.textContent = `(שווה ערך לכ-${(months % 1 === 0 ? months.toFixed(0) : months.toFixed(1))} חודשים)`;
+                } else if (note) {
+                    note.textContent = '';
+                }
+            },
+
+            setupNumberFormatting: (container) => {
+                container.querySelectorAll('input[type="text"][inputmode="decimal"]').forEach(input => {
+                    // Initial format
+                    if (input.value && !input.value.includes(',')) {
+                        input.value = Utils.formatNumber(input.value);
+                    }
+
+                    input.addEventListener('input', (e) => {
+                        const target = e.target;
+                        const originalValue = target.value;
+                        const cursorPos = target.selectionStart;
                         
-                        const cumulativeLivingCost = cumulativeCost - totalProviderCash;
-                        totalEconomicCost = totalProviderEconomic + cumulativeLivingCost;
+                        // Performance: Count digits only if needed
+                        const digitsToRight = originalValue.length - cursorPos; 
                         
-                        years = Math.floor(displayMonths / 12);
-                        months = displayMonths % 12;
-                        durationNote = `<div class="note">${years} שנים ו־${months} חודשים</div>`;
+                        const formattedValue = Utils.formatNumber(originalValue);
+                        if (originalValue === formattedValue) return;
+                        
+                        target.value = formattedValue;
+                        
+                        // Maintain cursor position logic (optimized)
+                        // Simple approximation often works, but here is robust logic:
+                        const newLength = formattedValue.length;
+                        const oldLength = originalValue.length;
+                        let newPos = cursorPos;
+                        
+                        // Adjust cursor if commas were added/removed
+                        if (newLength !== oldLength) {
+                            // Rough adjust: keep distance from right same
+                            newPos = newLength - digitsToRight;
+                            if(newPos < 0) newPos = 0;
+                        }
+                        
+                        target.setSelectionRange(newPos, newPos);
+                    });
+                });
+            },
+
+            renderResultsModal: () => {
+                const container = Utils.$('resultsTableContainer');
+                const targetYear = parseFloat(Utils.$('yearSlider').value);
+                const targetMonths = Math.round(targetYear * 12);
+                
+                const pricingModeMap = { 'deposit': 'עם פיקדון', 'entrance_fee': 'דמי כניסה', 'none': 'ללא' };
+
+                let table = `<table class="results-table"><thead><tr>
+                    <th>שם החברה-סוג החדר</th><th>סוג מסלול</th><th>סה"כ חודשים (עצמאי / סיעודי)</th>
+                    <th class="tooltip-header">עלות מצטברת כוללת (₪)<span class="tooltip-text">סך כל ההוצאות...</span></th>
+                    <th class="tooltip-header">עלות השחיקה (₪)<span class="tooltip-text">החלק היחסי של הפיקדון...</span></th>
+                    <th class="tooltip-header">עלות דמי אחזקה (₪)<span class="tooltip-text">סך התשלומים השוטפים...</span></th>
+                    <th class="tooltip-header">יתרת הון בסיום (₪)<span class="tooltip-text">ההון הנזיל שנותר...</span></th>
+                    <th class="tooltip-header">החזר צפוי (₪)<span class="tooltip-text">הסכום שיתקבל חזרה...</span></th>
+                    <th>תזרים חודשי ראשון (₪)</th>
+                </tr></thead><tbody>`;
+
+                State.simulationResults.forEach(result => {
+                    const rSummary = result.summary;
+                    let displayMonths = 0, indMonths = 0, nursMonths = 0, finalCash = 0, refundEnd = 0,
+                        cumulativeDepreciation = 0, cumulativeMaintenance = 0, totalEconomicCost = 0, durationNote = '';
+                    let rowClass = '';
+
+                    const ranOut = !rSummary.maxedOut;
+                    const showInsolvent = ranOut && rSummary.totalMonths < targetMonths;
+                    const hasLog = result.monthlyLog.length > 0;
+
+                    if (!hasLog) {
+                         rowClass = 'insolvent';
+                         durationNote = '<div class="note danger">לא מספיק הון להתחלה</div>';
+                    } else if (showInsolvent) {
+                        rowClass = 'insolvent';
+                        const last = result.monthlyLog[result.monthlyLog.length - 1];
+                        displayMonths = last.month; indMonths = last.independentMonths; nursMonths = last.nursingMonths;
+                        refundEnd = last.refund;
+                        
+                        const calcLogs = result.monthlyLog;
+                        cumulativeMaintenance = calcLogs.reduce((s, l) => s + (l.providerCost || 0), 0);
+                        const totalEconomic = calcLogs.reduce((s, l) => s + (l.providerEconomicCost || 0), 0);
+                        cumulativeDepreciation = totalEconomic - cumulativeMaintenance;
+                        totalEconomicCost = totalEconomic + (calcLogs.reduce((s, l) => s + (l.totalCost || 0), 0) - cumulativeMaintenance);
+
+                        const y = Math.floor(displayMonths / 12);
+                        const m = displayMonths % 12;
+                        durationNote = `<div class="note danger">ההון אזל לאחר ${y} שנים ו־${m} חודשים</div>`;
                     } else {
-                        displayMonths = 0; indMonths = 0; nursMonths = 0; finalCash = 0; refundEnd = 0; cumulativeDepreciation = 0; cumulativeMaintenance = 0; totalEconomicCost = 0;
-                        durationNote = '<div class="note">---</div>';
+                        // Healthy case or not yet insolvent
+                        const cappedMonths = Math.min(targetMonths, rSummary.totalMonths);
+                        const logs = result.monthlyLog.slice(0, cappedMonths);
+                        const last = logs[logs.length - 1];
+                        
+                        displayMonths = last.month; indMonths = last.independentMonths; nursMonths = last.nursingMonths;
+                        finalCash = last.cash; refundEnd = last.refund;
+                        
+                        cumulativeMaintenance = logs.reduce((s, l) => s + (l.providerCost || 0), 0);
+                        const totalEconomic = logs.reduce((s, l) => s + (l.providerEconomicCost || 0), 0);
+                        cumulativeDepreciation = totalEconomic - cumulativeMaintenance;
+                        totalEconomicCost = totalEconomic + (logs.reduce((s, l) => s + (l.totalCost || 0), 0) - cumulativeMaintenance);
+                        
+                        const y = Math.floor(displayMonths / 12);
+                        const m = displayMonths % 12;
+                        durationNote = `<div class="note">${y} שנים ו־${m} חודשים</div>`;
+                    }
+
+                    // Mobile headers map
+                    const mHeaders = ['שם החברה', 'סוג מסלול', 'סה"כ חודשים', 'עלות מצטברת', 'עלות שחיקה', 'עלות אחזקה', 'יתרת הון', 'החזר צפוי', 'תזרים ראשון'];
+
+                    // Initial Params for First Month Flow
+                    const initP = UI.readAllInputsForTrack(rSummary.trackId);
+                    const base = initP.pricingMode === 'deposit' ? initP.baseWithDeposit : (initP.pricingMode === 'entrance_fee' ? initP.baseWithEntranceFee : initP.baseNoDeposit);
+                    const rent = initP.scenario === 'rent' ? Math.max(0, (initP.rentGross * (1 - initP.rentTaxPct) * (1 - initP.vacancyPct)) - (initP.annualMaintenance / 12)) : 0;
+                    const indNet = (initP.monthlyIncome + rent) - (base + initP.monthlyLivingExpenses);
+
+                    // Tooltip Construction
+                    let tooltip = '';
+                    if (initP.pricingMode === 'deposit') {
+                         tooltip = `<div style="font-weight:bold;margin-bottom:5px;color:var(--accent);">פרטי מסלול פיקדון</div><div>דמי אחזקה: <b>${Utils.fmt(initP.baseWithDeposit)} ₪</b></div><div>סכום פיקדון: <b>${Utils.fmt(initP.depositAmount)} ₪</b></div><div>פחת שנתי: <b>${(initP.depositDepreciationPct * 100).toFixed(1)}%</b></div><div>שנים: <b>${initP.depositDepreciationYears}</b></div>`;
+                    } else if (initP.pricingMode === 'entrance_fee') {
+                         tooltip = `<div style="font-weight:bold;margin-bottom:5px;color:var(--accent);">פרטי מסלול דמי כניסה</div><div>דמי אחזקה: <b>${Utils.fmt(initP.baseWithEntranceFee)} ₪</b></div><div>דמי כניסה: <b>${Utils.fmt(initP.entranceFeeAmount)} ₪</b></div>`;
+                    } else {
+                         tooltip = `<div style="font-weight:bold;margin-bottom:5px;color:var(--accent);">פרטי מסלול שכירות</div><div>דמי אחזקה: <b>${Utils.fmt(initP.baseNoDeposit)} ₪</b></div>`;
+                    }
+
+                    table += `<tr class="${rowClass}">
+                        <td data-label="${mHeaders[0]}"><span class="tooltip-header">${Utils.escapeHtml(rSummary.trackName)}<span class="tooltip-text">${tooltip}</span></span></td>
+                        <td data-label="${mHeaders[1]}">${pricingModeMap[rSummary.pricingMode]}</td>
+                        <td data-label="${mHeaders[2]}"><b>${Utils.fmt(displayMonths)} (${Utils.fmt(indMonths)} / ${Utils.fmt(nursMonths)})</b>${durationNote}</td>
+                        <td data-label="${mHeaders[3]}">${Utils.fmt(totalEconomicCost)}</td>
+                        <td data-label="${mHeaders[4]}">${Utils.fmt(cumulativeDepreciation)}</td>
+                        <td data-label="${mHeaders[5]}">${Utils.fmt(cumulativeMaintenance)}</td>
+                        <td data-label="${mHeaders[6]}">${Utils.fmt(finalCash)}</td>
+                        <td data-label="${mHeaders[7]}">${Utils.fmt(refundEnd)}</td>
+                        <td data-label="${mHeaders[8]}">
+                            <span class="income">${Utils.fmt(initP.monthlyIncome + rent)}</span> /
+                            <span class="expense">${Utils.fmt(base + initP.monthlyLivingExpenses)}</span> /
+                            <b class="${indNet >= 0 ? 'ok' : 'danger'}">${Utils.fmt(indNet)}</b>
+                        </td>
+                    </tr>`;
+                });
+                
+                table += '</tbody></table>';
+                container.innerHTML = table;
+            },
+
+            setupYearSlider: () => {
+                const slider = Utils.$('yearSlider');
+                const bubble = Utils.$('sliderValueBubble');
+                const ticks = Utils.$('sliderTicksContainer');
+                
+                const maxYears = Math.max(0.5, Utils.unformat(Utils.$('maxYears').value) || 15, ...State.simulationResults.map(r => Math.ceil(r.summary.totalMonths / 12)));
+                const min = 0.5;
+                
+                slider.min = min; slider.max = maxYears; slider.value = maxYears;
+                
+                // Draw Ticks
+                ticks.innerHTML = '';
+                const numTicks = Math.floor(maxYears);
+                let step = numTicks > 50 ? 10 : (numTicks > 20 ? 5 : 1);
+
+                for (let i = 1; i <= numTicks; i++) {
+                    if (i > 0 && i % step !== 0 && i !== numTicks && numTicks > 10) continue;
+                    const pct = ((i - min) / (maxYears - min)) * 100;
+                    if (pct >= 0 && pct <= 100) {
+                        const tick = document.createElement('div'); tick.className = 'slider-tick'; tick.style.right = `${pct}%`;
+                        const label = document.createElement('span'); label.className = 'slider-tick-label'; label.textContent = i; label.style.right = `${pct}%`;
+                        ticks.append(tick, label);
                     }
                 }
+
+                // Update UI Function
+                const update = () => {
+                    const val = parseFloat(slider.value);
+                    Utils.$('yearSliderLabel').textContent = `הצג תוצאות לאחר: ${val} שנים`;
+                    bubble.innerHTML = `${val} שנים`;
+                    const pct = (maxYears - min) > 0 ? ((val - min) / (maxYears - min)) * 100 : 0;
+                    bubble.style.right = `${pct}%`;
+                    slider.style.setProperty('--slider-fill-percent', `${pct}%`);
+                };
+
+                slider.oninput = () => { update(); UI.renderResultsModal(); };
+                update();
             }
-            
-            const pricingModeText = pricingModeMap[rSummary.pricingMode] || rSummary.pricingMode;
-            const firstMonthParams = readAllInputsForTrack(rSummary.trackId);
-            const baseCost = (firstMonthParams.pricingMode === 'deposit') ? firstMonthParams.baseWithDeposit : (firstMonthParams.pricingMode === 'entrance_fee') ? firstMonthParams.baseWithEntranceFee : firstMonthParams.baseNoDeposit;
-            const livingExpenses = firstMonthParams.monthlyLivingExpenses;
-            const fixedIncome = firstMonthParams.monthlyIncome;
-            const rentIncome = (firstMonthParams.scenario === 'rent') ? Math.max(0, (firstMonthParams.rentGross * (1 - firstMonthParams.rentTaxPct) * (1 - firstMonthParams.vacancyPct)) - (firstMonthParams.annualMaintenance / 12)) : 0;
-            const indNet = (fixedIncome + rentIncome) - (baseCost + livingExpenses);
-
-            const trackParams = readAllInputsForTrack(rSummary.trackId);
-            let tooltipDetails = '';
-
-            if (trackParams) {
-                if (trackParams.pricingMode === 'deposit') {
-                    tooltipDetails = `
-                        <div style="font-weight: bold; margin-bottom: 5px; color: var(--accent);">פרטי מסלול פיקדון</div>
-                        <div>דמי אחזקה: <b>${fmt(trackParams.baseWithDeposit)} ₪</b></div>
-                        <div>סכום פיקדון: <b>${fmt(trackParams.depositAmount)} ₪</b></div>
-                        <div>פחת פיקדון שנתי: <b>${(trackParams.depositDepreciationPct * 100).toFixed(1)}%</b></div>
-                        <div>תקופת שחיקה: <b>${trackParams.depositDepreciationYears} שנים</b></div>
-                        <div>החזר מינימלי: <b>${(trackParams.depositRefundPct * 100).toFixed(1)}%</b></div>
-                    `;
-                } else if (trackParams.pricingMode === 'entrance_fee') {
-                    const rateInput = $(`entranceFeeDepreciationRateMonthly_${trackParams.id}`);
-                    const calculatedRateDisplay = rateInput ? rateInput.value : 'N/A';
-
-                    tooltipDetails = `
-                        <div style="font-weight: bold; margin-bottom: 5px; color: var(--accent);">פרטי מסלול דמי כניסה</div>
-                        <div>דמי אחזקה: <b>${fmt(trackParams.baseWithEntranceFee)} ₪</b></div>
-                        <div>דמי כניסה: <b>${fmt(trackParams.entranceFeeAmount)} ₪</b></div>
-                        <div>משך הפחת: <b>${trackParams.entranceFeeDepreciationYears} שנים</b></div>
-                        <div>פחת חודשי: <b>${calculatedRateDisplay}</b></div>
-                    `;
-                } else if (trackParams.pricingMode === 'none') {
-                    tooltipDetails = `
-                        <div style="font-weight: bold; margin-bottom: 5px; color: var(--accent);">פרטי מסלול שכירות</div>
-                        <div>דמי אחזקה: <b>${fmt(trackParams.baseNoDeposit)} ₪</b></div>
-                    `;
-                }
-            }
-
-            table += `<tr class="${rowClass}">
-                <td data-label="${escapedMobileHeaders[0]}">
-                    <span class="tooltip-header">${rSummary.trackName}
-                        <span class="tooltip-text" style="width: auto; white-space: nowrap; text-align: right; line-height: 1.6;">
-                            ${tooltipDetails}
-                        </span>
-                    </span>
-                </td>
-                <td data-label="${escapedMobileHeaders[1]}">${pricingModeText}</td>
-                <td data-label="${escapedMobileHeaders[2]}"><b>${fmt(displayMonths)} (${fmt(indMonths)} / ${fmt(nursMonths)})</b>${durationNote || ''}</td>
-                <td data-label="${escapedMobileHeaders[3]}">${fmt(totalEconomicCost)}</td>
-                <td data-label="${escapedMobileHeaders[4]}">${fmt(cumulativeDepreciation)}</td>
-                <td data-label="${escapedMobileHeaders[5]}">${fmt(cumulativeMaintenance)}</td>
-                <td data-label="${escapedMobileHeaders[6]}">${fmt(finalCash)}</td>
-                <td data-label="${escapedMobileHeaders[7]}">${fmt(refundEnd)}</td>
-                <td data-label="${escapedMobileHeaders[8]}">
-                    <span class="income">${fmt(fixedIncome + rentIncome)}</span> /
-                    <span class="expense">${fmt(baseCost + livingExpenses)}</span> /
-                    <b class="${indNet >= 0 ? 'ok' : 'danger'}">${fmt(indNet)}</b>
-                </td>
-            </tr>`;
-        });
-
-        table += '</tbody></table>';
-        container.innerHTML = table;
-    }
-
-    // --- Input Reading ---
-    function readAllInputsForTrack(trackId) {
-        const trackCard = document.querySelector(`.track-card[data-track-id='${trackId}']`);
-        if (!trackCard) return null;
-        
-        const pMode = $(`pricingMode_${trackId}`).value;
-        const trackName = $(`trackName_${trackId}`).value;
-
-        // Calculate refund pct from years
-        const depPctVal = pMode === 'deposit' ? unformat($(`depositDepreciationPct_${trackId}`).value) : 0;
-        const depYearsVal = pMode === 'deposit' ? unformat($(`depositDepreciationYears_${trackId}`).value) : 0;
-        
-        const trackParams = {
-            id: trackId,
-            trackName: trackName,
-            pricingMode: pMode,
-            baseWithDeposit: pMode === 'deposit' ? unformat($(`baseWithDeposit_${trackId}`).value) : 0,
-            baseWithEntranceFee: pMode === 'entrance_fee' ? unformat($(`baseWithEntranceFee_${trackId}`).value) : 0,
-            baseNoDeposit: pMode === 'none' ? unformat($(`baseNoDeposit_${trackId}`).value) : 0,
-            depositAmount: pMode === 'deposit' ? unformat($(`depositAmount_${trackId}`).value) : 0,
-            depositDepreciationPct: depPctVal / 100,
-            depositDepreciationYears: depYearsVal,
-            depositRefundPct: pMode === 'deposit' ? Math.max(0, (100 - (depYearsVal * depPctVal)) / 100) : 0,
-            entranceFeeAmount: pMode === 'entrance_fee' ? unformat($(`entranceFeeAmount_${trackId}`).value) : 0,
-            entranceFeeDepreciationRateMonthly: pMode === 'entrance_fee' ? (parseFloat($(`entranceFeeDepreciationRateMonthly_${trackId}`).value) || 0) / 100 : 0,
-            entranceFeeDepreciationYears: pMode === 'entrance_fee' ? unformat($(`entranceFeeDepreciationYears_${trackId}`).value) : 0,
-        };
-        
-        const commonParams = {
-            isNursing: $('isNursing').checked,
-            initCash: unformat($('initCash').value),
-            monthlyIncome: unformat($('monthlyIncome').value),
-            monthlyLivingExpenses: unformat($('monthlyLivingExpenses').value),
-            oneTimeCosts: unformat($('oneTimeCosts').value),
-            annualReturn: unformat($('annualReturn').value) / 100,
-            annualInflation: unformat($('annualInflation').value) / 100,
-            maxYears: unformat($('maxYears').value),
-            monthsIndependent: unformat($('monthsIndependent').value),
-            nursingAddon: unformat($('nursingAddon').value),
-            nursingAllowance: unformat($('nursingAllowance').value),
-            scenario: $('assetScenarioSelect').value,
-            salePrice: unformat($('salePrice').value),
-            saleCostsPct: unformat($('saleCostsPct').value) / 100,
-            rentGross: unformat($('rentGross').value),
-            rentTaxPct: unformat($('rentTaxPct').value) / 100,
-            vacancyPct: unformat($('vacancyPct').value) / 100,
-            annualMaintenance: unformat($('annualMaintenance').value),
         };
 
-        return { ...commonParams, ...trackParams };
-    }
+        // --- Event Orchestration ---
+        const Events = {
+            init: () => {
+                // Initial Format
+                UI.setupNumberFormatting(document.body);
+                UI.updateVacancyMonthsNote();
 
-    // --- Import / Export ---
-    function collectDataForExport() {
-        const data = {
-            common: {},
-            tracks: []
-        };
-        
-        // Collect common inputs
-        const commonInputs = document.querySelectorAll('#commonInputsCard input, #commonInputsCard select, .top-bar-settings input');
-        commonInputs.forEach(input => {
-            if (input.type === 'checkbox') {
-                data.common[input.id] = input.checked;
-            } else {
-                data.common[input.id] = input.value;
-            }
-        });
-
-        // Collect tracks
-        document.querySelectorAll('.track-card').forEach(card => {
-            const trackData = {};
-            card.querySelectorAll('input, select').forEach(input => {
-                const key = input.id.split('_')[0]; // e.g., 'trackName' from 'trackName_123'
-                trackData[key] = input.value;
-                if(input.dataset.baseValue) {
-                    trackData[key + '_base'] = input.dataset.baseValue;
-                }
-            });
-            data.tracks.push(trackData);
-        });
-        
-        return data;
-    }
-
-    function handleExport() {
-        try {
-            const data = collectDataForExport();
-            const dataStr = JSON.stringify(data, null, 2);
-            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-            const exportFileDefaultName = 'calculator-data.json';
-            
-            const linkElement = document.createElement('a');
-            linkElement.setAttribute('href', dataUri);
-            linkElement.setAttribute('download', exportFileDefaultName);
-            linkElement.click();
-        } catch (error) {
-            console.error("Error during export:", error);
-            alert("שגיאה בעת ייצוא הנתונים.");
-        }
-    }
-    
-    function applyImportedData(data) {
-        // Apply common inputs
-        for (const id in data.common) {
-            const input = $(id);
-            if (input) {
-                if (input.type === 'checkbox') {
-                    input.checked = data.common[id];
-                } else {
-                    input.value = data.common[id] || '';
-                }
-                input.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        }
-        
-        // Clear existing tracks
-        $('tracksContainer').innerHTML = '';
-        tracks = [];
-
-        // Apply tracks
-        data.tracks.forEach(trackData => {
-            handleAddTrack(); 
-            const newTrack = tracks[tracks.length - 1];
-            const trackId = newTrack.id;
-            const trackCard = document.querySelector(`.track-card[data-track-id='${trackId}']`);
-
-            const modeSelect = $(`pricingMode_${trackId}`);
-            modeSelect.value = trackData.pricingMode;
-            updateTrackBody(trackId);
-
-            for (const key in trackData) {
-                const isBaseValue = key.endsWith('_base');
-                const baseKey = isBaseValue ? key.slice(0, -5) : key;
-                const newId = `${baseKey}_${trackId}`;
-                const input = $(newId);
-                if (input) {
-                    if (isBaseValue) {
-                        input.dataset.baseValue = trackData[key];
+                // Common Inputs Listeners (Debounced Calculation Trigger for previews)
+                const debouncedPreviewUpdate = Utils.debounce((trackId) => {
+                    if (trackId) {
+                        UI.updateTrackPreview(trackId);
                     } else {
-                        input.value = trackData[key] || '';
+                        // Optimized: Batch update for all tracks to prevent Layout Thrashing
+                        UI.updateAllPreviews();
                     }
-                }
-            }
+                }, 100); // Reduce debounce to 100ms for snappier feel
 
-            // Migration logic for old data (refund pct -> years)
-            if (modeSelect.value === 'deposit' && trackData.depositRefundPct !== undefined && trackData.depositDepreciationYears === undefined) {
-                 const yearsInput = $(`depositDepreciationYears_${trackId}`);
-                 const depPctInput = $(`depositDepreciationPct_${trackId}`);
-                 if (yearsInput && depPctInput) {
-                     const refundPct = parseFloat(trackData.depositRefundPct); // e.g. 64
-                     const depPct = parseFloat(trackData.depositDepreciationPct || 3); // e.g. 3
-                     if (depPct > 0) {
-                         const years = (100 - refundPct) / depPct;
-                         yearsInput.value = formatNumber(years);
-                     } else {
-                         yearsInput.value = '0';
-                     }
-                 }
-            }
+                // Global Click Handler (Delegation)
+                document.addEventListener('click', (e) => {
+                    const target = e.target;
+                    
+                    // Spinner Buttons
+                    if (target.matches('.spinner-btn:not(.stepper-btn)')) {
+                        Events.handleSpinner(target);
+                    }
+                    // Stepper Buttons (Deposit Reduction)
+                    else if (target.classList.contains('stepper-btn')) {
+                        Events.handleStepper(target);
+                    }
+                    // Remove Track
+                    else if (target.dataset.removeTrackId) {
+                        const id = target.dataset.removeTrackId;
+                        State.removeTrack(id);
+                        document.querySelector(`.track-card[data-track-id='${id}']`).remove();
+                    }
+                    // Toggle Track
+                    else if (target.closest('.toggle-track-btn')) {
+                         const btn = target.closest('.toggle-track-btn');
+                         const card = document.querySelector(`.track-card[data-track-id='${btn.dataset.toggleTrackId}']`);
+                         if(card) card.classList.toggle('collapsed');
+                    }
+                    // Expand on click collapsed
+                    else if (target.closest('.track-card.collapsed')) {
+                        target.closest('.track-card.collapsed').classList.remove('collapsed');
+                    }
+                });
 
-            // This is crucial: apply number formatting to all the newly loaded values.
-            if (trackCard) {
-                setupNumberFormattingForContainer(trackCard);
-            }
-            
-            // Now, trigger the calculation logic by simulating user input.
-            if (modeSelect.value === 'deposit') {
-                const reducedDepositInput = $(`reducedDepositAmount_${trackId}`);
-                if (reducedDepositInput) {
-                    reducedDepositInput.dispatchEvent(new Event('input', { bubbles: true }));
-                }
-                updateRefundPctNote(trackId);
-            } else if (modeSelect.value === 'entrance_fee') {
-                const yearsInput = $(`entranceFeeDepreciationYears_${trackId}`);
-                if (yearsInput) {
-                    yearsInput.dispatchEvent(new Event('input', { bubbles: true }));
-                }
-            }
-        });
-
-        // Reset collapse button state
-        const btn = $('toggleAllTracksBtn');
-        const tooltip = $('toggleAllTooltip');
-        if(btn && tooltip) {
-             btn.innerHTML = ICONS.collapse;
-             btn.setAttribute('aria-label', 'כווץ הכל');
-             tooltip.textContent = 'כווץ הכל';
-        }
-
-        hideResultsModal();
-        alert('הנתונים יובאו בהצלחה!');
-    }
-
-    function handleImport(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const data = JSON.parse(e.target.result);
-                if (data && data.common && data.tracks) {
-                    applyImportedData(data);
-                } else {
-                    throw new Error("Invalid data structure");
-                }
-            } catch (error) {
-                console.error("Error during import:", error);
-                alert("שגיאה בקריאת הקובץ. ודא שזהו קובץ נתונים תקין.");
-            } finally {
-                event.target.value = null;
-            }
-        };
-        reader.readAsText(file);
-    }
-
-    // --- Event Handlers & Setup ---
-    function handleAddTrack(isUserAction = false) {
-        const newTrack = {
-            id: Date.now(),
-            name: `מסלול ${tracks.length + 1}`,
-            pricingMode: 'deposit'
-        };
-        tracks.push(newTrack);
-        renderTrackCard(newTrack);
-
-        const newCard = document.querySelector(`.track-card[data-track-id='${newTrack.id}']`);
-        // Only scroll if it was a user action (not the initial track) and on mobile
-        if (isUserAction && newCard && window.innerWidth <= 600) {
-            setTimeout(() => {
-                newCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }, 100);
-        }
-    }
-    
-    function handleCalculate() {
-        const trackCards = document.querySelectorAll('.track-card');
-        if (trackCards.length === 0) {
-            alert('יש להוסיף לפחות מסלול אחד להשוואה.');
-            return;
-        }
-
-        simulationResults = Array.from(trackCards).map(card => {
-            const trackId = card.dataset.trackId;
-            const params = readAllInputsForTrack(trackId);
-            return simulate(params);
-        });
-        
-        setupYearSlider();
-        renderResults();
-        showResultsModal();
-    }
-    
-    function updateSliderUI(slider) {
-        const bubble = $('sliderValueBubble');
-        if (!slider || !bubble) return;
-
-        const val = parseFloat(slider.value);
-        const min = parseFloat(slider.min);
-        const max = parseFloat(slider.max);
-        
-        $('yearSliderLabel').textContent = `הצג תוצאות לאחר: ${val} שנים`;
-        
-        bubble.innerHTML = `${val} שנים`;
-        const percent = (max - min) > 0 ? ((val - min) / (max - min)) * 100 : 0;
-        bubble.style.right = `${percent}%`;
-        slider.style.setProperty('--slider-fill-percent', `${percent}%`);
-    }
-
-    function setupYearSlider() {
-        const slider = $('yearSlider');
-        const ticksContainer = $('sliderTicksContainer');
-        const maxYears = Math.max(0.5, unformat($('maxYears').value) || 15, ...simulationResults.map(r => Math.ceil(r.summary.totalMonths / 12)));
-        
-        const min = 0.5;
-        slider.min = min;
-        slider.step = 0.5;
-        slider.max = maxYears;
-        slider.value = maxYears;
-        
-        ticksContainer.innerHTML = '';
-        const numTicks = Math.floor(maxYears);
-        
-        let step = 1;
-        if (numTicks > 20) step = 5;
-        if (numTicks > 50) step = 10;
-
-        for (let i = 1; i <= numTicks; i++) {
-            if (i > 0 && i % step !== 0 && i !== numTicks && numTicks > 10) continue;
-
-            const percent = ((i - min) / (maxYears - min)) * 100;
-            
-            if (percent >= 0 && percent <= 100) {
-                const tick = document.createElement('div');
-                tick.className = 'slider-tick';
-                tick.style.right = `${percent}%`;
-                ticksContainer.appendChild(tick);
+                // Global Change/Input Handler
+                const container = Utils.$('tracksContainer');
+                container.addEventListener('change', (e) => {
+                    if (e.target.id.startsWith('pricingMode_')) {
+                        UI.updateTrackBody(e.target.id.split('_')[1]);
+                    }
+                });
                 
-                const label = document.createElement('span');
-                label.className = 'slider-tick-label';
-                label.textContent = i;
-                label.style.right = `${percent}%`;
-                ticksContainer.appendChild(label);
-            }
-        }
-        
-        slider.oninput = () => {
-            updateSliderUI(slider);
-            renderResults();
-        };
+                container.addEventListener('input', (e) => {
+                    const id = e.target.id;
+                    const trackId = e.target.dataset.trackId || e.target.closest('.track-card')?.dataset.trackId;
+                    
+                    if (id.startsWith('entranceFee')) UI.updateCalculatedEntranceFeeRate(trackId);
+                    if (id.startsWith('reducedDeposit')) UI.updateDepositReduction(trackId);
+                    if (id.startsWith('depositDepreciation')) UI.updateRefundPctNote(trackId);
 
-        updateSliderUI(slider);
-    }
-
-    // --- Utilities ---
-    const formatNumber = (v) => {
-        if (v === '' || v === null || v === undefined) return '';
-        const clean = v.toString().replace(/[^0-9.]/g, '');
-        if (clean === '') return '';
-        const parts = clean.split('.');
-        const integerPart = new Intl.NumberFormat('he-IL').format(Number(parts[0]));
-        return parts.length > 1 ? `${integerPart}.${parts[1]}` : integerPart;
-    };
-    
-    function setupNumberFormattingForContainer(container) {
-        container.querySelectorAll('input[type="text"][inputmode="decimal"]').forEach(input => {
-            input.value = formatNumber(input.value);
-            input.addEventListener('input', (e) => {
-                const { target } = e;
-                const originalValue = target.value;
-                const cursorPos = target.selectionStart;
-                const digitsToRight = (originalValue.substring(cursorPos).match(/\d/g) || []).length;
-                
-                const formattedValue = formatNumber(originalValue);
-                if (originalValue === formattedValue) return;
-                target.value = formattedValue;
-                
-                let newCursorPos = formattedValue.length;
-                if (digitsToRight > 0) {
-                    let digitsCounted = 0;
-                    for (let i = formattedValue.length - 1; i >= 0; i--) {
-                        if (/\d/.test(formattedValue[i])) digitsCounted++;
-                        if (digitsCounted === digitsToRight) {
-                            newCursorPos = i;
-                            break;
+                    // Reset base value logic for manual overrides
+                    if (id.startsWith('baseWithDeposit_') || id.startsWith('depositAmount_')) {
+                        e.target.dataset.baseValue = Utils.unformat(e.target.value);
+                        const redInput = Utils.$(`reducedDepositAmount_${trackId}`);
+                        if (redInput && redInput.value !== '0' && redInput.value !== '') {
+                            redInput.value = Utils.formatNumber('0');
+                            // Recalc reduction to 0 to sync fields
+                            UI.updateDepositReduction(trackId);
+                            // Resync base values
+                            const otherId = id.startsWith('base') ? `depositAmount_${trackId}` : `baseWithDeposit_${trackId}`;
+                            const otherInput = Utils.$(otherId);
+                            if(otherInput) otherInput.dataset.baseValue = Utils.unformat(otherInput.value);
                         }
                     }
+
+                    if (trackId) debouncedPreviewUpdate(trackId);
+                });
+
+                // Common Inputs Change
+                Utils.$('commonInputsCard').addEventListener('input', () => debouncedPreviewUpdate());
+                Utils.$('topBarSettings').addEventListener('input', () => debouncedPreviewUpdate());
+                Utils.$('vacancyPct').addEventListener('input', UI.updateVacancyMonthsNote);
+
+                // Feature Toggles
+                Utils.$('isNursing').addEventListener('change', (e) => Utils.$('nursingFieldsRow').style.display = e.target.checked ? 'grid' : 'none');
+                Utils.$('assetScenarioSelect').addEventListener('change', (e) => {
+                    Utils.$('sellBlock').style.display = e.target.value === 'sell' ? 'block' : 'none';
+                    Utils.$('rentBlock').style.display = e.target.value === 'rent' ? 'block' : 'none';
+                });
+
+                // Buttons
+                Utils.$('addTrackBtn').addEventListener('click', () => {
+                    const t = State.addTrack();
+                    UI.renderTrackCard(t);
+                    if (window.innerWidth <= 600) setTimeout(() => document.querySelector(`.track-card[data-track-id='${t.id}']`)?.scrollIntoView({behavior:'smooth', block:'nearest'}), 100);
+                });
+
+                Utils.$('toggleAllTracksBtn').addEventListener('click', Events.toggleAllTracks);
+                Utils.$('calculateBtn').addEventListener('click', Events.runCalculation);
+                Utils.$('closeModalBtn').addEventListener('click', () => Utils.$('resultsModal').classList.remove('visible'));
+                Utils.$('resultsModal').addEventListener('click', (e) => { if (e.target.id === 'resultsModal') Utils.$('resultsModal').classList.remove('visible'); });
+
+                // Import/Export
+                Utils.$('exportBtn').addEventListener('click', Events.exportData);
+                Utils.$('importBtn').addEventListener('click', () => Utils.$('importFile').click());
+                Utils.$('importFile').addEventListener('change', Events.importData);
+
+                // Add initial track
+                const t = State.addTrack();
+                UI.renderTrackCard(t);
+            },
+
+            handleSpinner: (btn) => {
+                const { stepDir, target: targetId } = btn.dataset;
+                const input = Utils.$(targetId);
+                if (!input) return;
+
+                let val = Utils.unformat(input.value);
+                
+                // Determine step
+                const id = input.id;
+                let step = 500;
+                if (id.includes('Pct') || id.includes('Return') || id.includes('Inflation')) step = 0.5;
+                else if (id.toLowerCase().includes('years')) step = 1;
+                else if (id.includes('monthsIndependent')) step = 6;
+                else {
+                    const abs = Math.abs(val);
+                    if (abs >= 1000000) step = 100000;
+                    else if (abs >= 100000) step = 10000;
+                    else if (abs >= 10000) step = 1000;
                 }
-                target.setSelectionRange(newCursorPos, newCursorPos);
-            });
-        });
-    }
 
-    function updateVacancyMonthsNote() {
-        const vacancyPctInput = $('vacancyPct');
-        const vacancyMonthsNote = $('vacancyMonthsNote');
-        if (!vacancyPctInput || !vacancyMonthsNote) return;
+                val += (stepDir === 'up' ? step : -step);
+                input.value = Utils.formatNumber(Math.max(0, val));
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            },
 
-        const pct = unformat(vacancyPctInput.value);
-        if (isNaN(pct) || pct < 0 || pct === '') {
-            vacancyMonthsNote.textContent = '';
-            return;
-        }
-        
-        const months = (pct / 100) * 12;
-        const formattedMonths = months % 1 === 0 ? months.toFixed(0) : months.toFixed(1);
-        vacancyMonthsNote.textContent = `(שווה ערך לכ-${formattedMonths} חודשים)`;
-    }
-
-    function updateDepositReduction(trackId) {
-        const reducedDepositInput = $(`reducedDepositAmount_${trackId}`);
-        const maintenanceInput = $(`baseWithDeposit_${trackId}`);
-        const depositInput = $(`depositAmount_${trackId}`);
-
-        if (!reducedDepositInput || !maintenanceInput || !depositInput) return;
-        
-        const baseMaintenance = unformat(maintenanceInput.dataset.baseValue);
-        const baseDeposit = unformat(depositInput.dataset.baseValue);
-        let reducedAmount = unformat(reducedDepositInput.value);
-
-        // Cap reduction amount if it would result in negative deposit
-        const maxReduction = baseDeposit;
-        if (reducedAmount > maxReduction) {
-            reducedAmount = maxReduction;
-            reducedDepositInput.value = formatNumber(reducedAmount);
-        }
-        
-        const maintenanceIncrease = (reducedAmount / 50000) * 500;
-        const newMaintenance = baseMaintenance + maintenanceIncrease;
-        const newDeposit = baseDeposit - reducedAmount;
-        
-        maintenanceInput.value = formatNumber(Math.max(0, newMaintenance));
-        depositInput.value = formatNumber(Math.max(0, newDeposit));
-    }
-
-    function getStepForInput(input) {
-        const id = input.id || '';
-        if (id.includes('Pct') || id.includes('Return') || id.includes('Inflation')) {
-            return 0.5;
-        }
-        if (id.toLowerCase().includes('years')) return 1;
-        if (id.includes('monthsIndependent')) return 6;
-        
-        const value = Math.abs(unformat(input.value));
-        if (value >= 1000000) return 100000;
-        if (value >= 100000) return 10000;
-        if (value >= 10000) return 1000;
-        return 500;
-    }
-
-    function isSigned(input) {
-        return false; // No negative values allowed for now
-    }
-
-    // --- Initial Load ---
-    document.addEventListener('DOMContentLoaded', () => { 
-        // Initial setup for common inputs
-        setupNumberFormattingForContainer(document.body);
-
-        const vacancyInput = $('vacancyPct');
-        if (vacancyInput) {
-            vacancyInput.addEventListener('input', updateVacancyMonthsNote);
-            vacancyInput.addEventListener('change', updateVacancyMonthsNote);
-            updateVacancyMonthsNote();
-        }
-
-        // --- New Spinner Logic ---
-        document.addEventListener('click', (e) => {
-            if (!e.target.matches('.spinner-btn:not(.stepper-btn)')) return;
-
-            const { stepDir, target: targetId } = e.target.dataset;
-            const targetInput = $(targetId);
-            if (!targetInput) return;
-
-            let currentValue = unformat(targetInput.value);
-            const step = getStepForInput(targetInput);
-            const multiplier = stepDir === 'up' ? 1 : -1;
-
-            let newValue = currentValue + (step * multiplier);
-            
-            if (!isSigned(targetInput)) {
-                newValue = Math.max(0, newValue);
-            }
-
-            targetInput.value = formatNumber(newValue);
-
-            targetInput.dispatchEvent(new Event('input', { bubbles: true }));
-            targetInput.dispatchEvent(new Event('change', { bubbles: true }));
-        });
-        
-        $('isNursing').addEventListener('change', (e) => {
-            $('nursingFieldsRow').style.display = e.target.checked ? 'grid' : 'none';
-        });
-
-        $('assetScenarioSelect').addEventListener('change', (e) => {
-            const scenario = e.target.value;
-            $('sellBlock').style.display = scenario === 'sell' ? 'block' : 'none';
-            $('rentBlock').style.display = scenario === 'rent' ? 'block' : 'none';
-        });
-
-        // Toggle All Tracks
-        $('toggleAllTracksBtn').addEventListener('click', () => {
-            const cards = document.querySelectorAll('.track-card');
-            if (cards.length === 0) return;
-            
-            const anyExpanded = Array.from(cards).some(c => !c.classList.contains('collapsed'));
-            const btn = $('toggleAllTracksBtn');
-            const tooltip = $('toggleAllTooltip');
-            
-            cards.forEach(card => {
-                if (anyExpanded) {
-                    card.classList.add('collapsed');
-                } else {
-                    card.classList.remove('collapsed');
-                }
-            });
-            
-            if (anyExpanded) {
-                // Now they are all collapsed, so button should show "Expand All"
-                btn.innerHTML = ICONS.expand;
-                btn.setAttribute('aria-label', 'הרחב הכל');
-                if(tooltip) tooltip.textContent = 'הרחב הכל';
-            } else {
-                // Now they are expanded, so button should show "Collapse All"
-                btn.innerHTML = ICONS.collapse;
-                btn.setAttribute('aria-label', 'כווץ הכל');
-                if(tooltip) tooltip.textContent = 'כווץ הכל';
-            }
-        });
-
-        // Track management
-        $('addTrackBtn').addEventListener('click', () => handleAddTrack(true));
-        $('tracksContainer').addEventListener('click', (e) => {
-            if (e.target.dataset.removeTrackId) {
-                const trackId = e.target.dataset.removeTrackId;
-                tracks = tracks.filter(t => t.id != trackId);
-                document.querySelector(`.track-card[data-track-id='${trackId}']`).remove();
-            } else if (e.target.classList.contains('stepper-btn')) {
-                const { trackId, stepDir } = e.target.dataset;
-                const reducedDepositInput = $(`reducedDepositAmount_${trackId}`);
-                const depositInput = $(`depositAmount_${trackId}`);
-
-                const currentReduction = unformat(reducedDepositInput.value);
+            handleStepper: (btn) => {
+                const { trackId, stepDir } = btn.dataset;
+                const redInput = Utils.$(`reducedDepositAmount_${trackId}`);
+                const depInput = Utils.$(`depositAmount_${trackId}`);
+                
+                const cur = Utils.unformat(redInput.value);
                 const step = 50000;
-                const newReduction = currentReduction + (stepDir === 'up' ? step : -step);
+                const next = cur + (stepDir === 'up' ? step : -step);
                 
-                if (newReduction < 0) return;
+                if (next < 0) return;
+                const baseDep = Utils.unformat(depInput.dataset.baseValue);
+                if (stepDir === 'up' && (baseDep - next) < 0) { alert('לא ניתן להפחית יותר מסכום הפיקדון המקורי.'); return; }
 
-                const baseDeposit = unformat(depositInput.dataset.baseValue);
-                if (stepDir === 'up' && (baseDeposit - newReduction) < 0) {
-                    alert('לא ניתן להפחית יותר מסכום הפיקדון המקורי.');
-                    return;
-                }
+                redInput.value = Utils.formatNumber(next);
+                UI.updateDepositReduction(trackId);
+                UI.updateTrackPreview(trackId);
+            },
+
+            toggleAllTracks: () => {
+                const cards = document.querySelectorAll('.track-card');
+                if (!cards.length) return;
+                const anyExpanded = Array.from(cards).some(c => !c.classList.contains('collapsed'));
+                cards.forEach(c => c.classList.toggle('collapsed', anyExpanded));
                 
-                reducedDepositInput.value = formatNumber(newReduction);
-                updateDepositReduction(trackId);
-                updateTrackPreview(trackId);
-            } else if (e.target.closest('.toggle-track-btn')) {
-                // Handle collapse toggle
-                const btn = e.target.closest('.toggle-track-btn');
-                const trackId = btn.dataset.toggleTrackId;
-                const card = document.querySelector(`.track-card[data-track-id='${trackId}']`);
-                if(card) {
-                    card.classList.toggle('collapsed');
-                }
-            } else if (e.target.closest('.track-card.collapsed')) {
-                // Expand on click
-                const card = e.target.closest('.track-card.collapsed');
-                card.classList.remove('collapsed');
-            }
-        });
+                const btn = Utils.$('toggleAllTracksBtn');
+                const tooltip = Utils.$('toggleAllTooltip');
+                btn.innerHTML = anyExpanded ? Constants.ICONS.expand : Constants.ICONS.collapse;
+                const txt = anyExpanded ? 'הרחב הכל' : 'כווץ הכל';
+                btn.setAttribute('aria-label', txt);
+                if(tooltip) tooltip.textContent = txt;
+            },
 
-        $('tracksContainer').addEventListener('change', (e) => {
-            if (e.target.id.startsWith('pricingMode_')) {
-                const trackId = e.target.id.split('_')[1];
-                updateTrackBody(trackId);
-            }
-        });
+            runCalculation: () => {
+                 const cards = document.querySelectorAll('.track-card');
+                 if (cards.length === 0) { alert('יש להוסיף לפחות מסלול אחד.'); return; }
+                 
+                 // We need to read freshly because simulation might not have run for everything yet
+                 // Or we can just use readAllInputsForTrack per card
+                 State.simulationResults = Array.from(cards).map(c => {
+                     return Calculator.simulate(UI.readAllInputsForTrack(c.dataset.trackId));
+                 });
 
-        $('tracksContainer').addEventListener('input', (e) => {
-            const targetId = e.target.id;
-            if (targetId.startsWith('entranceFeeDepreciationYears_') || targetId.startsWith('entranceFeeAmount_')) {
-                const trackId = targetId.split('_')[1];
-                updateCalculatedEntranceFeeRate(trackId);
-            } else if (targetId.startsWith('reducedDepositAmount_')) {
-                const trackId = e.target.dataset.trackId;
-                updateDepositReduction(trackId);
-            } else if (targetId.startsWith('depositDepreciationPct_') || targetId.startsWith('depositDepreciationYears_')) {
-                const trackId = targetId.split('_')[1];
-                updateRefundPctNote(trackId);
-            }
+                 UI.setupYearSlider();
+                 UI.renderResultsModal();
+                 Utils.$('resultsModal').classList.add('visible');
+            },
 
-
-            const trackId = e.target.dataset.trackId;
-            if (!trackId) {
-                const closest = e.target.closest('.track-card');
-                if(closest) updateTrackPreview(closest.dataset.trackId);
-                return;
-            }
-
-            // Update preview on input
-            updateTrackPreview(trackId);
-
-            const isMaintenance = e.target.id.startsWith('baseWithDeposit_');
-            const isDeposit = e.target.id.startsWith('depositAmount_');
-            
-            if (isMaintenance || isDeposit) {
-                // User is manually editing a base value, so reset the reduction.
-                e.target.dataset.baseValue = unformat(e.target.value);
-                const reducedDepositInput = $(`reducedDepositAmount_${trackId}`);
-                if (reducedDepositInput.value !== '0' && reducedDepositInput.value !== '') {
-                    reducedDepositInput.value = formatNumber('0');
+            exportData: () => {
+                try {
+                    const data = { common: {}, tracks: [] };
+                    document.querySelectorAll('#commonInputsCard input, #commonInputsCard select, .top-bar-settings input').forEach(inp => {
+                        data.common[inp.id] = inp.type === 'checkbox' ? inp.checked : inp.value;
+                    });
+                    document.querySelectorAll('.track-card').forEach(card => {
+                        const tData = {};
+                        card.querySelectorAll('input, select').forEach(inp => {
+                            const key = inp.id.split('_')[0];
+                            tData[key] = inp.value;
+                            if (inp.dataset.baseValue) tData[key + '_base'] = inp.dataset.baseValue;
+                        });
+                        data.tracks.push(tData);
+                    });
                     
-                    // After resetting reduction, recalculate to bring fields back to their new base values
-                    updateDepositReduction(trackId);
+                    const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url; a.download = 'calculator-data.json';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                } catch(e) { console.error(e); alert('שגיאה בייצוא'); }
+            },
 
-                    // Then, update the *other* field's base value to its current value.
-                    if (isMaintenance) {
-                        const depositInput = $(`depositAmount_${trackId}`);
-                        depositInput.dataset.baseValue = unformat(depositInput.value);
-                    } else {
-                        const maintenanceInput = $(`baseWithDeposit_${trackId}`);
-                        maintenanceInput.dataset.baseValue = unformat(maintenanceInput.value);
-                    }
-                }
+            importData: (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const r = new FileReader();
+                r.onload = (ev) => {
+                    try {
+                        const d = JSON.parse(ev.target.result);
+                        if (!d.common || !d.tracks) throw new Error();
+                        
+                        // Apply Common
+                        Object.keys(d.common).forEach(k => {
+                            const el = Utils.$(k);
+                            if(el) {
+                                if(el.type === 'checkbox') el.checked = d.common[k];
+                                else el.value = d.common[k];
+                                el.dispatchEvent(new Event('change'));
+                            }
+                        });
+
+                        // Rebuild Tracks
+                        Utils.$('tracksContainer').innerHTML = '';
+                        State.clearTracks();
+                        
+                        d.tracks.forEach(td => {
+                            const t = State.addTrack();
+                            // Render blank first to create DOM
+                            UI.renderTrackCard(t);
+                            
+                            // Fill Data
+                            Utils.$(`pricingMode_${t.id}`).value = td.pricingMode;
+                            UI.updateTrackBody(t.id);
+                            
+                            Object.keys(td).forEach(k => {
+                                const isBase = k.endsWith('_base');
+                                const realK = isBase ? k.replace('_base','') : k;
+                                const el = Utils.$(`${realK}_${t.id}`);
+                                if(el) {
+                                    if(isBase) el.dataset.baseValue = td[k];
+                                    else el.value = td[k];
+                                }
+                            });
+                            
+                            // Migration (Legacy support for Refund Pct -> Years)
+                            if (td.pricingMode === 'deposit' && td.depositRefundPct && !td.depositDepreciationYears) {
+                                const pct = parseFloat(td.depositRefundPct);
+                                const depPct = parseFloat(td.depositDepreciationPct || 3);
+                                if(depPct > 0) Utils.$(`depositDepreciationYears_${t.id}`).value = Utils.formatNumber((100 - pct)/depPct);
+                            }
+
+                            // Trigger Calcs
+                            UI.setupNumberFormatting(document.querySelector(`.track-card[data-track-id='${t.id}']`));
+                            if(td.pricingMode === 'deposit') UI.updateDepositReduction(t.id);
+                            if(td.pricingMode === 'entrance_fee') UI.updateCalculatedEntranceFeeRate(t.id);
+                        });
+                        
+                        // Force update all previews
+                        UI.updateAllPreviews();
+
+                        // Reset Collapse
+                        // Quick dirty reset to expanded
+                        const cards = document.querySelectorAll('.track-card');
+                        cards.forEach(c => c.classList.remove('collapsed'));
+                        const btn = Utils.$('toggleAllTracksBtn');
+                        btn.innerHTML = Constants.ICONS.collapse;
+                        
+                        alert('הנתונים יובאו בהצלחה!');
+                    } catch(err) { console.error(err); alert('קובץ לא תקין'); }
+                    e.target.value = null;
+                };
+                r.readAsText(file);
             }
-        });
+        };
 
-        // Listen for common inputs changes to update all previews
-        $('commonInputsCard').addEventListener('input', () => {
-             document.querySelectorAll('.track-card').forEach(card => {
-                 updateTrackPreview(card.dataset.trackId);
-             });
-        });
-        
-        // Listen to the top bar input changes for maxYears
-        $('topBarSettings').addEventListener('input', () => {
-             document.querySelectorAll('.track-card').forEach(card => {
-                 updateTrackPreview(card.dataset.trackId);
-             });
-        });
-        
-         $('commonInputsCard').addEventListener('change', () => {
-             document.querySelectorAll('.track-card').forEach(card => {
-                 updateTrackPreview(card.dataset.trackId);
-             });
-        });
+        return { init: Events.init };
+    })();
 
-        // Calculation
-        $('calculateBtn').addEventListener('click', handleCalculate);
-        
-        // Import / Export
-        $('importBtn').addEventListener('click', () => $('importFile').click());
-        $('exportBtn').addEventListener('click', handleExport);
-        $('importFile').addEventListener('change', handleImport);
-
-        // Modal Closing
-        $('closeModalBtn').addEventListener('click', hideResultsModal);
-        $('resultsModal').addEventListener('click', (e) => {
-            if (e.target === $('resultsModal')) {
-                hideResultsModal();
-            }
-        });
-
-        // Add one track by default
-        handleAddTrack();
-    });
+    // Start App
+    document.addEventListener('DOMContentLoaded', App.init);
   </script>
 </body>
 </html>
