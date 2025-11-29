@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>מחשבון השוואת מסלולי דיור מוגן</title>
   <link rel="stylesheet" href="index.css" />
-<link rel="stylesheet" href="/index.css">
 </head>
 <body>
   <div class="top-bar">
@@ -286,6 +285,9 @@
         card.dataset.trackId = trackId;
         card.innerHTML = `
             <button class="remove-track-btn" data-remove-track-id="${trackId}" aria-label="הסר מסלול">&times;</button>
+            <button class="toggle-track-btn" data-toggle-track-id="${trackId}" aria-label="מזער/הרחב">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            </button>
             <div class="track-header">
                 <div class="form-group"><label for="trackName_${trackId}">שם החברה-סוג החדר</label><input type="text" id="trackName_${trackId}" value="${track.name}" placeholder="לדוגמה: פאלאס - דירת 2 חדרים"></div>
                 <div class="form-group"><label for="pricingMode_${trackId}">סוג המסלול</label>
@@ -297,7 +299,8 @@
                 </div>
             </div>
             <div class="track-body"></div>
-            <div class="track-preview" id="trackPreview_${trackId}"></div>`;
+            <div class="track-preview" id="trackPreview_${trackId}"></div>
+            <div class="track-collapsed-view" id="trackCollapsed_${trackId}"></div>`;
 
         $('tracksContainer').appendChild(card);
         updateTrackBody(trackId);
@@ -411,6 +414,7 @@
     
     function updateTrackPreview(trackId) {
         const previewEl = $(`trackPreview_${trackId}`);
+        const collapsedEl = $(`trackCollapsed_${trackId}`);
         if (!previewEl) return;
         
         const params = readAllInputsForTrack(trackId);
@@ -421,6 +425,10 @@
         
         if (!log || log.length === 0) {
             previewEl.innerHTML = '';
+             if (collapsedEl) collapsedEl.innerHTML = `
+                <div class="collapsed-title">${params.trackName || 'מסלול ללא שם'}</div>
+                <div class="collapsed-stats" style="justify-content: center; opacity: 0.5;">נתונים חסרים</div>
+             `;
             return;
         }
         
@@ -429,6 +437,7 @@
         const depreciation = totalProviderEconomic - totalProviderCash;
         
         const summary = result.summary;
+        const totalBalance = summary.finalCash + summary.refundEnd;
         
         let depLabel = `(ל-${params.maxYears} שנים)`;
         if (params.pricingMode === 'deposit') {
@@ -474,10 +483,45 @@
                 <span class="preview-label">יתרת החשבון (סוף תקופה)</span>
                 <span class="preview-value">${fmt(summary.finalCash)} ₪</span>
             </div>
+            <div class="preview-item">
+                <span class="preview-label">סה"כ יתרה (הון + החזר)</span>
+                <span class="preview-value ok" style="font-weight: 800;">${fmt(totalBalance)} ₪</span>
+            </div>
             <div class="preview-end-group">
                 ${insolvencyHtml}
             </div>
         `;
+
+        // Update collapsed view
+        if(collapsedEl) {
+            collapsedEl.innerHTML = `
+                <div class="collapsed-title">${params.trackName || 'מסלול ללא שם'}</div>
+                <div class="collapsed-stats">
+                    <div class="collapsed-stat-item" title="צפי אחזקה">
+                        <span class="collapsed-stat-label">אחזקה</span>
+                        <span class="collapsed-stat-value">${fmt(totalProviderCash)}</span>
+                    </div>
+                    <div class="collapsed-stat-item" title="צפי שחיקה">
+                        <span class="collapsed-stat-label">שחיקה</span>
+                        <span class="collapsed-stat-value">${fmt(depreciation)}</span>
+                    </div>
+                    ${params.pricingMode !== 'none' ? `
+                    <div class="collapsed-stat-item" title="${refundLabel}">
+                        <span class="collapsed-stat-label">החזר</span>
+                        <span class="collapsed-stat-value">${fmt(summary.refundEnd)}</span>
+                    </div>` : ''}
+                    <div class="collapsed-stat-item" title="יתרה לסיום">
+                        <span class="collapsed-stat-label">יתרה</span>
+                        <span class="collapsed-stat-value">${fmt(summary.finalCash)}</span>
+                    </div>
+                    <div class="collapsed-stat-item" title="סה&quot;כ יתרה">
+                        <span class="collapsed-stat-label">סה"כ</span>
+                        <span class="collapsed-stat-value ok" style="font-weight: 800;">${fmt(totalBalance)}</span>
+                    </div>
+                </div>
+                <div style="margin-right: auto; color: var(--muted);"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+            `;
+        }
     }
     
     function renderResults() {
@@ -1148,6 +1192,18 @@
                 reducedDepositInput.value = formatNumber(newReduction);
                 updateDepositReduction(trackId);
                 updateTrackPreview(trackId);
+            } else if (e.target.closest('.toggle-track-btn')) {
+                // Handle collapse toggle
+                const btn = e.target.closest('.toggle-track-btn');
+                const trackId = btn.dataset.toggleTrackId;
+                const card = document.querySelector(`.track-card[data-track-id='${trackId}']`);
+                if(card) {
+                    card.classList.toggle('collapsed');
+                }
+            } else if (e.target.closest('.track-card.collapsed')) {
+                // Expand on click
+                const card = e.target.closest('.track-card.collapsed');
+                card.classList.remove('collapsed');
             }
         });
 
@@ -1247,6 +1303,5 @@
         handleAddTrack();
     });
   </script>
-<script type="module" src="/index.tsx"></script>
 </body>
 </html>
