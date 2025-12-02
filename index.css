@@ -74,9 +74,58 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
     position: relative;
     z-index: 5;
 }
-#tracksContainer .track-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; position: relative; transition: all 0.2s ease; }
-.track-header { display: flex; gap: 16px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; padding-left: 40px; padding-right: 40px; }
+#tracksContainer {
+    position: relative;
+}
+#tracksContainer .track-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; position: relative; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.track-header { display: flex; gap: 16px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; padding-left: 40px; padding-right: 76px; }
 .track-header .form-group { flex-grow: 1; min-width: 200px; }
+
+/* Drag & Drop Styles */
+.drag-handle {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    color: var(--muted);
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    touch-action: none; /* Prevent scrolling while dragging handle */
+}
+.drag-handle:hover {
+    background: var(--card);
+    color: var(--accent);
+}
+.drag-handle:active {
+    cursor: grabbing;
+}
+.track-card.is-dragging {
+    opacity: 0.3;
+    pointer-events: none;
+}
+.drag-ghost {
+    position: fixed;
+    z-index: 1000;
+    pointer-events: none;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    background: var(--panel);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    opacity: 0.95;
+    transform-origin: center center;
+    transform: scale(1.02);
+}
+.drag-placeholder {
+    border: 2px dashed var(--border);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
 
 .remove-track-btn {
     position: absolute;
@@ -110,7 +159,7 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
 .toggle-track-btn {
     position: absolute;
     top: 8px;
-    right: 8px;
+    right: 48px; /* Moved left to make room for drag handle */
     width: 32px;
     height: 32px;
     border-radius: 50%;
@@ -146,10 +195,16 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
 .track-card.collapsed .toggle-track-btn {
     display: none;
 }
+/* Ensure handle is visible in collapsed view, but positioned differently */
+.track-card.collapsed .drag-handle {
+    top: 9px;
+    right: 8px;
+}
+
 
 .track-collapsed-view {
     display: none;
-    padding: 12px 16px;
+    padding: 12px 16px 12px 48px; /* Added right padding for handle */
     align-items: center;
     justify-content: space-between;
     gap: 16px;

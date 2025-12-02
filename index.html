@@ -388,6 +388,126 @@
             }
         };
 
+        // --- Drag & Drop Manager ---
+        const DragManager = {
+            draggedItem: null,
+            placeholder: null,
+            ghost: null,
+            startY: 0,
+            initialTop: 0,
+            
+            init: () => {
+                const container = Utils.$('tracksContainer');
+                
+                // Unified Mouse and Touch Events
+                container.addEventListener('mousedown', DragManager.handleStart);
+                container.addEventListener('touchstart', DragManager.handleStart, { passive: false });
+                
+                document.addEventListener('mousemove', DragManager.handleMove);
+                document.addEventListener('touchmove', DragManager.handleMove, { passive: false });
+                
+                document.addEventListener('mouseup', DragManager.handleEnd);
+                document.addEventListener('touchend', DragManager.handleEnd);
+            },
+            
+            handleStart: (e) => {
+                const handle = e.target.closest('.drag-handle');
+                if (!handle) return;
+                
+                e.preventDefault(); // Prevent text selection/scroll
+                
+                const card = handle.closest('.track-card');
+                if (!card) return;
+                
+                DragManager.draggedItem = card;
+                
+                // Get coordinates
+                const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+                const rect = card.getBoundingClientRect();
+                
+                DragManager.startY = clientY;
+                DragManager.initialTop = rect.top;
+                
+                // Create Placeholder
+                DragManager.placeholder = document.createElement('div');
+                DragManager.placeholder.className = 'drag-placeholder';
+                DragManager.placeholder.style.height = `${rect.height}px`;
+                card.parentNode.insertBefore(DragManager.placeholder, card);
+                
+                // Create Ghost
+                DragManager.ghost = card.cloneNode(true);
+                DragManager.ghost.classList.add('drag-ghost');
+                DragManager.ghost.style.width = `${rect.width}px`;
+                DragManager.ghost.style.height = `${rect.height}px`;
+                DragManager.ghost.style.top = `${rect.top}px`;
+                // Adjust left for RTL/LTR body
+                const bodyRect = document.body.getBoundingClientRect();
+                DragManager.ghost.style.left = `${rect.left}px`;
+                
+                // Preserve values for inputs in ghost
+                const originalInputs = card.querySelectorAll('input, select');
+                const ghostInputs = DragManager.ghost.querySelectorAll('input, select');
+                originalInputs.forEach((inp, i) => {
+                     if (inp.type === 'checkbox') ghostInputs[i].checked = inp.checked;
+                     else ghostInputs[i].value = inp.value;
+                });
+                
+                document.body.appendChild(DragManager.ghost);
+                
+                // Hide Original
+                card.classList.add('is-dragging');
+            },
+            
+            handleMove: (e) => {
+                if (!DragManager.draggedItem) return;
+                e.preventDefault(); // Prevent scrolling
+                
+                const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+                const deltaY = clientY - DragManager.startY;
+                
+                // Move Ghost
+                if (DragManager.ghost) {
+                    DragManager.ghost.style.top = `${DragManager.initialTop + deltaY}px`;
+                }
+                
+                // DOM swapping logic
+                // Find element below cursor (offset by ghost height/2 for center)
+                // Use built-in logic: compare clientY to other cards
+                const siblings = [...Utils.$('tracksContainer').querySelectorAll('.track-card:not(.is-dragging)')];
+                
+                const nextSibling = siblings.find(sibling => {
+                    const box = sibling.getBoundingClientRect();
+                    return clientY < box.top + box.height / 2;
+                });
+                
+                if (nextSibling) {
+                    Utils.$('tracksContainer').insertBefore(DragManager.placeholder, nextSibling);
+                } else {
+                    Utils.$('tracksContainer').appendChild(DragManager.placeholder);
+                }
+            },
+            
+            handleEnd: (e) => {
+                if (!DragManager.draggedItem) return;
+                
+                // Move original to placeholder position
+                Utils.$('tracksContainer').insertBefore(DragManager.draggedItem, DragManager.placeholder);
+                
+                // Cleanup
+                DragManager.draggedItem.classList.remove('is-dragging');
+                if (DragManager.ghost) DragManager.ghost.remove();
+                if (DragManager.placeholder) DragManager.placeholder.remove();
+                
+                DragManager.draggedItem = null;
+                DragManager.ghost = null;
+                DragManager.placeholder = null;
+                
+                // Reorder State
+                const newOrderIds = Array.from(document.querySelectorAll('.track-card')).map(el => el.dataset.trackId);
+                State.tracks.sort((a, b) => newOrderIds.indexOf(String(a.id)) - newOrderIds.indexOf(String(b.id)));
+            }
+        };
+
         // --- UI Manager ---
         const UI = {
             // Split reading inputs to optimize batch updates
@@ -522,6 +642,9 @@
                 const isSelected = (val) => track.pricingMode === val ? 'selected' : '';
 
                 card.innerHTML = `
+                    <div class="drag-handle" aria-label="גרור לסידור מחדש">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+                    </div>
                     <button class="remove-track-btn" data-remove-track-id="${trackId}" aria-label="הסר מסלול">&times;</button>
                     <button class="toggle-track-btn" data-toggle-track-id="${trackId}" aria-label="מזער/הרחב">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
@@ -927,6 +1050,9 @@
         // --- Event Orchestration ---
         const Events = {
             init: () => {
+                // Initialize DragManager
+                DragManager.init();
+
                 // Initial Format
                 UI.setupNumberFormatting(document.body);
                 UI.updateVacancyMonthsNote();
@@ -966,7 +1092,7 @@
                          if(card) card.classList.toggle('collapsed');
                     }
                     // Expand on click collapsed
-                    else if (target.closest('.track-card.collapsed')) {
+                    else if (target.closest('.track-card.collapsed') && !target.closest('.remove-track-btn') && !target.closest('.drag-handle')) {
                         target.closest('.track-card.collapsed').classList.remove('collapsed');
                     }
                 });
