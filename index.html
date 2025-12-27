@@ -66,7 +66,7 @@
         <div class="span-6">
             <label for="annualInflation">
                 <span class="tooltip-header">קצב התייקרות שנתי (מדד) (%)
-                    <span class="tooltip-text">שיעור האינפלציה השנתי הצפוי. משפיע על התייקרות דמי האחזקה, הוצאות המחייה, וההכנסה משכר דירה לאורך זמן, כדי לדמות את עליית יוקר המחיה.</span>
+                    <span class="tooltip-text">שיעור האינפאציה השנתי הצפוי. משפיע על התייקרות דמי האחזקה, הוצאות המחייה, וההכנסה משכר דירה לאורך זמן, כדי לדמות את עליית יוקר המחיה.</span>
                 </span>
             </label>
             <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualInflation">+</button><input type="text" id="annualInflation" value="2" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualInflation">-</button></div>
@@ -913,7 +913,7 @@
 
                 let table = `<table class="results-table"><thead><tr>
                     <th>שם החברה-סוג החדר</th><th>סוג מסלול</th><th>סה"כ חודשים (עצמאי / סיעודי)</th>
-                    <th class="tooltip-header">עלות מצטברת כוללת (₪)<span class="tooltip-text">סך כל ההוצאות המצטברות לאורך התקופה, כולל דמי אחזקה, הוצאות מחייה ושחיקת הפיקדון (החלק שאינו מוחזר).</span></th>
+                    <th class="tooltip-header">עלות מצטברת כוללת (₪)<span class="tooltip-text">סך כל ההוצאות המצטברות המשולמות לספק הדיור המוגן (דמי אחזקה, סיעוד ושחיקת הפיקדון) לאורך התקופה.</span></th>
                     <th class="tooltip-header">עלות השחיקה (₪)<span class="tooltip-text">החלק היחסי מהפיקדון או דמי הכניסה שנגרע לאורך הזמן בהתאם לתנאי החוזה (הפחת המצטבר).</span></th>
                     <th class="tooltip-header">עלות דמי אחזקה (₪)<span class="tooltip-text">סך כל התשלומים השוטפים ששולמו לבית הדיור המוגן עבור שירותי אחזקה וניהול לאורך כל התקופה.</span></th>
                     <th class="tooltip-header">יתרת הון בסיום (₪)<span class="tooltip-text">יתרת המזומנים הצפויה להישאר בחשבון הבנק בסוף התקופה, לאחר חישוב כל ההכנסות וההוצאות (ללא הפיקדון).</span></th>
@@ -944,7 +944,7 @@
                         cumulativeMaintenance = calcLogs.reduce((s, l) => s + (l.providerCost || 0), 0);
                         const totalEconomic = calcLogs.reduce((s, l) => s + (l.providerEconomicCost || 0), 0);
                         cumulativeDepreciation = totalEconomic - cumulativeMaintenance;
-                        totalEconomicCost = totalEconomic + (calcLogs.reduce((s, l) => s + (l.totalCost || 0), 0) - cumulativeMaintenance);
+                        totalEconomicCost = totalEconomic; // Only provider costs
 
                         const y = Math.floor(displayMonths / 12);
                         const m = displayMonths % 12;
@@ -961,7 +961,7 @@
                         cumulativeMaintenance = logs.reduce((s, l) => s + (l.providerCost || 0), 0);
                         const totalEconomic = logs.reduce((s, l) => s + (l.providerEconomicCost || 0), 0);
                         cumulativeDepreciation = totalEconomic - cumulativeMaintenance;
-                        totalEconomicCost = totalEconomic + (logs.reduce((s, l) => s + (l.totalCost || 0), 0) - cumulativeMaintenance);
+                        totalEconomicCost = totalEconomic; // Only provider costs
                         
                         const y = Math.floor(displayMonths / 12);
                         const m = displayMonths % 12;
@@ -1228,7 +1228,7 @@
                  if (cards.length === 0) { alert('יש להוסיף לפחות מסלול אחד.'); return; }
                  
                  // We need to read freshly because simulation might not have run for everything yet
-                 // Or we can just use readAllInputsForTrack per card
+                 // Or we can just use readAllInputs forTrack per card
                  State.simulationResults = Array.from(cards).map(c => {
                      return Calculator.simulate(UI.readAllInputsForTrack(c.dataset.trackId));
                  });
