@@ -1,5 +1,4 @@
 
-
 :root {
   --bg: #0f172a;          /* slate-900 */
   --panel: #1e293b;       /* slate-800 */
@@ -299,7 +298,7 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
 .results-table thead {
   position: sticky;
   top: 188px; /* Height of modal-header (76px) + slider (~112px) */
-  z-index: 9;
+  z-index: 100; /* Increased to ensure it stays above body cells but below tooltips */
 }
 .breakdown-cell { font-size: .8rem; text-align: right; padding: 4px; }
 .breakdown-cell table { width: 100%; }
@@ -312,7 +311,7 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
     border-radius: 0;
     position: sticky;
     top: 76px; /* After modal-header which is ~76px high */
-    z-index: 10;
+    z-index: 110;
 }
 
 .slider-container {
@@ -458,7 +457,7 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
 }
 .tooltip-text {
   visibility: hidden;
-  max-width: 280px;
+  max-width: 320px; /* Increased from 280px */
   width: calc(100vw - 48px);
   background-color: var(--panel);
   color: var(--text);
@@ -479,6 +478,8 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
   font-size: 0.85rem;
   line-height: 1.5;
   pointer-events: none;
+  white-space: normal; /* Ensure text wraps correctly */
+  word-wrap: break-word;
 }
 .tooltip-header:hover .tooltip-text {
   visibility: visible;
@@ -641,7 +642,7 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
-  z-index: 12;
+  z-index: 120;
 }
 .modal-header h2 {
   margin: 0;
@@ -715,6 +716,7 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
         left: auto;
         right: 0;
         transform: none;
+        max-width: 90vw;
     }
 
     #sliderGroup {
@@ -728,124 +730,6 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
       padding: 16px;
     }
     
-    .preview-end-group {
-        flex-direction: column;
-        gap: 12px;
-        width: 100%;
-        margin-right: 0;
-    }
-
-    .insolvency-alert {
-        margin-right: 0;
-        border-right: none;
-        border-top: 1px dashed var(--border);
-        padding-right: 0;
-        padding-top: 12px;
-        width: 100%;
-        margin-top: 4px;
-        flex-direction: row;
-        justify-content: space-between;
-    }
-
-    /* Responsive Table */
-    .results-table {
-        border: none;
-    }
-    .results-table thead {
-        display: none;
-    }
-    .results-table tr {
-        display: block;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        margin-bottom: 16px;
-        background: var(--panel);
-    }
-    .results-table tr.insolvent {
-        background-color: rgba(251, 113, 133, 0.2);
-        border-color: var(--danger);
-    }
-    .results-table td {
-        display: block;
-        text-align: left;
-        padding: 10px 16px;
-        border-bottom: 1px dashed var(--border);
-        position: relative;
-        word-break: break-word;
-    }
-    .results-table td:last-child {
-        border-bottom: none;
-    }
-    .results-table td::before {
-        content: attr(data-label);
-        float: right;
-        font-weight: bold;
-        color: var(--accent);
-        margin-left: 16px;
-    }
-    .results-table td:first-child { 
-        font-size: 1.1rem;
-        font-weight: bold;
-        padding-top: 16px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid var(--border);
-        background: rgba(255,255,255,0.05);
-        border-radius: 12px 12px 0 0;
-        text-align: center;
-    }
-    .results-table td:first-child::before {
-        display: none;
-    }
-
-    /* NEW STYLES for inline form elements */
-    #commonInputsCard .row > [class*="span-"],
-    .track-card .row > [class*="span-"],
-    .track-header .form-group {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 16px;
-    }
-
-    #commonInputsCard .row > [class*="span-"] label,
-    .track-card .row > [class*="span-"] label,
-    .track-header .form-group label {
-        margin-bottom: 0;
-    }
-    
-    #commonInputsCard .row > [class*="span-"] .spinner-control,
-    #commonInputsCard .row > [class*="span-"] select,
-    .track-card .row > [class*="span-"] .spinner-control,
-    .track-header .form-group input,
-    .track-header .form-group select {
-        width: 180px; /* Set a consistent width for controls */
-        flex-shrink: 0; /* Prevent from shrinking */
-    }
-
-    /* Exception for the nursing checkbox toggle */
-    #commonInputsCard .row > .span-12 {
-        display: block;
-    }
-    
-    .track-header {
-        padding-left: 0; /* Align with other content */
-    }
-
-    /* Mobile styles for text inputs in header */
-    .track-header .form-group.full-width-mobile {
-        display: block;
-    }
-    .track-header .form-group.full-width-mobile label {
-        margin-bottom: 6px;
-    }
-    .track-header .form-group.full-width-mobile input {
-        width: 100%;
-    }
-
-    .track-preview {
-        flex-direction: column;
-        gap: 12px;
-    }
     .preview-item {
         flex-direction: row;
         justify-content: space-between;
