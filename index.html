@@ -165,6 +165,17 @@
                     <span class="tooltip-text-topbar" id="toggleAllTooltip">כווץ הכל</span>
                 </div>
             </div>
+
+            <!-- Duplicate Slider for Step 2 -->
+            <div id="sliderGroupStep2" class="slider-group-wrapper">
+                <label for="yearSliderStep2" id="yearSliderLabelStep2">הצג תוצאות לאחר: 15 שנים</label>
+                <div class="slider-container">
+                    <output for="yearSliderStep2" id="sliderValueBubbleStep2"></output>
+                    <input type="range" id="yearSliderStep2" class="year-slider-input" min="0.5" max="15" value="15" step="0.5">
+                    <div id="sliderTicksContainerStep2"></div>
+                </div>
+            </div>
+
             <div id="tracksContainer"></div>
             <button id="addTrackBtn" class="btn secondary" style="margin-top: 16px;">+ הוסף מסלול חדש</button>
         </div>
@@ -182,11 +193,11 @@
                  <button id="step3BackBtnTop" class="btn secondary">חזרה לעריכת מסלולים</button>
             </div>
             
-            <div id="sliderGroup">
+            <div id="sliderGroup" class="slider-group-wrapper">
                 <label for="yearSlider" id="yearSliderLabel">הצג תוצאות לאחר: 15 שנים</label>
                 <div class="slider-container">
                     <output for="yearSlider" id="sliderValueBubble"></output>
-                    <input type="range" id="yearSlider" min="0.5" max="15" value="15" step="0.5">
+                    <input type="range" id="yearSlider" class="year-slider-input" min="0.5" max="15" value="15" step="0.5">
                     <div id="sliderTicksContainer"></div>
                 </div>
             </div>
@@ -410,6 +421,7 @@
             tracks: [],
             simulationResults: [],
             currentStep: 1,
+            viewYear: 15,
             
             addTrack: () => {
                 const newTrack = {
@@ -561,6 +573,7 @@
                 // If moving to step 2, ensure previews are updated in case visibility affected them
                 if (stepNumber === 2) {
                      UI.updateAllPreviews();
+                     UI.setupYearSliders(); // Ensure sliders are sync and sized correctly
                 }
             }
         };
@@ -726,7 +739,7 @@
                 UI.updateTrackPreview(trackId);
             },
 
-            generatePreviewHTML: (result, params) => {
+            generatePreviewHTML: (result, params, targetYear) => {
                 const log = result.monthlyLog;
                 if (!log || log.length === 0) {
                     return {
@@ -734,28 +747,42 @@
                         collapsed: `<div class="collapsed-title">${Utils.escapeHtml(params.trackName) || 'מסלול ללא שם'}</div><div class="collapsed-stats" style="justify-content: center; opacity: 0.5;">נתונים חסרים</div>`
                     };
                 }
-                const summary = result.summary;
-                const totalBalance = summary.finalCash + summary.refundEnd;
-                const totalProviderCash = log.reduce((sum, item) => sum + (item.providerCost || 0), 0);
-                const totalProviderEconomic = log.reduce((sum, item) => sum + (item.providerEconomicCost || 0), 0);
+
+                // Determine the state at the target year (or end of simulation)
+                const targetMonthIndex = Math.min(Math.round(targetYear * 12), log.length) - 1;
+                const currentStatus = targetMonthIndex >= 0 ? log[targetMonthIndex] : log[0];
+                
+                // Calculate accumulated values up to target year
+                const relevantLog = log.slice(0, targetMonthIndex + 1);
+                
+                const totalProviderCash = relevantLog.reduce((sum, item) => sum + (item.providerCost || 0), 0);
+                const totalProviderEconomic = relevantLog.reduce((sum, item) => sum + (item.providerEconomicCost || 0), 0);
                 const depreciation = totalProviderEconomic - totalProviderCash;
-                let depLabel = `(ל-${params.maxYears} שנים)`;
-                if (params.pricingMode === 'deposit') depLabel = `(ל-${params.depositDepreciationYears} שנים)`;
-                else if (params.pricingMode === 'entrance_fee') depLabel = `(ל-${params.entranceFeeDepreciationYears} שנים)`;
+                
+                const finalCash = currentStatus.cash;
+                const refundEnd = currentStatus.refund;
+                const totalBalance = currentStatus.totalBalance;
+                const isMaxedOut = result.summary.maxedOut;
+                
+                // Labels
+                let depLabel = `(ל-${targetYear} שנים)`;
+                
                 const refundTooltip = params.pricingMode === 'entrance_fee' ? 'יתרת דמי הכניסה שנותרה להחזר לאחר ניכוי הפחת המוגדר בחוזה.' : 'סכום הפיקדון שנותר להחזר לאחר ניכוי הפחת השנתי המצטבר.';
                 const finalCashTooltip = 'יתרת ההון הנזיל בבנק בסיום התקופה.';
                 let refundLabel = params.pricingMode === 'entrance_fee' ? 'יתרת דמי כניסה' : 'יתרת הפיקדון';
-                let refundHtml = params.pricingMode !== 'none' ? `<div class="preview-item"><span class="preview-label tooltip-header">${refundLabel} (סוף תקופה)<span class="tooltip-text">${refundTooltip}</span></span><span class="preview-value">${Utils.fmt(summary.refundEnd)} ₪</span></div>` : '';
+                let refundHtml = params.pricingMode !== 'none' ? `<div class="preview-item"><span class="preview-label tooltip-header">${refundLabel} (סוף תקופה)<span class="tooltip-text">${refundTooltip}</span></span><span class="preview-value">${Utils.fmt(refundEnd)} ₪</span></div>` : '';
+                
                 let insolvencyHtml = '';
-                if (!summary.maxedOut) {
-                     const years = Math.floor(summary.totalMonths / 12);
-                     const months = summary.totalMonths % 12;
+                if (!isMaxedOut && result.summary.totalMonths < (targetYear * 12)) {
+                     const years = Math.floor(result.summary.totalMonths / 12);
+                     const months = result.summary.totalMonths % 12;
                      insolvencyHtml = `<div class="preview-item insolvency-alert"><span class="preview-label" style="color: var(--danger);">חדלות פירעון</span><span class="preview-value" style="color: var(--danger); direction: rtl;">${years} שנים ו-${months} חודשים</span></div>`;
                 }
-                const previewHtml = `<div class="preview-item"><span class="preview-label">צפי אחזקה (ל-${params.maxYears} שנים)</span><span class="preview-value">${Utils.fmt(totalProviderCash)} ₪</span></div><div class="preview-item"><span class="preview-label">צפי שחיקה ${depLabel}</span><span class="preview-value">${Utils.fmt(depreciation)} ₪</span></div>${refundHtml}<div class="preview-item"><span class="preview-label tooltip-header">יתרת החשבון (סוף תקופה)<span class="tooltip-text">${finalCashTooltip}</span></span><span class="preview-value">${Utils.fmt(summary.finalCash)} ₪</span></div><div class="preview-item"><span class="preview-label">סה"כ יתרה (הון + החזר)</span><span class="preview-value ok" style="font-weight: 800;">${Utils.fmt(totalBalance)} ₪</span></div><div class="preview-end-group">${insolvencyHtml}</div>`;
+                
+                const previewHtml = `<div class="preview-item"><span class="preview-label">צפי אחזקה (ל-${targetYear} שנים)</span><span class="preview-value">${Utils.fmt(totalProviderCash)} ₪</span></div><div class="preview-item"><span class="preview-label">צפי שחיקה ${depLabel}</span><span class="preview-value">${Utils.fmt(depreciation)} ₪</span></div>${refundHtml}<div class="preview-item"><span class="preview-label tooltip-header">יתרת החשבון (סוף תקופה)<span class="tooltip-text">${finalCashTooltip}</span></span><span class="preview-value">${Utils.fmt(finalCash)} ₪</span></div><div class="preview-item"><span class="preview-label">סה"כ יתרה (הון + החזר)</span><span class="preview-value ok" style="font-weight: 800;">${Utils.fmt(totalBalance)} ₪</span></div><div class="preview-end-group">${insolvencyHtml}</div>`;
                 const modeLabels = { 'deposit': 'מסלול פיקדון', 'entrance_fee': 'דמי כניסה', 'none': 'ללא פיקדון' };
                 const typeLabel = modeLabels[params.pricingMode] || '';
-                const collapsedHtml = `<div class="collapsed-title">${Utils.escapeHtml(params.trackName) || 'מסלול ללא שם'}<span style="font-weight:normal; opacity:0.7; font-size:0.9em; margin-right:8px;">• ${typeLabel}</span></div><div class="collapsed-stats"><div class="collapsed-stat-item"><span class="collapsed-stat-label">אחזקה</span><span class="collapsed-stat-value">${Utils.fmt(totalProviderCash)}</span></div><div class="collapsed-stat-item"><span class="collapsed-stat-label">שחיקה</span><span class="collapsed-stat-value">${Utils.fmt(depreciation)}</span></div>${params.pricingMode !== 'none' ? `<div class="collapsed-stat-item"><span class="collapsed-stat-label">החזר</span><span class="collapsed-stat-value">${Utils.fmt(summary.refundEnd)}</span></div>` : ''}<div class="collapsed-stat-item"><span class="collapsed-stat-label">יתרה</span><span class="collapsed-stat-value">${Utils.fmt(summary.finalCash)}</span></div><div class="collapsed-stat-item"><span class="collapsed-stat-label">סה"כ</span><span class="collapsed-stat-value ok" style="font-weight: 800;">${Utils.fmt(totalBalance)}</span></div></div><div style="margin-right: auto; color: var(--muted);"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></div>`;
+                const collapsedHtml = `<div class="collapsed-title">${Utils.escapeHtml(params.trackName) || 'מסלול ללא שם'}<span style="font-weight:normal; opacity:0.7; font-size:0.9em; margin-right:8px;">• ${typeLabel}</span></div><div class="collapsed-stats"><div class="collapsed-stat-item"><span class="collapsed-stat-label">אחזקה</span><span class="collapsed-stat-value">${Utils.fmt(totalProviderCash)}</span></div><div class="collapsed-stat-item"><span class="collapsed-stat-label">שחיקה</span><span class="collapsed-stat-value">${Utils.fmt(depreciation)}</span></div>${params.pricingMode !== 'none' ? `<div class="collapsed-stat-item"><span class="collapsed-stat-label">החזר</span><span class="collapsed-stat-value">${Utils.fmt(refundEnd)}</span></div>` : ''}<div class="collapsed-stat-item"><span class="collapsed-stat-label">יתרה</span><span class="collapsed-stat-value">${Utils.fmt(finalCash)}</span></div><div class="collapsed-stat-item"><span class="collapsed-stat-label">סה"כ</span><span class="collapsed-stat-value ok" style="font-weight: 800;">${Utils.fmt(totalBalance)}</span></div></div><div style="margin-right: auto; color: var(--muted);"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></div>`;
                 return { preview: previewHtml, collapsed: collapsedHtml };
             },
 
@@ -763,7 +790,8 @@
                 const params = UI.readAllInputsForTrack(trackId);
                 if (!params) return;
                 const result = Calculator.simulate(params);
-                const html = UI.generatePreviewHTML(result, params);
+                // Use the shared view year from state (controlled by sliders)
+                const html = UI.generatePreviewHTML(result, params, State.viewYear);
                 const previewEl = Utils.$(`trackPreview_${trackId}`);
                 if (previewEl) previewEl.innerHTML = html.preview;
                 const collapsedEl = Utils.$(`trackCollapsed_${trackId}`);
@@ -778,7 +806,8 @@
                     const trackParams = UI.readTrackInputs(trackId);
                     const params = { ...common, ...trackParams };
                     const result = Calculator.simulate(params);
-                    const html = UI.generatePreviewHTML(result, params);
+                    // Use shared state year
+                    const html = UI.generatePreviewHTML(result, params, State.viewYear);
                     return { trackId, html };
                 });
                 updates.forEach(({ trackId, html }) => {
@@ -861,7 +890,7 @@
 
             renderResultsView: () => {
                 const container = Utils.$('resultsTableContainer');
-                const targetYear = parseFloat(Utils.$('yearSlider').value);
+                const targetYear = State.viewYear; // Use shared state
                 const targetMonths = Math.round(targetYear * 12);
                 const pricingModeMap = { 'deposit': 'עם פיקדון', 'entrance_fee': 'דמי כניסה', 'none': 'ללא' };
 
@@ -1026,35 +1055,92 @@
                 });
             },
 
-            setupYearSlider: () => {
-                const slider = Utils.$('yearSlider');
-                const bubble = Utils.$('sliderValueBubble');
-                const ticks = Utils.$('sliderTicksContainer');
-                const maxYears = Math.max(0.5, Utils.unformat(Utils.$('maxYears').value) || 15, ...State.simulationResults.map(r => Math.ceil(r.summary.totalMonths / 12)));
-                const min = 0.5;
-                slider.min = min; slider.max = maxYears; slider.value = maxYears;
-                ticks.innerHTML = '';
-                const numTicks = Math.floor(maxYears);
-                let step = numTicks > 50 ? 10 : (numTicks > 20 ? 5 : 1);
-                for (let i = 1; i <= numTicks; i++) {
-                    if (i > 0 && i % step !== 0 && i !== numTicks && numTicks > 10) continue;
-                    const pct = ((i - min) / (maxYears - min)) * 100;
-                    if (pct >= 0 && pct <= 100) {
-                        const tick = document.createElement('div'); tick.className = 'slider-tick'; tick.style.right = `${pct}%`;
-                        const label = document.createElement('span'); label.className = 'slider-tick-label'; label.textContent = i; label.style.right = `${pct}%`;
-                        ticks.append(tick, label);
-                    }
-                }
-                const update = () => {
-                    const val = parseFloat(slider.value);
-                    Utils.$('yearSliderLabel').textContent = `הצג תוצאות לאחר: ${val} שנים`;
+            // Updates the visual aspects of a specific slider DOM element
+            updateSliderVisuals: (sliderId, bubbleId, labelId, ticksContainerId, val, maxYears, min) => {
+                const slider = Utils.$(sliderId);
+                const bubble = Utils.$(bubbleId);
+                const label = Utils.$(labelId);
+                
+                if (!slider) return;
+
+                // Update input value
+                slider.value = val;
+                
+                // Update Label and Bubble
+                if(label) label.textContent = `הצג תוצאות לאחר: ${val} שנים`;
+                if(bubble) {
                     bubble.innerHTML = `${val} שנים`;
                     const pct = (maxYears - min) > 0 ? ((val - min) / (maxYears - min)) * 100 : 0;
                     bubble.style.right = `${pct}%`;
                     slider.style.setProperty('--slider-fill-percent', `${pct}%`);
-                };
-                slider.oninput = () => { update(); UI.renderResultsView(); };
-                update();
+                }
+            },
+
+            // Initializes and synchronizes both sliders
+            setupYearSliders: () => {
+                const sliderIds = [
+                    { slider: 'yearSlider', bubble: 'sliderValueBubble', label: 'yearSliderLabel', ticks: 'sliderTicksContainer' },
+                    { slider: 'yearSliderStep2', bubble: 'sliderValueBubbleStep2', label: 'yearSliderLabelStep2', ticks: 'sliderTicksContainerStep2' }
+                ];
+                
+                const maxYearsInput = parseFloat(Utils.unformat(Utils.$('maxYears').value)) || 15;
+                const min = 0.5;
+                
+                // Sync State.viewYear to bounds
+                if (State.viewYear > maxYearsInput) State.viewYear = maxYearsInput;
+                if (State.viewYear < min) State.viewYear = min;
+
+                sliderIds.forEach(config => {
+                    const slider = Utils.$(config.slider);
+                    const ticks = Utils.$(config.ticks);
+                    
+                    if (!slider) return;
+
+                    slider.min = min;
+                    slider.max = maxYearsInput;
+                    slider.step = 0.5;
+                    
+                    // Render Ticks
+                    if(ticks) {
+                        ticks.innerHTML = '';
+                        const numTicks = Math.floor(maxYearsInput);
+                        let step = numTicks > 50 ? 10 : (numTicks > 20 ? 5 : 1);
+                        for (let i = 1; i <= numTicks; i++) {
+                            if (i > 0 && i % step !== 0 && i !== numTicks && numTicks > 10) continue;
+                            const pct = ((i - min) / (maxYearsInput - min)) * 100;
+                            if (pct >= 0 && pct <= 100) {
+                                const tick = document.createElement('div'); tick.className = 'slider-tick'; tick.style.right = `${pct}%`;
+                                const label = document.createElement('span'); label.className = 'slider-tick-label'; label.textContent = i; label.style.right = `${pct}%`;
+                                ticks.append(tick, label);
+                            }
+                        }
+                    }
+
+                    // Initial visual update
+                    UI.updateSliderVisuals(config.slider, config.bubble, config.label, config.ticks, State.viewYear, maxYearsInput, min);
+
+                    // Add Listener
+                    slider.oninput = (e) => {
+                        const newVal = parseFloat(e.target.value);
+                        State.viewYear = newVal;
+                        
+                        // Sync other sliders
+                        sliderIds.forEach(other => {
+                            UI.updateSliderVisuals(other.slider, other.bubble, other.label, other.ticks, newVal, maxYearsInput, min);
+                        });
+
+                        // Trigger Updates
+                        UI.updateAllPreviews(); // Update Step 2 Cards
+                        if(State.simulationResults.length > 0 && State.currentStep === 3) {
+                             UI.renderResultsView(); // Update Step 3 Table/Charts
+                        }
+                    };
+                });
+            },
+            
+            // Replaced setupYearSlider with setupYearSliders
+            setupYearSlider: () => {
+                UI.setupYearSliders();
             }
         };
 
@@ -1064,6 +1150,10 @@
                 Navigation.init(); // Initialize navigation listeners
                 UI.setupNumberFormatting(document.body);
                 UI.updateVacancyMonthsNote();
+                
+                // Initialize Sliders immediately
+                UI.setupYearSliders();
+
                 const debouncedPreviewUpdate = Utils.debounce((trackId) => {
                     // Only update preview if we are on or past step 2
                     if (State.currentStep >= 2) {
@@ -1112,7 +1202,18 @@
                     if (trackId) debouncedPreviewUpdate(trackId);
                 });
                 Utils.$('commonInputsCard').addEventListener('input', () => debouncedPreviewUpdate());
-                Utils.$('topBarSettings').addEventListener('input', () => debouncedPreviewUpdate());
+                
+                // When Max Years changes, update sliders
+                Utils.$('maxYears').addEventListener('input', (e) => {
+                    UI.setupYearSliders();
+                    debouncedPreviewUpdate();
+                });
+                
+                Utils.$('topBarSettings').addEventListener('input', () => { 
+                     // Handled by specific listener above for maxYears, but keeping general update
+                     if(event.target.id !== 'maxYears') debouncedPreviewUpdate(); 
+                });
+
                 Utils.$('vacancyPct').addEventListener('input', UI.updateVacancyMonthsNote);
                 Utils.$('isNursing').addEventListener('change', (e) => Utils.$('nursingFieldsRow').style.display = e.target.checked ? 'grid' : 'none');
                 Utils.$('assetScenarioSelect').addEventListener('change', (e) => {
@@ -1190,7 +1291,8 @@
                  State.simulationResults = Array.from(cards).map(c => {
                      return Calculator.simulate(UI.readAllInputsForTrack(c.dataset.trackId));
                  });
-                 UI.setupYearSlider();
+                 // Re-sync sliders just in case
+                 UI.setupYearSliders();
                  UI.renderResultsView();
                  return true;
             },
