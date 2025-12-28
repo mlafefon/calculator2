@@ -913,12 +913,12 @@
 
                 let table = `<table class="results-table"><thead><tr>
                     <th>שם החברה-סוג החדר</th><th>סוג מסלול</th><th>סה"כ חודשים (עצמאי / סיעודי)</th>
-                    <th class="tooltip-header">עלות מצטברת כוללת (₪)<span class="tooltip-text">סך כל ההוצאות המצטברות המשולמות לספק הדיור המוגן (דמי אחזקה, סיעוד ושחיקת הפיקדון) לאורך התקופה.</span></th>
-                    <th class="tooltip-header">עלות השחיקה (₪)<span class="tooltip-text">החלק היחסי מהפיקדון או דמי הכניסה שנגרע לאורך הזמן בהתאם לתנאי החוזה (הפחת המצטבר).</span></th>
                     <th class="tooltip-header">עלות דמי אחזקה (₪)<span class="tooltip-text">סך כל התשלומים השוטפים ששולמו לבית הדיור המוגן עבור שירותי אחזקה וניהול לאורך כל התקופה.</span></th>
+                    <th class="tooltip-header">עלות השחיקה (₪)<span class="tooltip-text">החלק היחסי מהפיקדון או דמי הכניסה שנגרע לאורך הזמן בהתאם לתנאי החוזה (הפחת המצטבר).</span></th>
+                    <th class="tooltip-header">עלות מצטברת כוללת (₪)<span class="tooltip-text">סך כל ההוצאות המצטברות המשולמות לספק הדיור המוגן (דמי אחזקה, סיעוד ושחיקת הפיקדון) לאורך התקופה.</span></th>
                     <th class="tooltip-header">יתרת הון בסיום (₪)<span class="tooltip-text">יתרת המזומנים הצפויה להישאר בחשבון הבנק בסוף התקופה, לאחר חישוב כל ההכנסות וההוצאות (ללא הפיקדון).</span></th>
                     <th class="tooltip-header">החזר צפוי (₪)<span class="tooltip-text">סכום הפיקדון או דמי הכניסה שנותר להחזר לדייר או ליורשיו בסוף התקופה, לאחר ניכוי כל הפחת המצטבר.</span></th>
-                    <th>תזרים חודשי ראשון (₪)</th>
+                    <th class="tooltip-header">סה"כ יתרה (הון + החזר) (₪)<span class="tooltip-text">הסכום הכולל של יתרת המזומנים בבנק בתוספת סכום הפיקדון/דמי הכניסה המוחזר בסוף התקופה.</span></th>
                 </tr></thead><tbody>`;
 
                 State.simulationResults.forEach(result => {
@@ -968,14 +968,14 @@
                         durationNote = `<div class="note">${y} שנים ו־${m} חודשים</div>`;
                     }
 
-                    // Mobile headers map
-                    const mHeaders = ['שם החברה', 'סוג מסלול', 'סה"כ חודשים', 'עלות מצטברת', 'עלות שחיקה', 'עלות אחזקה', 'יתרת הון', 'החזר צפוי', 'תזרים ראשון'];
+                    // Mobile headers map - Updated order
+                    const mHeaders = ['שם החברה', 'סוג מסלול', 'סה"כ חודשים', 'עלות אחזקה', 'עלות שחיקה', 'עלות מצטברת', 'יתרת הון', 'החזר צפוי', 'סה"כ יתרה'];
 
-                    // Initial Params for First Month Flow
+                    // Total Balance (Cash + Refund)
+                    const totalBalance = finalCash + refundEnd;
+
+                    // Initial Params for Tooltip construction
                     const initP = UI.readAllInputsForTrack(rSummary.trackId);
-                    const base = initP.pricingMode === 'deposit' ? initP.baseWithDeposit : (initP.pricingMode === 'entrance_fee' ? initP.baseWithEntranceFee : initP.baseNoDeposit);
-                    const rent = initP.scenario === 'rent' ? Math.max(0, (initP.rentGross * (1 - initP.rentTaxPct) * (1 - initP.vacancyPct)) - (initP.annualMaintenance / 12)) : 0;
-                    const indNet = (initP.monthlyIncome + rent) - (base + initP.monthlyLivingExpenses);
 
                     // Tooltip Construction
                     let tooltip = '';
@@ -991,15 +991,13 @@
                         <td data-label="${mHeaders[0]}"><span class="tooltip-header">${Utils.escapeHtml(rSummary.trackName)}<span class="tooltip-text">${tooltip}</span></span></td>
                         <td data-label="${mHeaders[1]}">${pricingModeMap[rSummary.pricingMode]}</td>
                         <td data-label="${mHeaders[2]}"><b>${Utils.fmt(displayMonths)} (${Utils.fmt(indMonths)} / ${Utils.fmt(nursMonths)})</b>${durationNote}</td>
-                        <td data-label="${mHeaders[3]}">${Utils.fmt(totalEconomicCost)}</td>
+                        <td data-label="${mHeaders[3]}">${Utils.fmt(cumulativeMaintenance)}</td>
                         <td data-label="${mHeaders[4]}">${Utils.fmt(cumulativeDepreciation)}</td>
-                        <td data-label="${mHeaders[5]}">${Utils.fmt(cumulativeMaintenance)}</td>
+                        <td data-label="${mHeaders[5]}"><b class="danger">${Utils.fmt(totalEconomicCost)}</b></td>
                         <td data-label="${mHeaders[6]}">${Utils.fmt(finalCash)}</td>
                         <td data-label="${mHeaders[7]}">${Utils.fmt(refundEnd)}</td>
                         <td data-label="${mHeaders[8]}">
-                            <span class="income">${Utils.fmt(initP.monthlyIncome + rent)}</span> /
-                            <span class="expense">${Utils.fmt(base + initP.monthlyLivingExpenses)}</span> /
-                            <b class="${indNet >= 0 ? 'ok' : 'danger'}">${Utils.fmt(indNet)}</b>
+                            <b class="ok" style="font-size: 1.1rem;">${Utils.fmt(totalBalance)} ₪</b>
                         </td>
                     </tr>`;
                 });
