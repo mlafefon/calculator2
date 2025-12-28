@@ -295,8 +295,8 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
 .results-table tr.insolvent { background-color: rgba(251, 113, 133, 0.1); }
 .results-table thead {
   position: sticky;
-  top: 188px;
-  z-index: 100;
+  top: 130px; /* Adjusted for step 3 layout */
+  z-index: 90;
 }
 .track-num-badge {
     background: var(--accent);
@@ -317,7 +317,7 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 24px;
-    padding: 0 24px 40px;
+    padding: 0 0 40px;
 }
 .chart-box {
     background: var(--panel);
@@ -325,7 +325,6 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
     border-radius: 16px;
     padding: 24px;
     width: 100%;
-    /* Removed min-height to fit content */
 }
 .chart-box h3 {
     margin-top: 0;
@@ -340,13 +339,15 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
 }
 
 #sliderGroup {
-    margin-bottom: 0;
+    margin-bottom: 16px;
     padding: 16px 24px;
     background: var(--panel);
-    border-radius: 0;
+    border-radius: 12px;
     position: sticky;
-    top: 76px;
-    z-index: 110;
+    top: 0;
+    z-index: 95;
+    border: 1px solid var(--border);
+    margin-top: 16px;
 }
 
 .slider-container {
@@ -630,89 +631,113 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
     opacity: 1;
 }
 
-/* Results Modal */
-.modal-overlay {
-    position: fixed;
-    top: 0;
+/* STEPPER STYLES */
+.stepper-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 32px;
+    padding: 0 16px;
+}
+.stepper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 600px;
+    justify-content: space-between;
+    position: relative;
+}
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    cursor: pointer;
+}
+.step-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--panel);
+    border: 2px solid var(--border);
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+    transition: all 0.3s;
+}
+.step.active .step-circle {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    box-shadow: 0 0 15px rgba(34,211,238,0.4);
+}
+.step.completed .step-circle {
+    background: var(--ok);
+    border-color: var(--ok);
+    color: var(--bg);
+}
+.step-label {
+    font-size: 0.9rem;
+    color: var(--muted);
+    font-weight: 500;
+    transition: color 0.3s;
+}
+.step.active .step-label {
+    color: var(--accent);
+}
+.step.completed .step-label {
+    color: var(--ok);
+}
+.step-line {
+    position: absolute;
+    top: 20px;
     left: 0;
     width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s, visibility 0.3s;
-}
-.modal-overlay.visible {
-    opacity: 1;
-    visibility: visible;
-}
-.modal-content {
-    background: var(--bg);
-    padding: 0;
-    border-radius: 0;
-    border: none;
-    width: 100%;
-    height: 100%;
-    max-width: none;
-    max-height: none;
-    overflow-y: auto;
-    overflow-x: hidden;
-    position: relative;
-    transform: scale(0.95);
-    transition: transform 0.3s;
-}
-.modal-overlay.visible .modal-content {
-    transform: scale(1);
-}
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 24px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 120;
-}
-.modal-header h2 {
-  margin: 0;
-  color: var(--accent);
-}
-.modal-close {
-    position: relative;
-    top: auto;
-    left: auto;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-size: 1.5rem;
-    font-weight: bold;
-    cursor: pointer;
-    line-height: 1;
-    padding: 0;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    height: 2px;
+    background: var(--border);
     z-index: 1;
-    box-shadow: none;
-    transition: background-color 0.2s, transform 0.2s;
-    flex-shrink: 0;
 }
-.modal-close:hover {
-    color: var(--bg);
-    background-color: var(--accent);
-    transform: scale(1.1);
+.step-line-fill {
+    height: 100%;
+    background: var(--ok);
+    width: 0%;
+    transition: width 0.3s ease;
 }
+
+/* Step Visibility */
+.step-content {
+    display: none;
+    animation: fadeIn 0.4s ease;
+}
+.step-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.step-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 24px;
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+}
+.step-footer.single-btn {
+    justify-content: flex-end;
+}
+
+/* Results View */
 #resultsTableContainer {
-  padding: 0 24px 24px;
+  padding: 0;
+  overflow-x: auto;
 }
 
 .insolvency-alert {
@@ -748,9 +773,6 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
     .top-bar-settings .spinner-control input { padding-left: 2px; padding-right: 2px; }
     .top-bar-settings { gap: 6px; }
 
-    .modal-header h2 { font-size: 1.25rem; }
-    .modal-header { padding: 12px 16px; }
-    .modal-close { width: 36px; height: 36px; font-size: 1.2rem; }
     
     .tooltip-text {
         left: auto;
@@ -761,13 +783,7 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
 
     #sliderGroup {
       padding: 12px 16px;
-      top: 61px;
-    }
-    .results-table thead {
-      top: 172px; 
-    }
-    #resultsTableContainer {
-      padding: 16px;
+      /* Removed top: 61px to adapt to flow */
     }
     
     .preview-item {
@@ -800,10 +816,14 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
         border-radius: 6px;
     }
     .charts-container {
-        padding: 0 16px 32px;
+        padding: 0 0 32px;
     }
     .chart-box {
         padding: 16px;
         min-height: 300px;
     }
+    
+    .stepper-container { padding: 0; margin-bottom: 24px; }
+    .step-label { display: none; } /* Hide text on mobile if needed */
+    .step.active .step-label { display: block; position: absolute; top: 44px; width: 150px; text-align: center; }
 }

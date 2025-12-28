@@ -36,149 +36,180 @@
                   </button>
                   <span class="tooltip-text-topbar">ייצוא נתונים</span>
               </div>
-              <button id="calculateBtn" class="btn">השווה מסלולים</button>
           </div>
       </div>
   </div>
 
   <div class="container">
     <h1>מחשבון השוואת מסלולי דיור מוגן</h1>
-    <p class="subtitle">הכלי מאפשר להשוות תרחישים פיננסיים שונים למגורים בדיור מוגן. התחילו בהזנת הנתונים הכלליים, הגדירו את מסלולי התמחור שברצונכם לבחון, ולבסוף השוו את התוצאות כדי לקבל החלטה מושכלת.</p>
+    <p class="subtitle">הכלי מאפשר להשוות תרחישים פיננסיים שונים למגורים בדיור מוגן.</p>
+
+    <!-- Stepper Navigation -->
+    <div class="stepper-container">
+        <div class="stepper">
+            <div class="step-line">
+                <div class="step-line-fill" id="stepperLineFill"></div>
+            </div>
+            <div class="step active" id="step-indicator-1">
+                <div class="step-circle">1</div>
+                <div class="step-label">נתונים כלליים</div>
+            </div>
+            <div class="step" id="step-indicator-2">
+                <div class="step-circle">2</div>
+                <div class="step-label">הגדרת מסלולים</div>
+            </div>
+            <div class="step" id="step-indicator-3">
+                <div class="step-circle">3</div>
+                <div class="step-label">השוואת תוצאות</div>
+            </div>
+        </div>
+    </div>
 
     <!-- Step 1: Common Inputs -->
-    <div class="card" id="commonInputsCard">
-      <h2>שלב 1: נתונים כלליים ונכס</h2>
-      <h3>פרמטרים פיננסיים</h3>
-      <div class="row">
-        <div class="span-3"><label for="initCash">הון נזיל התחלתי (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="initCash">+</button><input type="text" id="initCash" value="1500000" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="initCash">-</button></div></div>
-        <div class="span-3"><label for="monthlyIncome">הכנסה חודשית קבועה (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="monthlyIncome">+</button><input type="text" id="monthlyIncome" value="5500" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="monthlyIncome">-</button></div></div>
-        <div class="span-3"><label for="monthlyLivingExpenses">הוצאות מחייה חודשיות (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="monthlyLivingExpenses">+</button><input type="text" id="monthlyLivingExpenses" value="1500" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="monthlyLivingExpenses">-</button></div></div>
-        <div class="span-3">
-            <label for="oneTimeCosts">
-                <span class="tooltip-header">עלויות חד־פעמיות (₪)
-                    <span class="tooltip-text">מכסה הוצאות גדולות ומיידיות הקשורות למעבר, שאינן הפיקדון או דמי הכניסה. למשל: הובלה, ריהוט, שיפוץ קל, או עמלות. סכום זה יופחת מההון הנזיל ההתחלתי שלך ביום הראשון של הסימולציה.</span>
-                </span>
-            </label>
-            <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="oneTimeCosts">+</button><input type="text" id="oneTimeCosts" value="0" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="oneTimeCosts">-</button></div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="span-6"><label for="annualReturn">תשואת ריבית שנתית על היתרה (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualReturn">+</button><input type="text" id="annualReturn" value="4.5" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualReturn">-</button></div></div>
-        <div class="span-6">
-            <label for="annualInflation">
-                <span class="tooltip-header">קצב התייקרות שנתי (מדד) (%)
-                    <span class="tooltip-text">שיעור האינפאציה השנתי הצפוי. משפיע על התייקרות דמי האחזקה, הוצאות המחייה, וההכנסה משכר דירה לאורך זמן, כדי לדמות את עליית יוקר המחיה.</span>
-                </span>
-            </label>
-            <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualInflation">+</button><input type="text" id="annualInflation" value="2" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualInflation">-</button></div>
-        </div>
-      </div>
-      
-      <div class="hr"></div>
-      <h3>מצב סיעודי</h3>
-      <div class="row">
-        <div class="span-12"><label class="inline-row"><input id="isNursing" type="checkbox"/> להפעיל תרחיש מצב סיעודי</label></div>
-      </div>
-      <div class="row" id="nursingFieldsRow" style="display: none;">
-        <div class="span-4"><label for="monthsIndependent">חודשים בתפקוד מלא</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="monthsIndependent">+</button><input type="text" id="monthsIndependent" value="60" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="monthsIndependent">-</button></div></div>
-        <div class="span-4"><label for="nursingAddon">תוספת חודשית במצב סיעודי (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="nursingAddon">+</button><input type="text" id="nursingAddon" value="18000" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="nursingAddon">-</button></div></div>
-        <div class="span-4">
-            <label for="nursingAllowance">
-                <span class="tooltip-header">גמלת סיעוד לקיזוז (₪/חודש)
-                    <span class="tooltip-text">סכום חודשי הצפוי להתקבל ממקור חיצוני (כגון ביטוח לאומי או פוליסה פרטית) למימון הטיפול הסיעודי. סכום זה מופחת מה'תוספת החודשית במצב סיעודי' כדי לחשב את ההוצאה נטו שלכם.</span>
-                </span>
-            </label>
-            <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="nursingAllowance">+</button><input type="text" id="nursingAllowance" value="0" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="nursingAllowance">-</button></div>
-        </div>
-      </div>
-
-      <div class="hr"></div>
-      <h3>תרחיש נכס</h3>
-      <div class="row">
-        <div class="span-4">
-            <label for="assetScenarioSelect">בחר תרחיש עבור הדירה</label>
-            <select id="assetScenarioSelect">
-                <option value="sell">מכירת הדירה</option>
-                <option value="rent" selected>השכרת הדירה</option>
-                <option value="none">ללא שימוש בדירה</option>
-            </select>
-        </div>
-      </div>
-      <div id="sellBlock" style="display: none;">
-        <div class="row">
-          <div class="span-6"><label for="salePrice">מחיר מכירה (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="salePrice">+</button><input type="text" id="salePrice" value="3000000" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="salePrice">-</button></div></div>
-          <div class="span-6"><label for="saleCostsPct">עלויות עסקה (% מהמחיר)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="saleCostsPct">+</button><input type="text" id="saleCostsPct" value="3" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="saleCostsPct">-</button></div></div>
-        </div>
-      </div>
-      <div id="rentBlock">
-        <div class="row">
-          <div class="span-3"><label for="rentGross">שכ"ד חודשי ברוטו (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="rentGross">+</button><input type="text" id="rentGross" value="7000" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="rentGross">-</button></div></div>
-          <div class="span-3"><label for="rentTaxPct">מס על שכ"ד (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="rentTaxPct">+</button><input type="text" id="rentTaxPct" value="10" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="rentTaxPct">-</button></div></div>
-          <div class="span-3">
-            <label for="vacancyPct">
-                <span class="tooltip-header">חודשים פנויים בשנה (%)
-                    <span class="tooltip-text">אחוז הזמן המוערך בשנה בו הנכס יעמוד ריק ולא יניב הכנסה, למשל בתקופות מעבר בין שוכרים. הנתון מפחית את ההכנסה השנתית משכירות כדי לשקף תחזית מציאותית יותר.</span>
-                </span>
-                 <span class="note" id="vacancyMonthsNote" style="display: block; font-weight: normal; line-height: 1.2; margin-top: 2px;"></span>
-            </label>
-            <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="vacancyPct">+</button><input type="text" id="vacancyPct" value="8" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="vacancyPct">-</button></div>
+    <div id="step-1-content" class="step-content active">
+        <div class="card" id="commonInputsCard">
+          <h2>שלב 1: נתונים כלליים ונכס</h2>
+          <h3>פרמטרים פיננסיים</h3>
+          <div class="row">
+            <div class="span-3"><label for="initCash">הון נזיל התחלתי (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="initCash">+</button><input type="text" id="initCash" value="1500000" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="initCash">-</button></div></div>
+            <div class="span-3"><label for="monthlyIncome">הכנסה חודשית קבועה (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="monthlyIncome">+</button><input type="text" id="monthlyIncome" value="5500" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="monthlyIncome">-</button></div></div>
+            <div class="span-3"><label for="monthlyLivingExpenses">הוצאות מחייה חודשיות (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="monthlyLivingExpenses">+</button><input type="text" id="monthlyLivingExpenses" value="1500" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="monthlyLivingExpenses">-</button></div></div>
+            <div class="span-3">
+                <label for="oneTimeCosts">
+                    <span class="tooltip-header">עלויות חד־פעמיות (₪)
+                        <span class="tooltip-text">מכסה הוצאות גדולות ומיידיות הקשורות למעבר, שאינן הפיקדון או דמי הכניסה. למשל: הובלה, ריהוט, שיפוץ קל, או עמלות. סכום זה יופחת מההון הנזיל ההתחלתי שלך ביום הראשון של הסימולציה.</span>
+                    </span>
+                </label>
+                <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="oneTimeCosts">+</button><input type="text" id="oneTimeCosts" value="0" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="oneTimeCosts">-</button></div>
+            </div>
           </div>
-          <div class="span-3"><label for="annualMaintenance">תחזוקה שנתית (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualMaintenance">+</button><input type="text" id="annualMaintenance" value="6000" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualMaintenance">-</button></div></div>
+          <div class="row">
+            <div class="span-6"><label for="annualReturn">תשואת ריבית שנתית על היתרה (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualReturn">+</button><input type="text" id="annualReturn" value="4.5" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualReturn">-</button></div></div>
+            <div class="span-6">
+                <label for="annualInflation">
+                    <span class="tooltip-header">קצב התייקרות שנתי (מדד) (%)
+                        <span class="tooltip-text">שיעור האינפאציה השנתי הצפוי. משפיע על התייקרות דמי האחזקה, הוצאות המחייה, וההכנסה משכר דירה לאורך זמן, כדי לדמות את עליית יוקר המחיה.</span>
+                    </span>
+                </label>
+                <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualInflation">+</button><input type="text" id="annualInflation" value="2" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualInflation">-</button></div>
+            </div>
+          </div>
+          
+          <div class="hr"></div>
+          <h3>מצב סיעודי</h3>
+          <div class="row">
+            <div class="span-12"><label class="inline-row"><input id="isNursing" type="checkbox"/> להפעיל תרחיש מצב סיעודי</label></div>
+          </div>
+          <div class="row" id="nursingFieldsRow" style="display: none;">
+            <div class="span-4"><label for="monthsIndependent">חודשים בתפקוד מלא</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="monthsIndependent">+</button><input type="text" id="monthsIndependent" value="60" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="monthsIndependent">-</button></div></div>
+            <div class="span-4"><label for="nursingAddon">תוספת חודשית במצב סיעודי (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="nursingAddon">+</button><input type="text" id="nursingAddon" value="18000" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="nursingAddon">-</button></div></div>
+            <div class="span-4">
+                <label for="nursingAllowance">
+                    <span class="tooltip-header">גמלת סיעוד לקיזוז (₪/חודש)
+                        <span class="tooltip-text">סכום חודשי הצפוי להתקבל ממקור חיצוני (כגון ביטוח לאומי או פוליסה פרטית) למימון הטיפול הסיעודי. סכום זה מופחת מה'תוספת החודשית במצב סיעודי' כדי לחשב את ההוצאה נטו שלכם.</span>
+                    </span>
+                </label>
+                <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="nursingAllowance">+</button><input type="text" id="nursingAllowance" value="0" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="nursingAllowance">-</button></div>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+          <h3>תרחיש נכס</h3>
+          <div class="row">
+            <div class="span-4">
+                <label for="assetScenarioSelect">בחר תרחיש עבור הדירה</label>
+                <select id="assetScenarioSelect">
+                    <option value="sell">מכירת הדירה</option>
+                    <option value="rent" selected>השכרת הדירה</option>
+                    <option value="none">ללא שימוש בדירה</option>
+                </select>
+            </div>
+          </div>
+          <div id="sellBlock" style="display: none;">
+            <div class="row">
+              <div class="span-6"><label for="salePrice">מחיר מכירה (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="salePrice">+</button><input type="text" id="salePrice" value="3000000" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="salePrice">-</button></div></div>
+              <div class="span-6"><label for="saleCostsPct">עלויות עסקה (% מהמחיר)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="saleCostsPct">+</button><input type="text" id="saleCostsPct" value="3" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="saleCostsPct">-</button></div></div>
+            </div>
+          </div>
+          <div id="rentBlock">
+            <div class="row">
+              <div class="span-3"><label for="rentGross">שכ"ד חודשי ברוטו (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="rentGross">+</button><input type="text" id="rentGross" value="7000" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="rentGross">-</button></div></div>
+              <div class="span-3"><label for="rentTaxPct">מס על שכ"ד (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="rentTaxPct">+</button><input type="text" id="rentTaxPct" value="10" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="rentTaxPct">-</button></div></div>
+              <div class="span-3">
+                <label for="vacancyPct">
+                    <span class="tooltip-header">חודשים פנויים בשנה (%)
+                        <span class="tooltip-text">אחוז הזמן המוערך בשנה בו הנכס יעמוד ריק ולא יניב הכנסה, למשל בתקופות מעבר בין שוכרים. הנתון מפחית את ההכנסה השנתית משכירות כדי לשקף תחזית מציאותית יותר.</span>
+                    </span>
+                     <span class="note" id="vacancyMonthsNote" style="display: block; font-weight: normal; line-height: 1.2; margin-top: 2px;"></span>
+                </label>
+                <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="vacancyPct">+</button><input type="text" id="vacancyPct" value="8" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="vacancyPct">-</button></div>
+              </div>
+              <div class="span-3"><label for="annualMaintenance">תחזוקה שנתית (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualMaintenance">+</button><input type="text" id="annualMaintenance" value="6000" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualMaintenance">-</button></div></div>
+            </div>
+          </div>
         </div>
-      </div>
+        <div class="step-footer single-btn">
+            <button id="step1NextBtn" class="btn">המשך להגדרת מסלולים &larr;</button>
+        </div>
     </div>
     
     <!-- Step 2: Tracks Definition -->
-    <div class="card" id="tracksCard">
-        <div class="header-row">
-            <h2>שלב 2: הגדרת מסלולים להשוואה</h2>
-            <div class="tooltip-container">
-                <button id="toggleAllTracksBtn" class="btn secondary icon-btn" aria-label="כווץ הכל">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 12 6 7 11"></polyline><polyline points="17 18 12 13 7 18"></polyline></svg>
-                </button>
-                <span class="tooltip-text-topbar" id="toggleAllTooltip">כווץ הכל</span>
+    <div id="step-2-content" class="step-content">
+        <div class="card" id="tracksCard">
+            <div class="header-row">
+                <h2>שלב 2: הגדרת מסלולים להשוואה</h2>
+                <div class="tooltip-container">
+                    <button id="toggleAllTracksBtn" class="btn secondary icon-btn" aria-label="כווץ הכל">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 12 6 7 11"></polyline><polyline points="17 18 12 13 7 18"></polyline></svg>
+                    </button>
+                    <span class="tooltip-text-topbar" id="toggleAllTooltip">כווץ הכל</span>
+                </div>
             </div>
+            <div id="tracksContainer"></div>
+            <button id="addTrackBtn" class="btn secondary" style="margin-top: 16px;">+ הוסף מסלול חדש</button>
         </div>
-        <div id="tracksContainer"></div>
-        <button id="addTrackBtn" class="btn secondary" style="margin-top: 16px;">+ הוסף מסלול חדש</button>
+        <div class="step-footer">
+            <button id="step2BackBtn" class="btn secondary">&rarr; חזרה לנתונים כלליים</button>
+            <button id="step2NextBtn" class="btn">חשב והשווה תוצאות &larr;</button>
+        </div>
     </div>
 
-  </div>
+    <!-- Step 3: Results -->
+    <div id="step-3-content" class="step-content">
+        <div class="card" style="padding-bottom: 0;">
+            <div class="header-row">
+                 <h2>שלב 3: השוואת תוצאות</h2>
+                 <button id="step3BackBtnTop" class="btn secondary">חזרה לעריכת מסלולים</button>
+            </div>
+            
+            <div id="sliderGroup">
+                <label for="yearSlider" id="yearSliderLabel">הצג תוצאות לאחר: 15 שנים</label>
+                <div class="slider-container">
+                    <output for="yearSlider" id="sliderValueBubble"></output>
+                    <input type="range" id="yearSlider" min="0.5" max="15" value="15" step="0.5">
+                    <div id="sliderTicksContainer"></div>
+                </div>
+            </div>
 
-  <!-- Results Modal -->
-  <div id="resultsModal" class="modal-overlay">
-      <div class="modal-content">
-          <div class="modal-header">
-              <h2>שלב 3: השוואת תוצאות</h2>
-              <button id="closeModalBtn" class="modal-close" aria-label="סגור חלון">&times;</button>
-          </div>
+            <div id="resultsTableContainer"></div>
 
-          <div id="sliderGroup">
-              <label for="yearSlider" id="yearSliderLabel">הצג תוצאות לאחר: 15 שנים</label>
-              <div class="slider-container">
-                  <output for="yearSlider" id="sliderValueBubble"></output>
-                  <input type="range" id="yearSlider" min="0.5" max="15" value="15" step="0.5">
-                  <div id="sliderTicksContainer"></div>
-              </div>
-          </div>
+            <div class="charts-container">
+                <div class="chart-box">
+                    <h3>מגמת עלות מצטברת לספק (₪)</h3>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="cumulativeCostChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-box">
+                    <h3>מגמת סה"כ יתרה (הון + החזר) (₪)</h3>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="totalBalanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-          <div id="resultsTableContainer"></div>
-
-          <div class="charts-container">
-              <div class="chart-box">
-                  <h3>מגמת עלות מצטברת לספק (₪)</h3>
-                  <div class="chart-canvas-wrapper">
-                      <canvas id="cumulativeCostChart"></canvas>
-                  </div>
-              </div>
-              <div class="chart-box">
-                  <h3>מגמת סה"כ יתרה (הון + החזר) (₪)</h3>
-                  <div class="chart-canvas-wrapper">
-                      <canvas id="totalBalanceChart"></canvas>
-                  </div>
-              </div>
-          </div>
-      </div>
   </div>
 
 
@@ -378,6 +409,7 @@
         const State = {
             tracks: [],
             simulationResults: [],
+            currentStep: 1,
             
             addTrack: () => {
                 const newTrack = {
@@ -475,6 +507,61 @@
                 DragManager.placeholder = null;
                 const newOrderIds = Array.from(document.querySelectorAll('.track-card')).map(el => el.dataset.trackId);
                 State.tracks.sort((a, b) => newOrderIds.indexOf(String(a.id)) - newOrderIds.indexOf(String(b.id)));
+            }
+        };
+
+        // --- Navigation Manager ---
+        const Navigation = {
+            init: () => {
+                Utils.$('step1NextBtn').addEventListener('click', () => Navigation.goToStep(2));
+                Utils.$('step2BackBtn').addEventListener('click', () => Navigation.goToStep(1));
+                Utils.$('step2NextBtn').addEventListener('click', () => {
+                    if (Events.runCalculation()) {
+                        Navigation.goToStep(3);
+                    }
+                });
+                Utils.$('step3BackBtnTop').addEventListener('click', () => Navigation.goToStep(2));
+
+                // Clickable Stepper Logic
+                Utils.$('step-indicator-1').addEventListener('click', () => Navigation.goToStep(1));
+                Utils.$('step-indicator-2').addEventListener('click', () => Navigation.goToStep(2));
+                Utils.$('step-indicator-3').addEventListener('click', () => {
+                    if (Events.runCalculation()) {
+                         Navigation.goToStep(3);
+                    }
+                });
+            },
+
+            goToStep: (stepNumber) => {
+                State.currentStep = stepNumber;
+                
+                // Update Step Content Visibility
+                document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+                Utils.$(`step-${stepNumber}-content`).classList.add('active');
+
+                // Update Stepper UI
+                const fill = Utils.$('stepperLineFill');
+                const indicators = [1, 2, 3];
+                
+                indicators.forEach(i => {
+                    const el = Utils.$(`step-indicator-${i}`);
+                    el.classList.remove('active', 'completed');
+                    if (i === stepNumber) el.classList.add('active');
+                    if (i < stepNumber) el.classList.add('completed');
+                });
+
+                // Update line fill width
+                if (stepNumber === 1) fill.style.width = '0%';
+                else if (stepNumber === 2) fill.style.width = '50%';
+                else if (stepNumber === 3) fill.style.width = '100%';
+
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                
+                // If moving to step 2, ensure previews are updated in case visibility affected them
+                if (stepNumber === 2) {
+                     UI.updateAllPreviews();
+                }
             }
         };
 
@@ -772,7 +859,7 @@
                 });
             },
 
-            renderResultsModal: () => {
+            renderResultsView: () => {
                 const container = Utils.$('resultsTableContainer');
                 const targetYear = parseFloat(Utils.$('yearSlider').value);
                 const targetMonths = Math.round(targetYear * 12);
@@ -966,7 +1053,7 @@
                     bubble.style.right = `${pct}%`;
                     slider.style.setProperty('--slider-fill-percent', `${pct}%`);
                 };
-                slider.oninput = () => { update(); UI.renderResultsModal(); };
+                slider.oninput = () => { update(); UI.renderResultsView(); };
                 update();
             }
         };
@@ -974,10 +1061,14 @@
         const Events = {
             init: () => {
                 DragManager.init();
+                Navigation.init(); // Initialize navigation listeners
                 UI.setupNumberFormatting(document.body);
                 UI.updateVacancyMonthsNote();
                 const debouncedPreviewUpdate = Utils.debounce((trackId) => {
-                    if (trackId) UI.updateTrackPreview(trackId); else UI.updateAllPreviews();
+                    // Only update preview if we are on or past step 2
+                    if (State.currentStep >= 2) {
+                        if (trackId) UI.updateTrackPreview(trackId); else UI.updateAllPreviews();
+                    }
                 }, 100);
                 document.addEventListener('click', (e) => {
                     const target = e.target;
@@ -1034,12 +1125,12 @@
                     if (window.innerWidth <= 600) setTimeout(() => document.querySelector(`.track-card[data-track-id='${t.id}']`)?.scrollIntoView({behavior:'smooth', block:'nearest'}), 100);
                 });
                 Utils.$('toggleAllTracksBtn').addEventListener('click', Events.toggleAllTracks);
-                Utils.$('calculateBtn').addEventListener('click', Events.runCalculation);
-                Utils.$('closeModalBtn').addEventListener('click', () => Utils.$('resultsModal').classList.remove('visible'));
-                Utils.$('resultsModal').addEventListener('click', (e) => { if (e.target.id === 'resultsModal') Utils.$('resultsModal').classList.remove('visible'); });
+                
                 Utils.$('exportBtn').addEventListener('click', Events.exportData);
                 Utils.$('importBtn').addEventListener('click', () => Utils.$('importFile').click());
                 Utils.$('importFile').addEventListener('change', Events.importData);
+                
+                // Init first track
                 const t = State.addTrack();
                 UI.renderTrackCard(t);
             },
@@ -1095,13 +1186,13 @@
 
             runCalculation: () => {
                  const cards = document.querySelectorAll('.track-card');
-                 if (cards.length === 0) { alert('יש להוסיף לפחות מסלול אחד.'); return; }
+                 if (cards.length === 0) { alert('יש להוסיף לפחות מסלול אחד.'); return false; }
                  State.simulationResults = Array.from(cards).map(c => {
                      return Calculator.simulate(UI.readAllInputsForTrack(c.dataset.trackId));
                  });
                  UI.setupYearSlider();
-                 UI.renderResultsModal();
-                 Utils.$('resultsModal').classList.add('visible');
+                 UI.renderResultsView();
+                 return true;
             },
 
             exportData: () => {
@@ -1165,7 +1256,7 @@
                             if(td.pricingMode === 'deposit') UI.updateDepositReduction(t.id);
                             if(td.pricingMode === 'entrance_fee') UI.updateCalculatedEntranceFeeRate(t.id);
                         });
-                        UI.updateAllPreviews();
+                        // UI.updateAllPreviews(); // Called by step 2 entry now
                         const cards = document.querySelectorAll('.track-card');
                         cards.forEach(c => c.classList.remove('collapsed'));
                         const btn = Utils.$('toggleAllTracksBtn');
