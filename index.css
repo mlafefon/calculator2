@@ -289,15 +289,10 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
 
 .results-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
 .results-table th, .results-table td { padding: 12px; text-align: center; border-bottom: 1px solid var(--border); }
-.results-table th { color: var(--accent); font-size: 0.9rem; background: var(--panel); }
+.results-table th { color: var(--accent); font-size: 0.9rem; background: var(--panel); vertical-align: bottom; }
 .results-table td { font-size: 1rem; }
 .results-table tr:last-child td { border-bottom: none; }
 .results-table tr.insolvent { background-color: rgba(251, 113, 133, 0.1); }
-.results-table thead {
-  position: sticky;
-  top: 130px; /* Adjusted for step 3 layout */
-  z-index: 90;
-}
 .track-num-badge {
     background: var(--accent);
     color: var(--bg);
