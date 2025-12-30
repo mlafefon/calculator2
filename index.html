@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="he" dir="rtl">
 <head>
@@ -84,14 +83,18 @@
             </div>
           </div>
           <div class="row">
-            <div class="span-6"><label for="annualReturn">תשואת ריבית שנתית על היתרה (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualReturn">+</button><input type="text" id="annualReturn" value="4.5" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualReturn">-</button></div></div>
-            <div class="span-6">
+            <div class="span-4"><label for="annualReturn">תשואת ריבית שנתית על היתרה (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualReturn">+</button><input type="text" id="annualReturn" value="4.5" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualReturn">-</button></div></div>
+            <div class="span-4">
                 <label for="annualInflation">
                     <span class="tooltip-header">קצב התייקרות שנתי (מדד) (%)
-                        <span class="tooltip-text">שיעור האינפאציה השנתי הצפוי. משפיע על התייקרות דמי האחזקה, הוצאות המחייה, וההכנסה משכר דירה לאורך זמן, כדי לדמות את עליית יוקר המחיה.</span>
+                        <span class="tooltip-text">שיעור האינפאציה השנתי הצפוי. משפיע על התייקרות דמי האחזקה, הוצאות המחייה, וההכנסה משכר דירה לאורך זמן. בנוסף, יתרת הפיקדון המוחזרת מוצמדת למדד זה.</span>
                     </span>
                 </label>
                 <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualInflation">+</button><input type="text" id="annualInflation" value="2" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualInflation">-</button></div>
+            </div>
+            <div class="span-4">
+                <label for="vatRate">שיעור מע"מ (%)</label>
+                <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="vatRate">+</button><input type="text" id="vatRate" value="17" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="vatRate">-</button></div>
             </div>
           </div>
           
@@ -326,8 +329,14 @@
                 const isDeposit = p.pricingMode === 'deposit';
                 const isEntrance = p.pricingMode === 'entrance_fee';
                 
+                // Adjust depreciation rate for VAT if checked
+                const vatMultiplier = 1 + p.vatRate;
+                const effectiveDepositDepreciationPct = p.depositAddVat ? p.depositDepreciationPct * vatMultiplier : p.depositDepreciationPct;
+
+                // Deposit Floor logic has been updated in readTrackInputs to account for VAT (if selected) in the p.depositRefundPct
                 const depositFloor = isDeposit ? (p.depositAmount || 0) * (p.depositRefundPct || 0) : 0;
-                const depositMonthlyDepreciation = isDeposit ? (p.depositAmount || 0) * ((p.depositDepreciationPct || 0) / 12) : 0;
+                
+                const depositMonthlyDepreciation = isDeposit ? (p.depositAmount || 0) * (effectiveDepositDepreciationPct / 12) : 0;
                 const entranceFeeMonthlyDep = isEntrance ? p.entranceFeeAmount * (p.entranceFeeDepreciationRateMonthly || 0) : 0;
                 const entranceFeeMaxMonths = isEntrance ? p.entranceFeeDepreciationYears * 12 : 0;
 
@@ -367,12 +376,15 @@
                     if (isDeposit && depositBook > depositFloor) {
                         const maxDeductible = Math.max(0, depositBook - depositFloor);
                         const actualDeduction = Math.min(depositMonthlyDepreciation, maxDeductible);
-                        depreciationThisMonth = actualDeduction;
+                        // Contract: Deduction is from the linked deposit.
+                        // Simplified simulation: We deduct nominal amount from nominal book.
+                        // But when displaying "Refund" (below), we MUST apply inflation to the remaining book.
+                        depreciationThisMonth = actualDeduction * inflationFactor; // Economic cost includes inflation on the deduction value
                         depositBook -= actualDeduction;
                     }
                     if (isEntrance && entranceFeeBook > 0 && t < entranceFeeMaxMonths) {
                         const actualDepreciation = Math.min(entranceFeeBook, entranceFeeMonthlyDep);
-                        depreciationThisMonth = actualDepreciation;
+                        depreciationThisMonth = actualDepreciation * inflationFactor;
                         entranceFeeBook = Math.max(0, entranceFeeBook - entranceFeeMonthlyDep);
                     }
                     
@@ -385,7 +397,11 @@
                     if (p.isNursing && t >= p.monthsIndependent) nursingMonths++; else independentMonths++;
                     lastPositiveCash = cash;
                     
-                    const refundCurrent = isDeposit ? depositBook : (isEntrance ? entranceFeeBook : 0);
+                    // Critical Update: Refund value is Linked to CPI
+                    // The book value is nominal, but the contract ensures it retains purchasing power (linked).
+                    // So we multiply the nominal remaining book by the cumulative inflation factor.
+                    const refundNominal = isDeposit ? depositBook : (isEntrance ? entranceFeeBook : 0);
+                    const refundLinked = isDeposit ? refundNominal * inflationFactor : refundNominal; // Entrance fee usually sunk, but if partially refundable, usually nominal. Deposit is Linked.
                     
                     monthlyLog.push({ 
                         month: t + 1, 
@@ -394,8 +410,8 @@
                         providerEconomicCost, 
                         cumulativeEconomic,
                         cash: lastPositiveCash, 
-                        refund: refundCurrent, 
-                        totalBalance: lastPositiveCash + refundCurrent,
+                        refund: refundLinked, 
+                        totalBalance: lastPositiveCash + refundLinked,
                         independentMonths, 
                         nursingMonths 
                     });
@@ -403,7 +419,10 @@
                     t++;
                 }
 
-                const refundEnd = isDeposit ? depositBook : (isEntrance ? entranceFeeBook : 0);
+                const refundNominalEnd = isDeposit ? depositBook : (isEntrance ? entranceFeeBook : 0);
+                // Apply final inflation factor for the summary
+                const finalInflationFactor = Math.pow(1 + monthlyInfl, t);
+                const refundEnd = isDeposit ? refundNominalEnd * finalInflationFactor : refundNominalEnd;
 
                 return { 
                     summary: { 
@@ -593,6 +612,7 @@
                     oneTimeCosts: getVal('oneTimeCosts'),
                     annualReturn: getVal('annualReturn') / 100,
                     annualInflation: getVal('annualInflation') / 100,
+                    vatRate: getVal('vatRate') / 100,
                     maxYears: getVal('maxYears'),
                     monthsIndependent: getVal('monthsIndependent'),
                     nursingAddon: getVal('nursingAddon'),
@@ -607,7 +627,7 @@
                 };
             },
 
-            readTrackInputs: (trackId) => {
+            readTrackInputs: (trackId, vatRate = 0) => {
                 const pMode = Utils.$(`pricingMode_${trackId}`).value;
                 const company = Utils.$(`trackCompany_${trackId}`).value;
                 const room = Utils.$(`trackRoom_${trackId}`).value;
@@ -618,6 +638,15 @@
                 };
                 const depPctVal = pMode === 'deposit' ? getVal(`depositDepreciationPct_${trackId}`) : 0;
                 const depYearsVal = pMode === 'deposit' ? getVal(`depositDepreciationYears_${trackId}`) : 0;
+                // Read VAT check
+                const depVatCheck = pMode === 'deposit' ? Utils.$(`depositAddVat_${trackId}`)?.checked : false;
+
+                // When calculating refund % floor with VAT added:
+                // If the user checks "Add VAT", the Total Deduction = Years * Rate * (1 + VAT).
+                // The Refund Floor = 100% - Total Deduction.
+                const multiplier = depVatCheck ? (1 + vatRate) : 1;
+                const totalDepreciationPct = depYearsVal * depPctVal * multiplier;
+                
                 return {
                     id: trackId,
                     trackName: trackName,
@@ -630,7 +659,8 @@
                     depositAmount: pMode === 'deposit' ? getVal(`depositAmount_${trackId}`) : 0,
                     depositDepreciationPct: depPctVal / 100,
                     depositDepreciationYears: depYearsVal,
-                    depositRefundPct: pMode === 'deposit' ? Math.max(0, (100 - (depYearsVal * depPctVal)) / 100) : 0,
+                    depositAddVat: depVatCheck,
+                    depositRefundPct: pMode === 'deposit' ? Math.max(0, (100 - totalDepreciationPct) / 100) : 0,
                     entranceFeeAmount: pMode === 'entrance_fee' ? getVal(`entranceFeeAmount_${trackId}`) : 0,
                     entranceFeeDepreciationRateMonthly: pMode === 'entrance_fee' ? (parseFloat(Utils.$(`entranceFeeDepreciationRateMonthly_${trackId}`)?.value || 0) / 100) : 0,
                     entranceFeeDepreciationYears: pMode === 'entrance_fee' ? getVal(`entranceFeeDepreciationYears_${trackId}`) : 0,
@@ -638,7 +668,8 @@
             },
 
             readAllInputsForTrack: (trackId) => {
-                return { ...UI.readCommonInputs(), ...UI.readTrackInputs(trackId) };
+                const common = UI.readCommonInputs();
+                return { ...common, ...UI.readTrackInputs(trackId, common.vatRate) };
             },
 
             Templates: {
@@ -663,11 +694,19 @@
                                 <button type="button" class="spinner-btn stepper-btn" data-step-dir="down" data-track-id="${id}">-</button>
                             </div>
                         </div>
-                        <div class="span-4">
+                        <div class="span-3">
                             <label for="depositAmount_${id}">סכום פיקדון (₪)</label>
                             ${UI.Templates.spinner(`depositAmount_${id}`, '1000000', 'income', `data-track-id="${id}" data-base-value="1000000"`)}
                         </div>
-                        <div class="span-2"><label for="depositDepreciationPct_${id}">פחת פיקדון שנתי (%)</label>${UI.Templates.spinner(`depositDepreciationPct_${id}`, '3', 'expense')}</div>
+                        <div class="span-3">
+                            <label for="depositDepreciationPct_${id}">פחת פיקדון שנתי (%)</label>
+                            ${UI.Templates.spinner(`depositDepreciationPct_${id}`, '3', 'expense')}
+                            <div style="margin-top:4px;">
+                                <label class="inline-row" style="font-size:0.8rem; cursor:pointer;">
+                                    <input type="checkbox" id="depositAddVat_${id}"> הוסף מע"מ לאחוז הפחת
+                                </label>
+                            </div>
+                        </div>
                         <div class="span-2">
                             <label for="depositDepreciationYears_${id}" class="tooltip-header">
                                 תקופת שחיקה (שנים)
@@ -767,7 +806,7 @@
                 // Labels
                 let depLabel = `(ל-${targetYear} שנים)`;
                 
-                const refundTooltip = params.pricingMode === 'entrance_fee' ? 'יתרת דמי הכניסה שנותרה להחזר לאחר ניכוי הפחת המוגדר בחוזה.' : 'סכום הפיקדון שנותר להחזר לאחר ניכוי הפחת השנתי המצטבר.';
+                const refundTooltip = params.pricingMode === 'entrance_fee' ? 'יתרת דמי הכניסה שנותרה להחזר לאחר ניכוי הפחת המוגדר בחוזה.' : 'סכום הפיקדון שנותר להחזר לאחר ניכוי הפחת השנתי המצטבר, כשהוא מוצמד למדד.';
                 const finalCashTooltip = 'יתרת ההון הנזיל בבנק בסיום התקופה.';
                 let refundLabel = params.pricingMode === 'entrance_fee' ? 'יתרת דמי כניסה' : 'יתרת הפיקדון';
                 let refundHtml = params.pricingMode !== 'none' ? `<div class="preview-item"><span class="preview-label tooltip-header">${refundLabel} (סוף תקופה)<span class="tooltip-text">${refundTooltip}</span></span><span class="preview-value">${Utils.fmt(refundEnd)} ₪</span></div>` : '';
@@ -803,7 +842,7 @@
                 const cards = document.querySelectorAll('.track-card');
                 const updates = Array.from(cards).map(card => {
                     const trackId = card.dataset.trackId;
-                    const trackParams = UI.readTrackInputs(trackId);
+                    const trackParams = UI.readTrackInputs(trackId, common.vatRate);
                     const params = { ...common, ...trackParams };
                     const result = Calculator.simulate(params);
                     // Use shared state year
@@ -832,9 +871,14 @@
             updateRefundPctNote: (trackId) => {
                 const years = Utils.unformat(Utils.$(`depositDepreciationYears_${trackId}`)?.value);
                 const depPct = Utils.unformat(Utils.$(`depositDepreciationPct_${trackId}`)?.value);
+                const isVatChecked = Utils.$(`depositAddVat_${trackId}`)?.checked;
+                const vatRateVal = Utils.unformat(Utils.$('vatRate')?.value);
+                const vatRate = vatRateVal ? vatRateVal / 100 : 0.17;
+
                 const note = Utils.$(`refundPctNote_${trackId}`);
                 if (note) {
-                    let refundPct = Math.max(0, 100 - (years * depPct));
+                    const multiplier = isVatChecked ? (1 + vatRate) : 1;
+                    let refundPct = Math.max(0, 100 - (years * depPct * multiplier));
                     note.textContent = `(החזר מינימלי: ${refundPct.toFixed(1)}%)`;
                 }
             },
@@ -1181,6 +1225,12 @@
                 const container = Utils.$('tracksContainer');
                 container.addEventListener('change', (e) => {
                     if (e.target.id.startsWith('pricingMode_')) UI.updateTrackBody(e.target.id.split('_')[1]);
+                    // If VAT check changes, update preview and note
+                    if (e.target.id.startsWith('depositAddVat_')) {
+                         const trackId = e.target.id.split('_')[1];
+                         UI.updateRefundPctNote(trackId);
+                         debouncedPreviewUpdate(trackId);
+                    }
                 });
                 container.addEventListener('input', (e) => {
                     const id = e.target.id;
@@ -1213,6 +1263,14 @@
                      // Handled by specific listener above for maxYears, but keeping general update
                      if(event.target.id !== 'maxYears') debouncedPreviewUpdate(); 
                 });
+                
+                // Specific listener for VAT rate to update all refund notes
+                Utils.$('vatRate').addEventListener('input', () => {
+                     document.querySelectorAll('.track-card').forEach(c => {
+                        UI.updateRefundPctNote(c.dataset.trackId);
+                     });
+                     // Debounced update is handled by commonInputsCard listener
+                });
 
                 Utils.$('vacancyPct').addEventListener('input', UI.updateVacancyMonthsNote);
                 Utils.$('isNursing').addEventListener('change', (e) => Utils.$('nursingFieldsRow').style.display = e.target.checked ? 'grid' : 'none');
@@ -1243,7 +1301,7 @@
                 let val = Utils.unformat(input.value);
                 const id = input.id;
                 let step = 500;
-                if (id.includes('Pct') || id.includes('Return') || id.includes('Inflation')) step = 0.5;
+                if (id.includes('Pct') || id.includes('Return') || id.includes('Inflation') || id.includes('vatRate')) step = 0.5;
                 else if (id.toLowerCase().includes('years')) step = 1;
                 else if (id.includes('monthsIndependent')) step = 6;
                 else {
@@ -1307,8 +1365,11 @@
                         const tData = {};
                         card.querySelectorAll('input, select').forEach(inp => {
                             const key = inp.id.split('_')[0];
-                            tData[key] = inp.value;
-                            if (inp.dataset.baseValue) tData[key + '_base'] = inp.dataset.baseValue;
+                            if (inp.type === 'checkbox') tData[key] = inp.checked;
+                            else {
+                                tData[key] = inp.value;
+                                if (inp.dataset.baseValue) tData[key + '_base'] = inp.dataset.baseValue;
+                            }
                         });
                         data.tracks.push(tData);
                     });
@@ -1352,13 +1413,22 @@
                                 const isBase = k.endsWith('_base');
                                 const realK = isBase ? k.replace('_base','') : k;
                                 const el = Utils.$(`${realK}_${t.id}`);
-                                if(el) { if(isBase) el.dataset.baseValue = td[k]; else el.value = td[k]; }
+                                if(el) { 
+                                    if(el.type === 'checkbox') el.checked = td[k];
+                                    else {
+                                        if(isBase) el.dataset.baseValue = td[k]; 
+                                        else el.value = td[k]; 
+                                    }
+                                }
                             });
                             UI.setupNumberFormatting(document.querySelector(`.track-card[data-track-id='${t.id}']`));
                             if(td.pricingMode === 'deposit') UI.updateDepositReduction(t.id);
                             if(td.pricingMode === 'entrance_fee') UI.updateCalculatedEntranceFeeRate(t.id);
                         });
-                        // UI.updateAllPreviews(); // Called by step 2 entry now
+                        
+                        UI.updateAllPreviews(); 
+                        if (State.tracks.length > 0) Events.runCalculation();
+
                         const cards = document.querySelectorAll('.track-card');
                         cards.forEach(c => c.classList.remove('collapsed'));
                         const btn = Utils.$('toggleAllTracksBtn');
