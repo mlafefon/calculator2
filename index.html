@@ -751,7 +751,7 @@
                             <select id="pricingMode_${trackId}">
                                 <option value="deposit" ${isSelected('deposit')}>עם פיקדון</option>
                                 <option value="entrance_fee" ${isSelected('entrance_fee')}>דמי כניסה</option>
-                                <option value="none" ${isSelected('none')}>ללא</option>
+                                <option value="none" ${isSelected('none')}>תשלום חודשי</option>
                             </select>
                         </div>
                     </div>
@@ -837,7 +837,7 @@
                 }
                 
                 const previewHtml = `<div class="preview-item"><span class="preview-label">צפי אחזקה (ל-${targetYear} שנים)</span><span class="preview-value">${Utils.fmt(totalProviderCash)} ₪</span></div><div class="preview-item"><span class="preview-label">צפי שחיקה ${depLabel}</span><span class="preview-value">${Utils.fmt(depreciation)} ₪</span></div>${refundHtml}<div class="preview-item"><span class="preview-label tooltip-header">יתרת החשבון (סוף תקופה)<span class="tooltip-text">${finalCashTooltip}</span></span><span class="preview-value">${Utils.fmt(finalCash)} ₪</span></div><div class="preview-item"><span class="preview-label">סה"כ יתרה (הון + החזר)</span><span class="preview-value ok" style="font-weight: 800;">${Utils.fmt(totalBalance)} ₪</span></div><div class="preview-end-group">${insolvencyHtml}</div>`;
-                const modeLabels = { 'deposit': 'מסלול פיקדון', 'entrance_fee': 'דמי כניסה', 'none': 'ללא פיקדון' };
+                const modeLabels = { 'deposit': 'מסלול פיקדון', 'entrance_fee': 'דמי כניסה', 'none': 'תשלום חודשי' };
                 const typeLabel = modeLabels[params.pricingMode] || '';
                 const collapsedHtml = `<div class="collapsed-title">${Utils.escapeHtml(params.trackName) || 'מסלול ללא שם'}<span style="font-weight:normal; opacity:0.7; font-size:0.9em; margin-right:8px;">• ${typeLabel}</span></div><div class="collapsed-stats"><div class="collapsed-stat-item"><span class="collapsed-stat-label">אחזקה</span><span class="collapsed-stat-value">${Utils.fmt(totalProviderCash)}</span></div><div class="collapsed-stat-item"><span class="collapsed-stat-label">שחיקה</span><span class="collapsed-stat-value">${Utils.fmt(depreciation)}</span></div><div class="collapsed-stat-item"><span class="collapsed-stat-label">החזר</span><span class="collapsed-stat-value">${Utils.fmt(refundEnd)}</span></div><div class="collapsed-stat-item"><span class="collapsed-stat-label">יתרה</span><span class="collapsed-stat-value">${Utils.fmt(finalCash)}</span></div><div class="collapsed-stat-item"><span class="collapsed-stat-label">סה"כ</span><span class="collapsed-stat-value ok" style="font-weight: 800;">${Utils.fmt(totalBalance)}</span></div></div><div style="margin-right: auto; color: var(--muted);"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></div>`;
                 return { preview: previewHtml, collapsed: collapsedHtml };
@@ -954,7 +954,7 @@
                 const container = Utils.$('resultsTableContainer');
                 const targetYear = State.viewYear; // Use shared state
                 const targetMonths = Math.round(targetYear * 12);
-                const pricingModeMap = { 'deposit': 'עם פיקדון', 'entrance_fee': 'דמי כניסה', 'none': 'ללא' };
+                const pricingModeMap = { 'deposit': 'עם פיקדון', 'entrance_fee': 'דמי כניסה', 'none': 'תשלום חודשי' };
 
                 let table = `<table class="results-table"><thead><tr>
                     <th>#</th><th>שם החברה-סוג החדר</th><th>סוג מסלול</th><th>סה"כ חודשים (עצמאי / סיעודי)</th>
@@ -1034,7 +1034,7 @@
                 const datasetsCost = [];
                 const datasetsBalance = [];
                 
-                const modeMap = { 'deposit': 'פיקדון', 'entrance_fee': 'דמי כניסה', 'none': 'ללא' };
+                const modeMap = { 'deposit': 'פיקדון', 'entrance_fee': 'דמי כניסה', 'none': 'תשלום חודשי' };
 
                 State.simulationResults.forEach((res, idx) => {
                     const color = Constants.COLORS[idx % Constants.COLORS.length];
