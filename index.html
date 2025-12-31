@@ -99,17 +99,17 @@
           </div>
           
           <div class="hr"></div>
-          <h3>מצב סיעודי</h3>
+          <h3>מצב עוזרת צמודה</h3>
           <div class="row">
-            <div class="span-12"><label class="inline-row"><input id="isNursing" type="checkbox"/> להפעיל תרחיש מצב סיעודי</label></div>
+            <div class="span-12"><label class="inline-row"><input id="isNursing" type="checkbox"/> להפעיל תרחיש מצב עוזרת צמודה</label></div>
           </div>
           <div class="row" id="nursingFieldsRow" style="display: none;">
             <div class="span-4"><label for="monthsIndependent">חודשים בתפקוד מלא</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="monthsIndependent">+</button><input type="text" id="monthsIndependent" value="60" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="monthsIndependent">-</button></div></div>
-            <div class="span-4"><label for="nursingAddon">תוספת חודשית במצב סיעודי (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="nursingAddon">+</button><input type="text" id="nursingAddon" value="18000" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="nursingAddon">-</button></div></div>
+            <div class="span-4"><label for="nursingAddon">תוספת חודשית במצב עוזרת צמודה (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="nursingAddon">+</button><input type="text" id="nursingAddon" value="18000" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="nursingAddon">-</button></div></div>
             <div class="span-4">
                 <label for="nursingAllowance">
                     <span class="tooltip-header">גמלת סיעוד לקיזוז (₪/חודש)
-                        <span class="tooltip-text">סכום חודשי הצפוי להתקבל ממקור חיצוני (כגון ביטוח לאומי או פוליסה פרטית) למימון הטיפול הסיעודי. סכום זה מופחת מה'תוספת החודשית במצב סיעודי' כדי לחשב את ההוצאה נטו שלכם.</span>
+                        <span class="tooltip-text">סכום חודשי הצפוי להתקבל ממקור חיצוני (כגון ביטוח לאומי או פוליסה פרטית) למימון העוזרת הצמודה. סכום זה מופחת מה'תוספת החודשית במצב עוזרת צמודה' כדי לחשב את ההוצאה נטו שלכם.</span>
                     </span>
                 </label>
                 <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="nursingAllowance">+</button><input type="text" id="nursingAllowance" value="0" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="nursingAllowance">-</button></div>
@@ -698,18 +698,21 @@
                             <label for="depositAmount_${id}">סכום פיקדון (₪)</label>
                             ${UI.Templates.spinner(`depositAmount_${id}`, '1000000', 'income', `data-track-id="${id}" data-base-value="1000000"`)}
                         </div>
-                        <div class="span-3">
-                            <label for="depositDepreciationPct_${id}">פחת פיקדון שנתי (%)</label>
+                        <div class="span-2">
+                            <label for="depositDepreciationPct_${id}">פחת שנתי (%)</label>
                             ${UI.Templates.spinner(`depositDepreciationPct_${id}`, '3', 'expense')}
-                            <div style="margin-top:4px;">
-                                <label class="inline-row" style="font-size:0.8rem; cursor:pointer;">
-                                    <input type="checkbox" id="depositAddVat_${id}"> הוסף מע"מ לאחוז הפחת
-                                </label>
-                            </div>
+                        </div>
+                        <div class="span-1">
+                             <label for="depositAddVat_${id}" class="tooltip-header" style="font-size:0.8rem; text-align:center; display:block; margin-bottom: 8px;">+ מע"מ
+                                <span class="tooltip-text">האם להוסיף מע"מ לשיעור השחיקה. לרוב, אחוז השחיקה הנקוב בחוזה אינו כולל מע"מ ויש להוסיפו.</span>
+                             </label>
+                             <div style="display:flex; justify-content:center;">
+                                <input type="checkbox" id="depositAddVat_${id}" style="width:20px; height:20px; accent-color:var(--accent);" checked>
+                             </div>
                         </div>
                         <div class="span-2">
                             <label for="depositDepreciationYears_${id}" class="tooltip-header">
-                                תקופת שחיקה (שנים)
+                                שחיקה (שנים)
                                 <span class="tooltip-text">תקופת השחיקה המקסימלית של הפיקדון. לאחר תקופה זו, גביית הפחת נפסקת ויתרת הפיקדון נשמרת.</span>
                                 <span class="note" id="refundPctNote_${id}" style="display: block; font-weight: normal; line-height: 1.2; margin-top: 2px;"></span>
                             </label>

@@ -29,6 +29,7 @@ p.subtitle { color: var(--muted); margin: 0 0 24px; text-align: center; max-widt
 .span-4 { grid-column: span 4; }
 .span-3 { grid-column: span 3; }
 .span-2 { grid-column: span 2; }
+.span-1 { grid-column: span 1; }
 .row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; margin-bottom: 16px; align-items: end; }
 label { font-size: 0.9rem; color: var(--muted); display: block; margin-bottom: 6px; }
 label .help-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--muted); color: var(--muted); font-size: 11px; font-weight: bold; margin-right: 6px; cursor: pointer; user-select: none; transition: all 0.2s; }
@@ -738,8 +739,8 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
 
 
 @media (max-width: 900px) {
-  .span-8, .span-6, .span-4, .span-3, .span-2 { grid-column: span 12; }
-  .row > .span-12, .row > .span-8, .row > .span-6, .row > .span-4, .row > .span-3, .row > .span-2 { grid-column: span 12; }
+  .span-8, .span-6, .span-4, .span-3, .span-2, .span-1 { grid-column: span 12; }
+  .row > .span-12, .row > .span-8, .row > .span-6, .row > .span-4, .row > .span-3, .row > .span-2, .row > .span-1 { grid-column: span 12; }
   
   .charts-container {
     grid-template-columns: 1fr;
