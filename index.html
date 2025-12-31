@@ -10,7 +10,28 @@
 <body>
   <div class="top-bar">
       <div class="top-bar-container">
-          <div class="actions" style="margin-right: auto;">
+          <!-- Stepper Navigation (Moved to Top Bar) -->
+          <div class="stepper-container">
+              <div class="stepper">
+                  <div class="step-line">
+                      <div class="step-line-fill" id="stepperLineFill"></div>
+                  </div>
+                  <div class="step active" id="step-indicator-1">
+                      <div class="step-circle">1</div>
+                      <div class="step-label">נתונים כלליים</div>
+                  </div>
+                  <div class="step" id="step-indicator-2">
+                      <div class="step-circle">2</div>
+                      <div class="step-label">הגדרת מסלולים</div>
+                  </div>
+                  <div class="step" id="step-indicator-3">
+                      <div class="step-circle">3</div>
+                      <div class="step-label">השוואת תוצאות</div>
+                  </div>
+              </div>
+          </div>
+
+          <div class="actions">
               <div class="tooltip-container">
                   <input type="file" id="importFile" accept=".json" style="display:none;">
                   <button id="importBtn" class="btn secondary icon-btn" aria-label="ייבוא נתונים">
@@ -31,27 +52,6 @@
   <div class="container">
     <h1>מחשבון השוואת מסלולי דיור מוגן</h1>
     <p class="subtitle">הכלי מאפשר להשוות תרחישים פיננסיים שונים למגורים בדיור מוגן.</p>
-
-    <!-- Stepper Navigation -->
-    <div class="stepper-container">
-        <div class="stepper">
-            <div class="step-line">
-                <div class="step-line-fill" id="stepperLineFill"></div>
-            </div>
-            <div class="step active" id="step-indicator-1">
-                <div class="step-circle">1</div>
-                <div class="step-label">נתונים כלליים</div>
-            </div>
-            <div class="step" id="step-indicator-2">
-                <div class="step-circle">2</div>
-                <div class="step-label">הגדרת מסלולים</div>
-            </div>
-            <div class="step" id="step-indicator-3">
-                <div class="step-circle">3</div>
-                <div class="step-label">השוואת תוצאות</div>
-            </div>
-        </div>
-    </div>
 
     <!-- Step 1: Common Inputs -->
     <div id="step-1-content" class="step-content active">
