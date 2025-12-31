@@ -10,18 +10,7 @@
 <body>
   <div class="top-bar">
       <div class="top-bar-container">
-          <div class="top-bar-settings" id="topBarSettings">
-              <label for="maxYears">
-                  <span class="desktop-text">מגבלת סימולציה (שנים)</span>
-                  <span class="mobile-text">שנים</span>
-              </label>
-              <div class="spinner-control">
-                  <button type="button" class="spinner-btn" data-step-dir="up" data-target="maxYears">+</button>
-                  <input type="text" id="maxYears" value="15" inputmode="decimal"/>
-                  <button type="button" class="spinner-btn" data-step-dir="down" data-target="maxYears">-</button>
-              </div>
-          </div>
-          <div class="actions">
+          <div class="actions" style="margin-right: auto;">
               <div class="tooltip-container">
                   <input type="file" id="importFile" accept=".json" style="display:none;">
                   <button id="importBtn" class="btn secondary icon-btn" aria-label="ייבוא נתונים">
@@ -83,8 +72,8 @@
             </div>
           </div>
           <div class="row">
-            <div class="span-4"><label for="annualReturn">תשואת ריבית שנתית על היתרה (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualReturn">+</button><input type="text" id="annualReturn" value="4.5" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualReturn">-</button></div></div>
-            <div class="span-4">
+            <div class="span-3"><label for="annualReturn">תשואת ריבית שנתית על היתרה (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualReturn">+</button><input type="text" id="annualReturn" value="4.5" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualReturn">-</button></div></div>
+            <div class="span-3">
                 <label for="annualInflation">
                     <span class="tooltip-header">קצב התייקרות שנתי (מדד) (%)
                         <span class="tooltip-text">שיעור האינפאציה השנתי הצפוי. משפיע על התייקרות דמי האחזקה, הוצאות המחייה, וההכנסה משכר דירה לאורך זמן. בנוסף, יתרת הפיקדון המוחזרת מוצמדת למדד זה.</span>
@@ -92,9 +81,13 @@
                 </label>
                 <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualInflation">+</button><input type="text" id="annualInflation" value="2" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualInflation">-</button></div>
             </div>
-            <div class="span-4">
+            <div class="span-3">
                 <label for="vatRate">שיעור מע"מ (%)</label>
                 <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="vatRate">+</button><input type="text" id="vatRate" value="17" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="vatRate">-</button></div>
+            </div>
+            <div class="span-3">
+                <label for="maxYears">מגבלת סימולציה (שנים)</label>
+                <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="maxYears">+</button><input type="text" id="maxYears" value="15" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="maxYears">-</button></div>
             </div>
           </div>
           
@@ -1260,11 +1253,6 @@
                 Utils.$('maxYears').addEventListener('input', (e) => {
                     UI.setupYearSliders();
                     debouncedPreviewUpdate();
-                });
-                
-                Utils.$('topBarSettings').addEventListener('input', () => { 
-                     // Handled by specific listener above for maxYears, but keeping general update
-                     if(event.target.id !== 'maxYears') debouncedPreviewUpdate(); 
                 });
                 
                 // Specific listener for VAT rate to update all refund notes
