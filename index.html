@@ -1033,6 +1033,8 @@
 
                 const datasetsCost = [];
                 const datasetsBalance = [];
+                
+                const modeMap = { 'deposit': 'פיקדון', 'entrance_fee': 'דמי כניסה', 'none': 'ללא' };
 
                 State.simulationResults.forEach((res, idx) => {
                     const color = Constants.COLORS[idx % Constants.COLORS.length];
@@ -1053,7 +1055,8 @@
                         }
                     });
 
-                    const labelStr = `מסלול ${idx + 1}: ${res.summary.trackName}`;
+                    const modeLabel = modeMap[res.summary.pricingMode] || '';
+                    const labelStr = `מסלול ${idx + 1}: ${res.summary.trackName} (${modeLabel})`;
 
                     datasetsCost.push({
                         label: labelStr,
