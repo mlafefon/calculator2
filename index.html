@@ -173,6 +173,9 @@
             </div>
 
             <div id="tracksContainer"></div>
+            <!-- Datalist for existing company names -->
+            <datalist id="companyList"></datalist>
+
             <button id="addTrackBtn" class="btn secondary" style="margin-top: 16px;">+ הוסף מסלול חדש</button>
         </div>
         <div class="step-footer">
@@ -742,7 +745,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
                     </button>
                     <div class="track-header">
-                        <div class="form-group full-width-mobile"><label for="trackCompany_${trackId}">שם חברה וכתובת</label><input type="text" id="trackCompany_${trackId}" value="${safeCompany}" placeholder="לדוגמה: אחוזת בית, רעננה"></div>
+                        <div class="form-group full-width-mobile"><label for="trackCompany_${trackId}">שם חברה וכתובת</label><input type="text" id="trackCompany_${trackId}" value="${safeCompany}" list="companyList" placeholder="לדוגמה: אחוזת בית, רעננה" autocomplete="off"></div>
                         <div class="form-group full-width-mobile"><label for="trackRoom_${trackId}">סוג חדר וגודל</label><input type="text" id="trackRoom_${trackId}" value="${safeRoom}" placeholder="לדוגמה: 2 חדרים, 60 מ&quot;ר"></div>
                         <div class="form-group"><label for="pricingMode_${trackId}">סוג המסלול</label>
                             <select id="pricingMode_${trackId}">
@@ -772,6 +775,25 @@
                 if (mode === 'deposit') UI.updateRefundPctNote(trackId);
                 if (mode === 'entrance_fee') UI.updateCalculatedEntranceFeeRate(trackId);
                 UI.updateTrackPreview(trackId);
+            },
+            
+            updateCompanyDatalist: () => {
+                const inputs = document.querySelectorAll('input[id^="trackCompany_"]');
+                const uniqueCompanies = new Set();
+                inputs.forEach(input => {
+                    const val = input.value.trim();
+                    if (val) uniqueCompanies.add(val);
+                });
+                
+                const dataList = Utils.$('companyList');
+                if (!dataList) return;
+                
+                dataList.innerHTML = '';
+                uniqueCompanies.forEach(company => {
+                    const option = document.createElement('option');
+                    option.value = company;
+                    dataList.appendChild(option);
+                });
             },
 
             generatePreviewHTML: (result, params, targetYear) => {
@@ -1208,6 +1230,7 @@
                         const id = target.dataset.removeTrackId;
                         State.removeTrack(id);
                         document.querySelector(`.track-card[data-track-id='${id}']`).remove();
+                        UI.updateCompanyDatalist(); // Update list when track removed
                     }
                     else if (target.closest('.toggle-track-btn')) {
                          const btn = target.closest('.toggle-track-btn');
@@ -1231,6 +1254,11 @@
                 container.addEventListener('input', (e) => {
                     const id = e.target.id;
                     const trackId = e.target.dataset.trackId || e.target.closest('.track-card')?.dataset.trackId;
+                    
+                    if (id.startsWith('trackCompany_')) {
+                        UI.updateCompanyDatalist(); // Update list as user types
+                    }
+                    
                     if (id.startsWith('entranceFee')) UI.updateCalculatedEntranceFeeRate(trackId);
                     if (id.startsWith('reducedDeposit')) UI.updateDepositReduction(trackId);
                     if (id.startsWith('depositDepreciation')) UI.updateRefundPctNote(trackId);
@@ -1424,6 +1452,7 @@
                         cards.forEach(c => c.classList.remove('collapsed'));
                         const btn = Utils.$('toggleAllTracksBtn');
                         btn.innerHTML = Constants.ICONS.collapse;
+                        UI.updateCompanyDatalist(); // Update list after import
                         alert('הנתונים יובאו בהצלחה!');
                     } catch(err) { console.error(err); alert('קובץ לא תקין'); }
                     e.target.value = null;
