@@ -1,3 +1,5 @@
+
+
 <!doctype html>
 <html lang="he" dir="rtl">
 <head>
@@ -10,7 +12,7 @@
 <body>
   <div class="top-bar">
       <div class="top-bar-container">
-          <!-- Stepper Navigation (Moved to Top Bar) -->
+          <!-- Stepper Navigation -->
           <div class="stepper-container">
               <div class="stepper">
                   <div class="step-line">
@@ -22,11 +24,7 @@
                   </div>
                   <div class="step" id="step-indicator-2">
                       <div class="step-circle">2</div>
-                      <div class="step-label">הגדרת מסלולים</div>
-                  </div>
-                  <div class="step" id="step-indicator-3">
-                      <div class="step-circle">3</div>
-                      <div class="step-label">השוואת תוצאות</div>
+                      <div class="step-label">השוואה וניתוח</div>
                   </div>
               </div>
           </div>
@@ -97,22 +95,14 @@
             <div class="span-12"><label class="inline-row"><input id="isNursing" type="checkbox"/> להפעיל תרחיש מצב עוזרת צמודה</label></div>
           </div>
           <div class="row" id="nursingFieldsRow" style="display: none;">
-            <div class="span-4"><label for="monthsIndependent">חודשים בתפקוד מלא</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="monthsIndependent">+</button><input type="text" id="monthsIndependent" value="60" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="monthsIndependent">-</button></div></div>
-            <div class="span-4"><label for="nursingAddon">תוספת חודשית במצב עוזרת צמודה (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="nursingAddon">+</button><input type="text" id="nursingAddon" value="18000" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="nursingAddon">-</button></div></div>
-            <div class="span-4">
-                <label for="nursingAllowance">
-                    <span class="tooltip-header">גמלת סיעוד לקיזוז (₪/חודש)
-                        <span class="tooltip-text">סכום חודשי הצפוי להתקבל ממקור חיצוני (כגון ביטוח לאומי או פוליסה פרטית) למימון העוזרת הצמודה. סכום זה מופחת מה'תוספת החודשית במצב עוזרת צמודה' כדי לחשב את ההוצאה נטו שלכם.</span>
-                    </span>
-                </label>
-                <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="nursingAllowance">+</button><input type="text" id="nursingAllowance" value="0" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="nursingAllowance">-</button></div>
-            </div>
+            <div class="span-3"><label for="monthsIndependent">חודשים בתפקוד מלא</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="monthsIndependent">+</button><input type="text" id="monthsIndependent" value="60" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="monthsIndependent">-</button></div></div>
+            <div class="span-3"><label for="nursingAddon">תוספת חודשית במצב עוזרת צמודה (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="nursingAddon">+</button><input type="text" id="nursingAddon" value="10000" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="nursingAddon">-</button></div></div>
           </div>
 
           <div class="hr"></div>
           <h3>תרחיש נכס</h3>
           <div class="row">
-            <div class="span-4">
+            <div class="span-2">
                 <label for="assetScenarioSelect">בחר תרחיש עבור הדירה</label>
                 <select id="assetScenarioSelect">
                     <option value="sell">מכירת הדירה</option>
@@ -123,15 +113,15 @@
           </div>
           <div id="sellBlock" style="display: none;">
             <div class="row">
-              <div class="span-6"><label for="salePrice">מחיר מכירה (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="salePrice">+</button><input type="text" id="salePrice" value="3000000" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="salePrice">-</button></div></div>
-              <div class="span-6"><label for="saleCostsPct">עלויות עסקה (% מהמחיר)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="saleCostsPct">+</button><input type="text" id="saleCostsPct" value="3" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="saleCostsPct">-</button></div></div>
+              <div class="span-3"><label for="salePrice">מחיר מכירה (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="salePrice">+</button><input type="text" id="salePrice" value="3000000" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="salePrice">-</button></div></div>
+              <div class="span-3"><label for="saleCostsPct">עלויות עסקה (% מהמחיר)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="saleCostsPct">+</button><input type="text" id="saleCostsPct" value="3" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="saleCostsPct">-</button></div></div>
             </div>
           </div>
           <div id="rentBlock">
             <div class="row">
-              <div class="span-3"><label for="rentGross">שכ"ד חודשי ברוטו (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="rentGross">+</button><input type="text" id="rentGross" value="7000" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="rentGross">-</button></div></div>
-              <div class="span-3"><label for="rentTaxPct">מס על שכ"ד (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="rentTaxPct">+</button><input type="text" id="rentTaxPct" value="10" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="rentTaxPct">-</button></div></div>
-              <div class="span-3">
+              <div class="span-2"><label for="rentGross">שכ"ד חודשי ברוטו (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="rentGross">+</button><input type="text" id="rentGross" value="7000" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="rentGross">-</button></div></div>
+              <div class="span-2"><label for="rentTaxPct">מס על שכ"ד (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="rentTaxPct">+</button><input type="text" id="rentTaxPct" value="10" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="rentTaxPct">-</button></div></div>
+              <div class="span-2">
                 <label for="vacancyPct">
                     <span class="tooltip-header">חודשים פנויים בשנה (%)
                         <span class="tooltip-text">אחוז הזמן המוערך בשנה בו הנכס יעמוד ריק ולא יניב הכנסה, למשל בתקופות מעבר בין שוכרים. הנתון מפחית את ההכנסה השנתית משכירות כדי לשקף תחזית מציאותית יותר.</span>
@@ -140,56 +130,21 @@
                 </label>
                 <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="vacancyPct">+</button><input type="text" id="vacancyPct" value="8" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="vacancyPct">-</button></div>
               </div>
-              <div class="span-3"><label for="annualMaintenance">תחזוקה שנתית (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualMaintenance">+</button><input type="text" id="annualMaintenance" value="6000" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualMaintenance">-</button></div></div>
+              <div class="span-2"><label for="annualMaintenance">תחזוקה שנתית (₪)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualMaintenance">+</button><input type="text" id="annualMaintenance" value="6000" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualMaintenance">-</button></div></div>
             </div>
           </div>
         </div>
         <div class="step-footer single-btn">
-            <button id="step1NextBtn" class="btn">המשך להגדרת מסלולים &larr;</button>
+            <button id="step1NextBtn" class="btn">המשך ללוח השוואה &larr;</button>
         </div>
     </div>
     
-    <!-- Step 2: Tracks Definition -->
+    <!-- Step 2: Unified Dashboard -->
     <div id="step-2-content" class="step-content">
-        <div class="card" id="tracksCard">
-            <div class="header-row">
-                <h2>שלב 2: הגדרת מסלולים להשוואה</h2>
-                <div class="tooltip-container">
-                    <button id="toggleAllTracksBtn" class="btn secondary icon-btn" aria-label="כווץ הכל">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 12 6 7 11"></polyline><polyline points="17 18 12 13 7 18"></polyline></svg>
-                    </button>
-                    <span class="tooltip-text-topbar" id="toggleAllTooltip">כווץ הכל</span>
-                </div>
-            </div>
-
-            <!-- Duplicate Slider for Step 2 -->
-            <div id="sliderGroupStep2" class="slider-group-wrapper">
-                <label for="yearSliderStep2" id="yearSliderLabelStep2">הצג תוצאות לאחר: 15 שנים</label>
-                <div class="slider-container">
-                    <output for="yearSliderStep2" id="sliderValueBubbleStep2"></output>
-                    <input type="range" id="yearSliderStep2" class="year-slider-input" min="0.5" max="15" value="15" step="0.5">
-                    <div id="sliderTicksContainerStep2"></div>
-                </div>
-            </div>
-
-            <div id="tracksContainer"></div>
-            <!-- Datalist for existing company names -->
-            <datalist id="companyList"></datalist>
-
-            <button id="addTrackBtn" class="btn secondary" style="margin-top: 16px;">+ הוסף מסלול חדש</button>
-        </div>
-        <div class="step-footer">
-            <button id="step2BackBtn" class="btn secondary">&rarr; חזרה לנתונים כלליים</button>
-            <button id="step2NextBtn" class="btn">חשב והשווה תוצאות &larr;</button>
-        </div>
-    </div>
-
-    <!-- Step 3: Results -->
-    <div id="step-3-content" class="step-content">
         <div class="card" style="padding-bottom: 0;">
             <div class="header-row">
-                 <h2>שלב 3: השוואת תוצאות</h2>
-                 <button id="step3BackBtnTop" class="btn secondary">חזרה לעריכת מסלולים</button>
+                 <h2>שלב 2: השוואה וניתוח</h2>
+                 <button id="addTrackBtn" class="btn secondary">+ הוסף מסלול</button>
             </div>
             
             <div id="sliderGroup" class="slider-group-wrapper">
@@ -217,24 +172,61 @@
                     </div>
                 </div>
             </div>
+
+             <div class="step-footer">
+                <button id="step2BackBtn" class="btn secondary">&rarr; חזרה לנתונים כלליים</button>
+            </div>
         </div>
     </div>
-
   </div>
 
+  <!-- Modal for Editing/Adding Track -->
+  <div id="trackModal" class="modal-overlay">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h2 id="modalTitle">עריכת מסלול</h2>
+              <button class="close-modal" id="modalCloseX">&times;</button>
+          </div>
+          <div class="modal-body" id="modalBody">
+              <!-- Dynamic Form Content injected here -->
+          </div>
+          <div class="modal-footer">
+              <button class="btn secondary" id="modalCancelBtn">ביטול</button>
+              <button class="btn" id="modalSaveBtn">שמור שינויים</button>
+          </div>
+      </div>
+  </div>
+
+  <!-- Modal for Delete Confirmation -->
+  <div id="deleteConfirmationModal" class="modal-overlay">
+      <div class="modal-content" style="max-width: 500px; height: auto;">
+          <div class="modal-header">
+              <h2>מחיקת מסלול</h2>
+              <button class="close-modal" id="deleteModalCloseX">&times;</button>
+          </div>
+          <div class="modal-body">
+              <p style="font-size: 1.1rem; line-height: 1.6;">האם אתה בטוח שברצונך למחוק מסלול זה? הפעולה אינה הפיכה.</p>
+          </div>
+          <div class="modal-footer">
+              <button class="btn secondary" id="deleteModalCancelBtn">ביטול</button>
+              <button class="btn danger" id="deleteModalConfirmBtn">מחק מסלול</button>
+          </div>
+      </div>
+  </div>
+  
+  <!-- Global Tooltip Element -->
+  <div id="globalTooltip" class="floating-tooltip"></div>
+  
+  <!-- Datalist for existing company names -->
+  <datalist id="companyList"></datalist>
 
   <script>
     /**
-     * Senior Living Calculator
-     * Optimized Version: Caches DOM Access, Batches Layout Updates, Uses Shared Formatters
+     * Senior Living Calculator - Unified Dashboard Version
      */
     const App = (function() {
         // --- Constants & Config ---
         const Constants = {
-            ICONS: {
-                collapse: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 12 6 7 11"></polyline><polyline points="17 18 12 13 7 18"></polyline></svg>`,
-                expand: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"></polyline><polyline points="7 6 12 11 17 6"></polyline></svg>`
-            },
             COLORS: [
                 '#22d3ee', '#fb7185', '#34d399', '#f59e0b', '#a78bfa', '#f472b6', '#fbbf24', '#2dd4bf', '#818cf8', '#ef4444'
             ],
@@ -325,11 +317,9 @@
                 const isDeposit = p.pricingMode === 'deposit';
                 const isEntrance = p.pricingMode === 'entrance_fee';
                 
-                // Adjust depreciation rate for VAT if checked
                 const vatMultiplier = 1 + p.vatRate;
                 const effectiveDepositDepreciationPct = p.depositAddVat ? p.depositDepreciationPct * vatMultiplier : p.depositDepreciationPct;
 
-                // Deposit Floor logic has been updated in readTrackInputs to account for VAT (if selected) in the p.depositRefundPct
                 const depositFloor = isDeposit ? (p.depositAmount || 0) * (p.depositRefundPct || 0) : 0;
                 
                 const depositMonthlyDepreciation = isDeposit ? (p.depositAmount || 0) * (effectiveDepositDepreciationPct / 12) : 0;
@@ -365,25 +355,27 @@
                         const gross = p.rentGross * inflationFactor;
                         rentIncome = Math.max(0, (gross * rentNetFactor) - maintenanceMonthly);
                     }
-                    const income = p.monthlyIncome + rentIncome;
+                    
+                    // FIXED: Apply inflation to fixed monthly income (Pension/Kitzba usually linked)
+                    const currentMonthlyIncome = p.monthlyIncome * inflationFactor;
+                    
+                    const income = currentMonthlyIncome + rentIncome;
                     cash += (income - totalMonthlyCost);
                     
                     let depreciationThisMonth = 0;
                     if (isDeposit && depositBook > depositFloor) {
                         const maxDeductible = Math.max(0, depositBook - depositFloor);
                         const actualDeduction = Math.min(depositMonthlyDepreciation, maxDeductible);
-                        // Contract: Deduction is from the linked deposit.
-                        // Simplified simulation: We deduct nominal amount from nominal book.
-                        // But when displaying "Refund" (below), we MUST apply inflation to the remaining book.
-                        depreciationThisMonth = actualDeduction * inflationFactor; // Economic cost includes inflation on the deduction value
+                        depreciationThisMonth = actualDeduction; 
                         depositBook -= actualDeduction;
                     }
                     if (isEntrance && entranceFeeBook > 0 && t < entranceFeeMaxMonths) {
                         const actualDepreciation = Math.min(entranceFeeBook, entranceFeeMonthlyDep);
-                        depreciationThisMonth = actualDepreciation * inflationFactor;
+                        depreciationThisMonth = actualDepreciation; 
                         entranceFeeBook = Math.max(0, entranceFeeBook - entranceFeeMonthlyDep);
                     }
                     
+                    // Economic Cost includes the Nominal depreciation (Erosion) + Real provider costs
                     const providerEconomicCost = providerMonthlyCost + depreciationThisMonth;
                     cumulativeMaintenance += providerMonthlyCost;
                     cumulativeEconomic += providerEconomicCost;
@@ -393,11 +385,9 @@
                     if (p.isNursing && t >= p.monthsIndependent) nursingMonths++; else independentMonths++;
                     lastPositiveCash = cash;
                     
-                    // Critical Update: Refund value is Linked to CPI
-                    // The book value is nominal, but the contract ensures it retains purchasing power (linked).
-                    // So we multiply the nominal remaining book by the cumulative inflation factor.
                     const refundNominal = isDeposit ? depositBook : (isEntrance ? entranceFeeBook : 0);
-                    const refundLinked = isDeposit ? refundNominal * inflationFactor : refundNominal; // Entrance fee usually sunk, but if partially refundable, usually nominal. Deposit is Linked.
+                    // FIXED: Apply linkage to entrance fee refund as well (standard practice in IL)
+                    const refundLinked = refundNominal * inflationFactor; 
                     
                     monthlyLog.push({ 
                         month: t + 1, 
@@ -416,9 +406,8 @@
                 }
 
                 const refundNominalEnd = isDeposit ? depositBook : (isEntrance ? entranceFeeBook : 0);
-                // Apply final inflation factor for the summary
                 const finalInflationFactor = Math.pow(1 + monthlyInfl, t);
-                const refundEnd = isDeposit ? refundNominalEnd * finalInflationFactor : refundNominalEnd;
+                const refundEnd = refundNominalEnd * finalInflationFactor;
 
                 return { 
                     summary: { 
@@ -433,28 +422,50 @@
 
         // --- State Management ---
         const State = {
-            tracks: [],
+            tracks: [], // Objects with full data properties
             simulationResults: [],
             currentStep: 1,
             viewYear: 15,
+            editModeTrackId: null, // Track currently in modal
+            pendingDeleteId: null, // Track pending deletion
+
+            init: () => {
+                // Seed initial track if empty
+                if(State.tracks.length === 0) State.addTrack();
+            },
             
             addTrack: () => {
                 const newTrack = {
                     id: Date.now(),
-                    company: `מסלול ${State.tracks.length + 1}`,
+                    company: '',
                     room: '',
-                    pricingMode: 'deposit'
+                    pricingMode: 'deposit',
+                    isVisible: true,
+                    // Default values
+                    baseWithDeposit: 9000,
+                    depositAmount: 1000000,
+                    depositDepreciationPct: 3,
+                    depositAddVat: true,
+                    depositDepreciationYears: 12,
+                    baseWithEntranceFee: 9500,
+                    entranceFeeAmount: 450000,
+                    entranceFeeDepreciationYears: 5,
+                    entranceFeeDepreciationRateMonthly: 0,
+                    baseNoDeposit: 14000
                 };
                 State.tracks.push(newTrack);
                 return newTrack;
             },
             
-            removeTrack: (id) => {
-                State.tracks = State.tracks.filter(t => t.id != id);
+            updateTrack: (id, data) => {
+                const idx = State.tracks.findIndex(t => t.id == id);
+                if (idx !== -1) {
+                    State.tracks[idx] = { ...State.tracks[idx], ...data };
+                }
             },
             
-            clearTracks: () => {
-                State.tracks = [];
+            removeTrack: (id) => {
+                State.tracks = State.tracks.filter(t => String(t.id) !== String(id));
             }
         };
 
@@ -467,7 +478,7 @@
             initialTop: 0,
             
             init: () => {
-                const container = Utils.$('tracksContainer');
+                const container = Utils.$('resultsTableContainer');
                 container.addEventListener('mousedown', DragManager.handleStart);
                 container.addEventListener('touchstart', DragManager.handleStart, { passive: false });
                 document.addEventListener('mousemove', DragManager.handleMove);
@@ -480,121 +491,170 @@
                 const handle = e.target.closest('.drag-handle');
                 if (!handle) return;
                 e.preventDefault();
-                const card = handle.closest('.track-card');
-                if (!card) return;
-                DragManager.draggedItem = card;
+                const row = handle.closest('.track-row');
+                if (!row) return;
+                
+                DragManager.draggedItem = row;
                 const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
-                const rect = card.getBoundingClientRect();
+                const rect = row.getBoundingClientRect();
                 DragManager.startY = clientY;
                 DragManager.initialTop = rect.top;
-                DragManager.placeholder = document.createElement('div');
-                DragManager.placeholder.className = 'drag-placeholder';
+                
+                // Create placeholder
+                DragManager.placeholder = document.createElement('tr');
+                DragManager.placeholder.className = 'drag-placeholder-row';
+                DragManager.placeholder.innerHTML = `<td colspan="${row.children.length}"></td>`;
                 DragManager.placeholder.style.height = `${rect.height}px`;
-                card.parentNode.insertBefore(DragManager.placeholder, card);
-                DragManager.ghost = card.cloneNode(true);
-                DragManager.ghost.classList.add('drag-ghost');
+                row.parentNode.insertBefore(DragManager.placeholder, row);
+                
+                // Create Ghost
+                DragManager.ghost = row.cloneNode(true);
+                DragManager.ghost.classList.add('is-dragging');
+                DragManager.ghost.style.position = 'fixed';
+                DragManager.ghost.style.zIndex = '1000';
                 DragManager.ghost.style.width = `${rect.width}px`;
                 DragManager.ghost.style.height = `${rect.height}px`;
                 DragManager.ghost.style.top = `${rect.top}px`;
-                const bodyRect = document.body.getBoundingClientRect();
                 DragManager.ghost.style.left = `${rect.left}px`;
-                const originalInputs = card.querySelectorAll('input, select');
-                const ghostInputs = DragManager.ghost.querySelectorAll('input, select');
-                originalInputs.forEach((inp, i) => {
-                     if (inp.type === 'checkbox') ghostInputs[i].checked = inp.checked;
-                     else ghostInputs[i].value = inp.value;
-                });
+                DragManager.ghost.style.background = 'var(--panel)';
+                DragManager.ghost.style.display = 'table'; // Maintain table layout look
+                // IMPORTANT: Prevent ghost from capturing mouse events
+                DragManager.ghost.style.pointerEvents = 'none';
+                
+                // Copy widths to ghost cells
+                const originalCells = row.children;
+                const ghostCells = DragManager.ghost.children;
+                for(let i=0; i<originalCells.length; i++) {
+                    ghostCells[i].style.width = `${originalCells[i].offsetWidth}px`;
+                }
+
                 document.body.appendChild(DragManager.ghost);
-                card.classList.add('is-dragging');
+                
+                row.style.display = 'none'; // Hide original
             },
             
             handleMove: (e) => {
                 if (!DragManager.draggedItem) return;
                 e.preventDefault();
-                const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+                const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.touches[0].clientY;
                 const deltaY = clientY - DragManager.startY;
-                if (DragManager.ghost) DragManager.ghost.style.top = `${DragManager.initialTop + deltaY}px`;
-                const siblings = [...Utils.$('tracksContainer').querySelectorAll('.track-card:not(.is-dragging)')];
-                const nextSibling = siblings.find(sibling => {
-                    const box = sibling.getBoundingClientRect();
-                    return clientY < box.top + box.height / 2;
+                
+                if (DragManager.ghost) {
+                    DragManager.ghost.style.top = `${DragManager.initialTop + deltaY}px`;
+                }
+                
+                // Table Row Reordering Logic
+                const tbody = DragManager.draggedItem.parentNode;
+                const siblings = [...tbody.querySelectorAll('.track-row:not([style*="display: none"])')];
+                const sibling = siblings.find(sib => {
+                    const rect = sib.getBoundingClientRect();
+                    return clientY >= rect.top && clientY <= rect.bottom;
                 });
-                if (nextSibling) Utils.$('tracksContainer').insertBefore(DragManager.placeholder, nextSibling);
-                else Utils.$('tracksContainer').appendChild(DragManager.placeholder);
+                
+                if (sibling && sibling !== DragManager.placeholder) {
+                     const rect = sibling.getBoundingClientRect();
+                     const isTop = clientY < (rect.top + rect.height / 2);
+                     if(isTop) tbody.insertBefore(DragManager.placeholder, sibling);
+                     else tbody.insertBefore(DragManager.placeholder, sibling.nextSibling);
+                }
             },
             
             handleEnd: (e) => {
                 if (!DragManager.draggedItem) return;
-                Utils.$('tracksContainer').insertBefore(DragManager.draggedItem, DragManager.placeholder);
-                DragManager.draggedItem.classList.remove('is-dragging');
+                
+                // Finalize DOM position
+                DragManager.placeholder.parentNode.insertBefore(DragManager.draggedItem, DragManager.placeholder);
+                DragManager.draggedItem.style.display = '';
+                
                 if (DragManager.ghost) DragManager.ghost.remove();
                 if (DragManager.placeholder) DragManager.placeholder.remove();
                 DragManager.draggedItem = null;
                 DragManager.ghost = null;
                 DragManager.placeholder = null;
-                const newOrderIds = Array.from(document.querySelectorAll('.track-card')).map(el => el.dataset.trackId);
+                
+                // Sync State
+                const newOrderIds = Array.from(document.querySelectorAll('.track-row')).map(el => el.dataset.trackId);
                 State.tracks.sort((a, b) => newOrderIds.indexOf(String(a.id)) - newOrderIds.indexOf(String(b.id)));
+                
+                // Re-render to ensure correct indexing colors
+                UI.renderDashboard();
             }
         };
 
-        // --- Navigation Manager ---
+        // --- Navigation ---
         const Navigation = {
             init: () => {
                 Utils.$('step1NextBtn').addEventListener('click', () => Navigation.goToStep(2));
                 Utils.$('step2BackBtn').addEventListener('click', () => Navigation.goToStep(1));
-                Utils.$('step2NextBtn').addEventListener('click', () => {
-                    if (Events.runCalculation()) {
-                        Navigation.goToStep(3);
-                    }
-                });
-                Utils.$('step3BackBtnTop').addEventListener('click', () => Navigation.goToStep(2));
-
-                // Clickable Stepper Logic
+                
                 Utils.$('step-indicator-1').addEventListener('click', () => Navigation.goToStep(1));
                 Utils.$('step-indicator-2').addEventListener('click', () => Navigation.goToStep(2));
-                Utils.$('step-indicator-3').addEventListener('click', () => {
-                    if (Events.runCalculation()) {
-                         Navigation.goToStep(3);
-                    }
-                });
             },
 
             goToStep: (stepNumber) => {
                 State.currentStep = stepNumber;
-                
-                // Update Step Content Visibility
                 document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
                 Utils.$(`step-${stepNumber}-content`).classList.add('active');
 
-                // Update Stepper UI
                 const fill = Utils.$('stepperLineFill');
-                const indicators = [1, 2, 3];
-                
+                const indicators = [1, 2];
                 indicators.forEach(i => {
                     const el = Utils.$(`step-indicator-${i}`);
                     el.classList.remove('active', 'completed');
                     if (i === stepNumber) el.classList.add('active');
                     if (i < stepNumber) el.classList.add('completed');
                 });
-
-                // Update line fill width
-                if (stepNumber === 1) fill.style.width = '0%';
-                else if (stepNumber === 2) fill.style.width = '50%';
-                else if (stepNumber === 3) fill.style.width = '100%';
-
-                // Scroll to top
+                fill.style.width = stepNumber === 1 ? '0%' : '100%';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 
-                // If moving to step 2, ensure previews are updated in case visibility affected them
                 if (stepNumber === 2) {
-                     UI.updateAllPreviews();
-                     UI.setupYearSliders(); // Ensure sliders are sync and sized correctly
+                     UI.renderDashboard();
                 }
             }
         };
 
         // --- UI Manager ---
         const UI = {
+            fetchAndSetVat: async () => {
+                try {
+                    // Simulate API Fetch for VAT
+                    // In a real scenario: const response = await fetch('https://api.gov.il/vat'); const data = await response.json();
+                    await new Promise(resolve => setTimeout(resolve, 500)); 
+                    // Assuming API returns 17%
+                    Utils.$('vatRate').value = '17'; 
+                } catch (e) {
+                    console.warn('Failed to fetch VAT, defaulting to 17');
+                    Utils.$('vatRate').value = '17';
+                }
+            },
+
+            showTooltip: (element) => {
+                const textSpan = element.querySelector('.tooltip-text');
+                if (!textSpan) return;
+                
+                const tooltip = Utils.$('globalTooltip');
+                tooltip.innerHTML = textSpan.innerHTML;
+                tooltip.classList.add('active');
+                
+                const rect = element.getBoundingClientRect();
+                const tRect = tooltip.getBoundingClientRect();
+                
+                let top = rect.top - tRect.height - 12; // 12px gap
+                let left = rect.left + (rect.width / 2) - (tRect.width / 2);
+                
+                // Prevent going off screen (basic)
+                if (left < 10) left = 10;
+                if (left + tRect.width > window.innerWidth - 10) left = window.innerWidth - tRect.width - 10;
+                
+                tooltip.style.top = `${top}px`;
+                tooltip.style.left = `${left}px`;
+            },
+            
+            hideTooltip: () => {
+                const tooltip = Utils.$('globalTooltip');
+                tooltip.classList.remove('active');
+            },
+
             readCommonInputs: () => {
                  const getVal = (id) => {
                     const el = Utils.$(id);
@@ -606,66 +666,163 @@
                     monthlyIncome: getVal('monthlyIncome'),
                     monthlyLivingExpenses: getVal('monthlyLivingExpenses'),
                     oneTimeCosts: getVal('oneTimeCosts'),
-                    annualReturn: getVal('annualReturn') / 100,
-                    annualInflation: getVal('annualInflation') / 100,
-                    vatRate: getVal('vatRate') / 100,
+                    annualReturn: getVal('annualReturn'),
+                    annualInflation: getVal('annualInflation'),
+                    vatRate: getVal('vatRate'),
                     maxYears: getVal('maxYears'),
                     monthsIndependent: getVal('monthsIndependent'),
                     nursingAddon: getVal('nursingAddon'),
                     nursingAllowance: getVal('nursingAllowance'),
                     scenario: Utils.$('assetScenarioSelect').value,
                     salePrice: getVal('salePrice'),
-                    saleCostsPct: getVal('saleCostsPct') / 100,
+                    saleCostsPct: getVal('saleCostsPct'),
                     rentGross: getVal('rentGross'),
-                    rentTaxPct: getVal('rentTaxPct') / 100,
-                    vacancyPct: getVal('vacancyPct') / 100,
+                    rentTaxPct: getVal('rentTaxPct'),
+                    vacancyPct: getVal('vacancyPct'),
                     annualMaintenance: getVal('annualMaintenance'),
                 };
             },
 
-            readTrackInputs: (trackId, vatRate = 0) => {
-                const pMode = Utils.$(`pricingMode_${trackId}`).value;
-                const company = Utils.$(`trackCompany_${trackId}`).value;
-                const room = Utils.$(`trackRoom_${trackId}`).value;
-                const trackName = `${company}${room ? ' - ' + room : ''}`;
-                const getVal = (id) => {
-                    const el = Utils.$(id);
-                    return el ? Utils.unformat(el.value) : 0;
-                };
-                const depPctVal = pMode === 'deposit' ? getVal(`depositDepreciationPct_${trackId}`) : 0;
-                const depYearsVal = pMode === 'deposit' ? getVal(`depositDepreciationYears_${trackId}`) : 0;
-                // Read VAT check
-                const depVatCheck = pMode === 'deposit' ? Utils.$(`depositAddVat_${trackId}`)?.checked : false;
+            // Calculates effective params for simulation
+            getTrackParams: (track) => {
+                const commonRaw = UI.readCommonInputs();
+                const pct = (v) => v / 100;
 
-                // When calculating refund % floor with VAT added:
-                // If the user checks "Add VAT", the Total Deduction = Years * Rate * (1 + VAT).
-                // The Refund Floor = 100% - Total Deduction.
-                const multiplier = depVatCheck ? (1 + vatRate) : 1;
-                const totalDepreciationPct = depYearsVal * depPctVal * multiplier;
+                const common = {
+                    ...commonRaw,
+                    annualReturn: pct(commonRaw.annualReturn),
+                    annualInflation: pct(commonRaw.annualInflation),
+                    vatRate: pct(commonRaw.vatRate),
+                    saleCostsPct: pct(commonRaw.saleCostsPct),
+                    rentTaxPct: pct(commonRaw.rentTaxPct),
+                    vacancyPct: pct(commonRaw.vacancyPct),
+                };
+
+                const vatRate = common.vatRate;
+                const company = track.company;
+                const room = track.room;
+                const trackName = `${company}${room ? ' - ' + room : ''}` || `מסלול ${track.id}`;
                 
+                // Calculate refundPct based on params
+                let depositRefundPct = 0;
+                if(track.pricingMode === 'deposit') {
+                    const multiplier = track.depositAddVat ? (1 + vatRate) : 1;
+                    const totalDep = track.depositDepreciationYears * pct(track.depositDepreciationPct) * multiplier;
+                    depositRefundPct = Math.max(0, 1 - totalDep);
+                }
+
                 return {
-                    id: trackId,
-                    trackName: trackName,
-                    company: company,
-                    room: room,
-                    pricingMode: pMode,
-                    baseWithDeposit: pMode === 'deposit' ? getVal(`baseWithDeposit_${trackId}`) : 0,
-                    baseWithEntranceFee: pMode === 'entrance_fee' ? getVal(`baseWithEntranceFee_${trackId}`) : 0,
-                    baseNoDeposit: pMode === 'none' ? getVal(`baseNoDeposit_${trackId}`) : 0,
-                    depositAmount: pMode === 'deposit' ? getVal(`depositAmount_${trackId}`) : 0,
-                    depositDepreciationPct: depPctVal / 100,
-                    depositDepreciationYears: depYearsVal,
-                    depositAddVat: depVatCheck,
-                    depositRefundPct: pMode === 'deposit' ? Math.max(0, (100 - totalDepreciationPct) / 100) : 0,
-                    entranceFeeAmount: pMode === 'entrance_fee' ? getVal(`entranceFeeAmount_${trackId}`) : 0,
-                    entranceFeeDepreciationRateMonthly: pMode === 'entrance_fee' ? (parseFloat(Utils.$(`entranceFeeDepreciationRateMonthly_${trackId}`)?.value || 0) / 100) : 0,
-                    entranceFeeDepreciationYears: pMode === 'entrance_fee' ? getVal(`entranceFeeDepreciationYears_${trackId}`) : 0,
+                    ...common,
+                    ...track,
+                    trackName,
+                    // Ensure numeric conversion for key props
+                    depositDepreciationPct: pct(Number(track.depositDepreciationPct)),
+                    depositRefundPct,
+                    entranceFeeDepreciationRateMonthly: Number(track.entranceFeeDepreciationRateMonthly)
                 };
             },
 
-            readAllInputsForTrack: (trackId) => {
-                const common = UI.readCommonInputs();
-                return { ...common, ...UI.readTrackInputs(trackId, common.vatRate) };
+            renderDashboard: () => {
+                // Calculate results for ALL tracks to populate table
+                State.simulationResults = State.tracks.map((track, idx) => {
+                    return Calculator.simulate(UI.getTrackParams(track));
+                });
+
+                UI.renderResultsTable();
+                UI.renderCharts();
+            },
+
+            // -- Modal Logic --
+            openTrackEditor: (trackId) => {
+                State.editModeTrackId = trackId;
+                const isNew = trackId === 'new';
+                const track = isNew ? State.addTrack() : State.tracks.find(t => t.id == trackId);
+                
+                // Safeguard against missing track
+                if (!track) {
+                    console.error('Track not found:', trackId);
+                    return;
+                }
+
+                if (isNew) State.editModeTrackId = track.id; // Update Ref
+                
+                Utils.$('modalTitle').textContent = isNew ? 'הוספת מסלול חדש' : 'עריכת מסלול';
+                
+                // Inject Form
+                const body = Utils.$('modalBody');
+                body.innerHTML = UI.Templates.trackForm(track);
+                
+                // Setup formatting & listeners inside modal
+                UI.setupNumberFormatting(body);
+                UI.attachModalListeners(track.id);
+                
+                Utils.$('trackModal').classList.add('open');
+                
+                // Populate Company Datalist
+                UI.updateCompanyDatalist();
+            },
+
+            closeModal: () => {
+                Utils.$('trackModal').classList.remove('open');
+                State.editModeTrackId = null;
+            },
+
+            saveModal: () => {
+                const id = State.editModeTrackId;
+                if (!id) return;
+                
+                // Read inputs from Modal
+                const getVal = (field) => {
+                    const el = Utils.$(`${field}_${id}`);
+                    return el ? (el.type === 'checkbox' ? el.checked : Utils.unformat(el.value)) : null;
+                };
+                const getStr = (field) => {
+                     const el = Utils.$(`${field}_${id}`);
+                     return el ? el.value : '';
+                };
+
+                const mode = getStr('pricingMode');
+                
+                const data = {
+                    company: getStr('trackCompany'),
+                    room: getStr('trackRoom'),
+                    pricingMode: mode,
+                    baseWithDeposit: getVal('baseWithDeposit'),
+                    // reducedDepositAmount logic removed
+                    depositAmount: getVal('depositAmount'),
+                    depositDepreciationPct: getVal('depositDepreciationPct'),
+                    depositAddVat: getVal('depositAddVat'),
+                    depositDepreciationYears: getVal('depositDepreciationYears'),
+                    baseWithEntranceFee: getVal('baseWithEntranceFee'),
+                    entranceFeeAmount: getVal('entranceFeeAmount'),
+                    entranceFeeDepreciationYears: getVal('entranceFeeDepreciationYears'),
+                    baseNoDeposit: getVal('baseNoDeposit')
+                };
+
+                // Calculate derived values like monthly rate for entrance fee
+                if (mode === 'entrance_fee') {
+                     const rateStr = Utils.$(`entranceFeeDepreciationRateMonthly_${id}`).value;
+                     // Parse percentage back or recalc? Better recalc on save logic or trust storage
+                     // We actually just need to store the years/amount. The rate is derived.
+                     if (data.entranceFeeDepreciationYears > 0) {
+                         data.entranceFeeDepreciationRateMonthly = (1 / (data.entranceFeeDepreciationYears * 12));
+                     }
+                }
+                
+                State.updateTrack(id, data);
+                UI.closeModal();
+                UI.renderDashboard();
+            },
+            
+            // -- Delete Modal Logic --
+            openDeleteModal: (id) => {
+                State.pendingDeleteId = id;
+                Utils.$('deleteConfirmationModal').classList.add('open');
+            },
+            
+            closeDeleteModal: () => {
+                State.pendingDeleteId = null;
+                Utils.$('deleteConfirmationModal').classList.remove('open');
             },
 
             Templates: {
@@ -676,224 +833,136 @@
                         <button type="button" class="spinner-btn" data-step-dir="down" data-target="${id}">-</button>
                     </div>`,
                 
-                depositModeInputs: (id) => `
-                    <div class="row">
-                        <div class="span-2">
-                            <label for="baseWithDeposit_${id}">דמי אחזקה (₪)</label>
-                            ${UI.Templates.spinner(`baseWithDeposit_${id}`, '9000', 'expense', `data-track-id="${id}" data-base-value="9000"`)}
-                        </div>
-                        <div class="span-2">
-                            <label for="reducedDepositAmount_${id}" class="tooltip-header">פקדון מופחת (₪)<span class="tooltip-text">סכום ההפחתה מהפיקדון. כל 50,000₪ הפחתה מהפיקדון מוסיפים 500₪ לדמי האחזקה החודשיים.</span></label>
-                            <div class="spinner-control">
-                                <button type="button" class="spinner-btn stepper-btn" data-step-dir="up" data-track-id="${id}">+</button>
-                                <input type="text" id="reducedDepositAmount_${id}" data-track-id="${id}" value="0" class="expense" inputmode="decimal">
-                                <button type="button" class="spinner-btn stepper-btn" data-step-dir="down" data-track-id="${id}">-</button>
+                trackForm: (track) => {
+                    if (!track) return '<div>Error: Track not found</div>';
+                    const id = track.id;
+                    const safeCompany = Utils.escapeHtml(track.company);
+                    const safeRoom = Utils.escapeHtml(track.room);
+                    const isSelected = (val) => track.pricingMode === val ? 'selected' : '';
+                    
+                    const depositHtml = `
+                    <div id="mode_deposit_${id}" class="mode-fields" style="display:${track.pricingMode === 'deposit' ? 'block' : 'none'}">
+                        <div class="row">
+                             <div class="span-6">
+                                <label for="depositAmount_${id}">סכום פיקדון (₪)</label>
+                                ${UI.Templates.spinner(`depositAmount_${id}`, Utils.fmt(track.depositAmount), 'income', `data-base-value="${track.depositAmount}"`)}
+                            </div>
+                            <div class="span-6">
+                                <label for="baseWithDeposit_${id}">דמי אחזקה (₪)</label>
+                                ${UI.Templates.spinner(`baseWithDeposit_${id}`, Utils.fmt(track.baseWithDeposit), 'expense', `data-base-value="${track.baseWithDeposit}"`)}
                             </div>
                         </div>
-                        <div class="span-3">
-                            <label for="depositAmount_${id}">סכום פיקדון (₪)</label>
-                            ${UI.Templates.spinner(`depositAmount_${id}`, '1000000', 'income', `data-track-id="${id}" data-base-value="1000000"`)}
+                        <div class="row">
+                            <div class="span-4">
+                                <label for="depositDepreciationPct_${id}">פחת שנתי (%)</label>
+                                ${UI.Templates.spinner(`depositDepreciationPct_${id}`, track.depositDepreciationPct, 'expense')}
+                            </div>
+                            <div class="span-4">
+                                <label for="depositDepreciationYears_${id}">שחיקה (שנים)
+                                 <span class="note" id="refundPctNote_${id}" style="display: block; font-weight: normal; line-height: 1.2; margin-top: 2px;"></span>
+                                </label>
+                                ${UI.Templates.spinner(`depositDepreciationYears_${id}`, track.depositDepreciationYears, 'income')}
+                            </div>
+                            <div class="span-4">
+                                <label for="depositAddVat_${id}" style="font-size:0.9rem;">+ מע"מ</label>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <input type="checkbox" id="depositAddVat_${id}" style="width:20px; height:20px; accent-color:var(--accent);" ${track.depositAddVat ? 'checked' : ''}>
+                                    <div id="vatCalcNote_${id}" class="note" style="font-weight:bold;"></div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="span-2">
-                            <label for="depositDepreciationPct_${id}">פחת שנתי (%)</label>
-                            ${UI.Templates.spinner(`depositDepreciationPct_${id}`, '3', 'expense')}
+                    </div>`;
+                    
+                    const entranceHtml = `
+                    <div id="mode_entrance_fee_${id}" class="mode-fields" style="display:${track.pricingMode === 'entrance_fee' ? 'block' : 'none'}">
+                        <div class="row">
+                             <div class="span-6"><label for="entranceFeeAmount_${id}">סכום דמי כניסה (₪)</label>${UI.Templates.spinner(`entranceFeeAmount_${id}`, Utils.fmt(track.entranceFeeAmount), 'income')}</div>
+                             <div class="span-6"><label for="baseWithEntranceFee_${id}">דמי אחזקה (₪)</label>${UI.Templates.spinner(`baseWithEntranceFee_${id}`, Utils.fmt(track.baseWithEntranceFee), 'expense')}</div>
                         </div>
-                        <div class="span-1">
-                             <label for="depositAddVat_${id}" class="tooltip-header" style="font-size:0.8rem; text-align:center; display:block; margin-bottom: 8px;">+ מע"מ
-                                <span class="tooltip-text">האם להוסיף מע"מ לשיעור השחיקה. לרוב, אחוז השחיקה הנקוב בחוזה אינו כולל מע"מ ויש להוסיפו.</span>
-                             </label>
-                             <div style="display:flex; justify-content:center;">
-                                <input type="checkbox" id="depositAddVat_${id}" style="width:20px; height:20px; accent-color:var(--accent);" checked>
-                             </div>
+                        <div class="row">
+                            <div class="span-6"><label for="entranceFeeDepreciationYears_${id}">משך הפחת (שנים)</label>${UI.Templates.spinner(`entranceFeeDepreciationYears_${id}`, track.entranceFeeDepreciationYears, 'expense')}</div>
+                            <div class="span-6"><label for="entranceFeeDepreciationRateMonthly_${id}">פחת חודשי (מחושב)</label><input type="text" id="entranceFeeDepreciationRateMonthly_${id}" value="" class="expense" readonly style="background-color: var(--bg); cursor: not-allowed;"></div>
                         </div>
-                        <div class="span-2">
-                            <label for="depositDepreciationYears_${id}" class="tooltip-header">
-                                שחיקה (שנים)
-                                <span class="tooltip-text">תקופת השחיקה המקסימלית של הפיקדון. לאחר תקופה זו, גביית הפחת נפסקת ויתרת הפיקדון נשמרת.</span>
-                                <span class="note" id="refundPctNote_${id}" style="display: block; font-weight: normal; line-height: 1.2; margin-top: 2px;"></span>
-                            </label>
-                            ${UI.Templates.spinner(`depositDepreciationYears_${id}`, '12', 'income')}
-                        </div>
-                    </div>`,
+                    </div>`;
+                    
+                    const noneHtml = `
+                    <div id="mode_none_${id}" class="mode-fields" style="display:${track.pricingMode === 'none' ? 'block' : 'none'}">
+                         <div class="row"><div class="span-12"><label for="baseNoDeposit_${id}">דמי אחזקה חודשיים (₪)</label>${UI.Templates.spinner(`baseNoDeposit_${id}`, Utils.fmt(track.baseNoDeposit), 'expense')}</div></div>
+                    </div>`;
 
-                entranceModeInputs: (id) => `
-                    <div class="row">
-                        <div class="span-3"><label for="baseWithEntranceFee_${id}">דמי אחזקה (₪)</label>${UI.Templates.spinner(`baseWithEntranceFee_${id}`, '9500', 'expense')}</div>
-                        <div class="span-3"><label for="entranceFeeAmount_${id}">סכום דמי כניסה (₪)</label>${UI.Templates.spinner(`entranceFeeAmount_${id}`, '450000', 'income')}</div>
-                        <div class="span-3"><label for="entranceFeeDepreciationYears_${id}">משך הפחת (שנים)</label>${UI.Templates.spinner(`entranceFeeDepreciationYears_${id}`, '5', 'expense')}</div>
-                        <div class="span-3"><label for="entranceFeeDepreciationRateMonthly_${id}">פחת חודשי (מחושב)</label><input type="text" id="entranceFeeDepreciationRateMonthly_${id}" value="" class="expense" inputmode="decimal" readonly style="background-color: var(--bg); cursor: not-allowed;"></div>
-                    </div>`,
+                    return `
+                        <div class="row">
+                             <div class="span-6"><label for="trackCompany_${id}">שם חברה וכתובת</label><input type="text" id="trackCompany_${id}" value="${safeCompany}" list="companyList" placeholder="לדוגמה: אחוזת בית"></div>
+                             <div class="span-6"><label for="trackRoom_${id}">סוג חדר</label><input type="text" id="trackRoom_${id}" value="${safeRoom}" placeholder="לדוגמה: 2 חדרים"></div>
+                        </div>
+                        <div class="row">
+                            <div class="span-12"><label for="pricingMode_${id}">סוג מסלול</label>
+                                <select id="pricingMode_${id}">
+                                    <option value="deposit" ${isSelected('deposit')}>עם פיקדון</option>
+                                    <option value="entrance_fee" ${isSelected('entrance_fee')}>דמי כניסה</option>
+                                    <option value="none" ${isSelected('none')}>תשלום חודשי</option>
+                                </select>
+                            </div>
+                        </div>
+                        <hr class="hr"/>
+                        ${depositHtml}${entranceHtml}${noneHtml}
+                    `;
+                }
+            },
+
+            attachModalListeners: (trackId) => {
+                const modal = Utils.$('modalBody');
                 
-                noneModeInputs: (id) => `
-                     <div class="row"><div class="span-3"><label for="baseNoDeposit_${id}">דמי אחזקה (₪)</label>${UI.Templates.spinner(`baseNoDeposit_${id}`, '14000', 'expense')}</div></div>`
-            },
+                // Mode switcher
+                const modeSelect = Utils.$(`pricingMode_${trackId}`);
+                if (!modeSelect) return;
+                
+                modeSelect.addEventListener('change', () => {
+                    modal.querySelectorAll('.mode-fields').forEach(el => el.style.display = 'none');
+                    const mode = modeSelect.value;
+                    Utils.$(`mode_${mode}_${trackId}`).style.display = 'block';
+                });
 
-            renderTrackCard: (track) => {
-                const trackId = track.id;
-                const card = document.createElement('div');
-                card.className = 'track-card';
-                card.dataset.trackId = trackId;
-                const safeCompany = Utils.escapeHtml(track.company || track.name || '');
-                const safeRoom = Utils.escapeHtml(track.room || '');
-                const isSelected = (val) => track.pricingMode === val ? 'selected' : '';
-                card.innerHTML = `
-                    <div class="drag-handle" aria-label="גרור לסידור מחדש">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
-                    </div>
-                    <button class="remove-track-btn" data-remove-track-id="${trackId}" aria-label="הסר מסלול">&times;</button>
-                    <button class="toggle-track-btn" data-toggle-track-id="${trackId}" aria-label="מזער/הרחב">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
-                    </button>
-                    <div class="track-header">
-                        <div class="form-group full-width-mobile"><label for="trackCompany_${trackId}">שם חברה וכתובת</label><input type="text" id="trackCompany_${trackId}" value="${safeCompany}" list="companyList" placeholder="לדוגמה: אחוזת בית, רעננה" autocomplete="off"></div>
-                        <div class="form-group full-width-mobile"><label for="trackRoom_${trackId}">סוג חדר וגודל</label><input type="text" id="trackRoom_${trackId}" value="${safeRoom}" placeholder="לדוגמה: 2 חדרים, 60 מ&quot;ר"></div>
-                        <div class="form-group"><label for="pricingMode_${trackId}">סוג המסלול</label>
-                            <select id="pricingMode_${trackId}">
-                                <option value="deposit" ${isSelected('deposit')}>עם פיקדון</option>
-                                <option value="entrance_fee" ${isSelected('entrance_fee')}>דמי כניסה</option>
-                                <option value="none" ${isSelected('none')}>תשלום חודשי</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="track-body"></div>
-                    <div class="track-preview" id="trackPreview_${trackId}"></div>
-                    <div class="track-collapsed-view" id="trackCollapsed_${trackId}"></div>`;
-                Utils.$('tracksContainer').appendChild(card);
-                UI.updateTrackBody(trackId);
-            },
-
-            updateTrackBody: (trackId) => {
-                const card = document.querySelector(`.track-card[data-track-id='${trackId}']`);
-                const body = card.querySelector('.track-body');
-                const mode = card.querySelector(`#pricingMode_${trackId}`).value;
-                let html = '';
-                if (mode === 'deposit') html = UI.Templates.depositModeInputs(trackId);
-                else if (mode === 'entrance_fee') html = UI.Templates.entranceModeInputs(trackId);
-                else html = UI.Templates.noneModeInputs(trackId);
-                body.innerHTML = html;
-                UI.setupNumberFormatting(body);
-                if (mode === 'deposit') UI.updateRefundPctNote(trackId);
-                if (mode === 'entrance_fee') UI.updateCalculatedEntranceFeeRate(trackId);
-                UI.updateTrackPreview(trackId);
+                // Input listeners for live updates (refund note, entrance fee calc, VAT note)
+                modal.addEventListener('input', (e) => {
+                    const tId = e.target.id;
+                    if (tId.includes('depositDepreciation') || tId.includes('depositAddVat') || tId.includes('vatRate') || tId.includes('depositAmount')) {
+                        UI.updateRefundPctNote(trackId, true); 
+                        UI.updateVatNote(trackId);
+                    }
+                    if (tId.includes('entranceFee')) {
+                         UI.updateCalculatedEntranceFeeRate(trackId, true);
+                    }
+                });
+                
+                // Trigger initial updates
+                UI.updateRefundPctNote(trackId, true);
+                UI.updateCalculatedEntranceFeeRate(trackId, true);
+                UI.updateVatNote(trackId);
             },
             
             updateCompanyDatalist: () => {
-                const inputs = document.querySelectorAll('input[id^="trackCompany_"]');
                 const uniqueCompanies = new Set();
-                inputs.forEach(input => {
-                    const val = input.value.trim();
-                    if (val) uniqueCompanies.add(val);
-                });
-                
-                const dataList = Utils.$('companyList');
-                if (!dataList) return;
-                
-                dataList.innerHTML = '';
-                uniqueCompanies.forEach(company => {
-                    const option = document.createElement('option');
-                    option.value = company;
-                    dataList.appendChild(option);
+                State.tracks.forEach(t => { if(t.company) uniqueCompanies.add(t.company); });
+                const list = Utils.$('companyList');
+                list.innerHTML = '';
+                uniqueCompanies.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c;
+                    list.appendChild(opt);
                 });
             },
 
-            generatePreviewHTML: (result, params, targetYear) => {
-                const log = result.monthlyLog;
-                if (!log || log.length === 0) {
-                    return {
-                        preview: '',
-                        collapsed: `<div class="collapsed-title">${Utils.escapeHtml(params.trackName) || 'מסלול ללא שם'}</div><div class="collapsed-stats" style="justify-content: center; opacity: 0.5;">נתונים חסרים</div>`
-                    };
-                }
+            // Updated to handle both DOM read (dashboard preview) and Modal read
+            updateRefundPctNote: (trackId, inModal = false) => {
+                const suffix = `_${trackId}`;
+                const getVal = (id) => Utils.unformat(Utils.$(id)?.value);
+                const years = getVal(`depositDepreciationYears${suffix}`);
+                const depPct = getVal(`depositDepreciationPct${suffix}`);
+                const isVatChecked = Utils.$(`depositAddVat${suffix}`)?.checked;
+                const vatRate = Utils.unformat(Utils.$('vatRate')?.value) / 100;
 
-                // Determine the state at the target year (or end of simulation)
-                const targetMonthIndex = Math.min(Math.round(targetYear * 12), log.length) - 1;
-                const currentStatus = targetMonthIndex >= 0 ? log[targetMonthIndex] : log[0];
-                
-                // Calculate accumulated values up to target year
-                const relevantLog = log.slice(0, targetMonthIndex + 1);
-                
-                const totalProviderCash = relevantLog.reduce((sum, item) => sum + (item.providerCost || 0), 0);
-                const totalProviderEconomic = relevantLog.reduce((sum, item) => sum + (item.providerEconomicCost || 0), 0);
-                const depreciation = totalProviderEconomic - totalProviderCash;
-                
-                const finalCash = currentStatus.cash;
-                const refundEnd = currentStatus.refund;
-                const totalBalance = currentStatus.totalBalance;
-                const isMaxedOut = result.summary.maxedOut;
-                
-                // Labels
-                let depLabel = `(ל-${targetYear} שנים)`;
-                
-                const refundTooltip = params.pricingMode === 'entrance_fee' ? 'יתרת דמי הכניסה שנותרה להחזר לאחר ניכוי הפחת המוגדר בחוזה.' : 'סכום הפיקדון שנותר להחזר לאחר ניכוי הפחת השנתי המצטבר, כשהוא מוצמד למדד.';
-                const finalCashTooltip = 'יתרת ההון הנזיל בבנק בסיום התקופה.';
-                let refundLabel = params.pricingMode === 'entrance_fee' ? 'יתרת דמי כניסה' : 'יתרת הפיקדון';
-                let refundHtml = `<div class="preview-item"><span class="preview-label tooltip-header">${refundLabel} (סוף תקופה)<span class="tooltip-text">${refundTooltip}</span></span><span class="preview-value">${Utils.fmt(refundEnd)} ₪</span></div>`;
-                
-                let insolvencyHtml = '';
-                if (!isMaxedOut && result.summary.totalMonths < (targetYear * 12)) {
-                     const years = Math.floor(result.summary.totalMonths / 12);
-                     const months = result.summary.totalMonths % 12;
-                     insolvencyHtml = `<div class="preview-item insolvency-alert"><span class="preview-label" style="color: var(--danger);">חדלות פירעון</span><span class="preview-value" style="color: var(--danger); direction: rtl;">${years} שנים ו-${months} חודשים</span></div>`;
-                }
-                
-                const previewHtml = `<div class="preview-item"><span class="preview-label">צפי אחזקה (ל-${targetYear} שנים)</span><span class="preview-value">${Utils.fmt(totalProviderCash)} ₪</span></div><div class="preview-item"><span class="preview-label">צפי שחיקה ${depLabel}</span><span class="preview-value">${Utils.fmt(depreciation)} ₪</span></div>${refundHtml}<div class="preview-item"><span class="preview-label tooltip-header">יתרת החשבון (סוף תקופה)<span class="tooltip-text">${finalCashTooltip}</span></span><span class="preview-value">${Utils.fmt(finalCash)} ₪</span></div><div class="preview-item"><span class="preview-label">סה"כ יתרה (הון + החזר)</span><span class="preview-value ok" style="font-weight: 800;">${Utils.fmt(totalBalance)} ₪</span></div><div class="preview-end-group">${insolvencyHtml}</div>`;
-                const modeLabels = { 'deposit': 'מסלול פיקדון', 'entrance_fee': 'דמי כניסה', 'none': 'תשלום חודשי' };
-                const typeLabel = modeLabels[params.pricingMode] || '';
-                const collapsedHtml = `<div class="collapsed-title">${Utils.escapeHtml(params.trackName) || 'מסלול ללא שם'}<span style="font-weight:normal; opacity:0.7; font-size:0.9em; margin-right:8px;">• ${typeLabel}</span></div><div class="collapsed-stats"><div class="collapsed-stat-item"><span class="collapsed-stat-label">אחזקה</span><span class="collapsed-stat-value">${Utils.fmt(totalProviderCash)}</span></div><div class="collapsed-stat-item"><span class="collapsed-stat-label">שחיקה</span><span class="collapsed-stat-value">${Utils.fmt(depreciation)}</span></div><div class="collapsed-stat-item"><span class="collapsed-stat-label">החזר</span><span class="collapsed-stat-value">${Utils.fmt(refundEnd)}</span></div><div class="collapsed-stat-item"><span class="collapsed-stat-label">יתרה</span><span class="collapsed-stat-value">${Utils.fmt(finalCash)}</span></div><div class="collapsed-stat-item"><span class="collapsed-stat-label">סה"כ</span><span class="collapsed-stat-value ok" style="font-weight: 800;">${Utils.fmt(totalBalance)}</span></div></div><div style="margin-right: auto; color: var(--muted);"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></div>`;
-                return { preview: previewHtml, collapsed: collapsedHtml };
-            },
-
-            updateTrackPreview: (trackId) => {
-                const params = UI.readAllInputsForTrack(trackId);
-                if (!params) return;
-                const result = Calculator.simulate(params);
-                // Use the shared view year from state (controlled by sliders)
-                const html = UI.generatePreviewHTML(result, params, State.viewYear);
-                const previewEl = Utils.$(`trackPreview_${trackId}`);
-                if (previewEl) previewEl.innerHTML = html.preview;
-                const collapsedEl = Utils.$(`trackCollapsed_${trackId}`);
-                if (collapsedEl) collapsedEl.innerHTML = html.collapsed;
-            },
-
-            updateAllPreviews: () => {
-                const common = UI.readCommonInputs();
-                const cards = document.querySelectorAll('.track-card');
-                const updates = Array.from(cards).map(card => {
-                    const trackId = card.dataset.trackId;
-                    const trackParams = UI.readTrackInputs(trackId, common.vatRate);
-                    const params = { ...common, ...trackParams };
-                    const result = Calculator.simulate(params);
-                    // Use shared state year
-                    const html = UI.generatePreviewHTML(result, params, State.viewYear);
-                    return { trackId, html };
-                });
-                updates.forEach(({ trackId, html }) => {
-                    const previewEl = Utils.$(`trackPreview_${trackId}`);
-                    if (previewEl) previewEl.innerHTML = html.preview;
-                    const collapsedEl = Utils.$(`trackCollapsed_${trackId}`);
-                    if (collapsedEl) collapsedEl.innerHTML = html.collapsed;
-                });
-            },
-
-            updateCalculatedEntranceFeeRate: (trackId) => {
-                const years = Utils.unformat(Utils.$(`entranceFeeDepreciationYears_${trackId}`)?.value);
-                const amount = Utils.unformat(Utils.$(`entranceFeeAmount_${trackId}`)?.value);
-                const rateInput = Utils.$(`entranceFeeDepreciationRateMonthly_${trackId}`);
-                if (rateInput && years > 0) {
-                    const ratePercent = 100 / (years * 12);
-                    const monthlyDepAmount = amount / (years * 12);
-                    rateInput.value = (amount > 0 && isFinite(monthlyDepAmount)) ? `${ratePercent.toFixed(3)}% (${Utils.fmt(monthlyDepAmount)} ₪)` : `${ratePercent.toFixed(3)}%`;
-                } else if (rateInput) rateInput.value = '0.000%';
-            },
-
-            updateRefundPctNote: (trackId) => {
-                const years = Utils.unformat(Utils.$(`depositDepreciationYears_${trackId}`)?.value);
-                const depPct = Utils.unformat(Utils.$(`depositDepreciationPct_${trackId}`)?.value);
-                const isVatChecked = Utils.$(`depositAddVat_${trackId}`)?.checked;
-                const vatRateVal = Utils.unformat(Utils.$('vatRate')?.value);
-                const vatRate = vatRateVal ? vatRateVal / 100 : 0.17;
-
-                const note = Utils.$(`refundPctNote_${trackId}`);
+                const note = Utils.$(`refundPctNote${suffix}`);
                 if (note) {
                     const multiplier = isVatChecked ? (1 + vatRate) : 1;
                     let refundPct = Math.max(0, 100 - (years * depPct * multiplier));
@@ -901,35 +970,46 @@
                 }
             },
             
-            updateDepositReduction: (trackId) => {
-                const reducedDepositInput = Utils.$(`reducedDepositAmount_${trackId}`);
-                const maintenanceInput = Utils.$(`baseWithDeposit_${trackId}`);
-                const depositInput = Utils.$(`depositAmount_${trackId}`);
-                if (!reducedDepositInput || !maintenanceInput || !depositInput) return;
-                const baseMaintenance = Utils.unformat(maintenanceInput.dataset.baseValue);
-                const baseDeposit = Utils.unformat(depositInput.dataset.baseValue);
-                let reducedAmount = Utils.unformat(reducedDepositInput.value);
-                if (reducedAmount > baseDeposit) {
-                    reducedAmount = baseDeposit;
-                    reducedDepositInput.value = Utils.formatNumber(reducedAmount);
+            updateVatNote: (trackId) => {
+                const suffix = `_${trackId}`;
+                const getVal = (id) => Utils.unformat(Utils.$(id)?.value);
+                
+                const deposit = getVal(`depositAmount${suffix}`);
+                const pct = getVal(`depositDepreciationPct${suffix}`) / 100;
+                const years = getVal(`depositDepreciationYears${suffix}`);
+                const isChecked = Utils.$(`depositAddVat${suffix}`)?.checked;
+                const globalVat = Utils.unformat(Utils.$('vatRate').value) / 100;
+                
+                const noteEl = Utils.$(`vatCalcNote${suffix}`);
+                if(!noteEl) return;
+                
+                if(!isChecked) {
+                    noteEl.innerHTML = '';
+                    return;
                 }
-                const maintenanceIncrease = (reducedAmount / 50000) * 500;
-                maintenanceInput.value = Utils.formatNumber(Math.max(0, baseMaintenance + maintenanceIncrease));
-                depositInput.value = Utils.formatNumber(Math.max(0, baseDeposit - reducedAmount));
+                
+                // The VAT added is on the Base Deduction
+                // VAT Amount = Deposit * TotalBaseDeductionPct * VAT_Rate
+                const totalBaseDeductionPct = pct * years;
+                const vatAmount = deposit * totalBaseDeductionPct * globalVat;
+                
+                noteEl.innerHTML = `שווי מע"מ: ${Utils.fmt(vatAmount)} ₪`;
             },
 
-            updateVacancyMonthsNote: () => {
-                const note = Utils.$('vacancyMonthsNote');
-                const pct = Utils.unformat(Utils.$('vacancyPct')?.value);
-                if (note && !isNaN(pct) && pct !== '') {
-                     const months = (pct / 100) * 12;
-                     note.textContent = `(שווה ערך לכ-${(months % 1 === 0 ? months.toFixed(0) : months.toFixed(1))} חודשים)`;
-                } else if (note) note.textContent = '';
+            updateCalculatedEntranceFeeRate: (trackId, inModal = false) => {
+                const suffix = `_${trackId}`;
+                const years = Utils.unformat(Utils.$(`entranceFeeDepreciationYears${suffix}`)?.value);
+                const amount = Utils.unformat(Utils.$(`entranceFeeAmount${suffix}`)?.value);
+                const rateInput = Utils.$(`entranceFeeDepreciationRateMonthly${suffix}`);
+                if (rateInput && years > 0) {
+                    const ratePercent = 100 / (years * 12);
+                    const monthlyDepAmount = amount / (years * 12);
+                    rateInput.value = (amount > 0 && isFinite(monthlyDepAmount)) ? `${ratePercent.toFixed(3)}% (${Utils.fmt(monthlyDepAmount)} ₪)` : `${ratePercent.toFixed(3)}%`;
+                } else if (rateInput) rateInput.value = '0.000%';
             },
 
             setupNumberFormatting: (container) => {
                 container.querySelectorAll('input[type="text"][inputmode="decimal"]').forEach(input => {
-                    if (input.value && !input.value.includes(',')) input.value = Utils.formatNumber(input.value);
                     input.addEventListener('input', (e) => {
                         const target = e.target;
                         const originalValue = target.value;
@@ -938,107 +1018,139 @@
                         const formattedValue = Utils.formatNumber(originalValue);
                         if (originalValue === formattedValue) return;
                         target.value = formattedValue;
-                        const newLength = formattedValue.length;
-                        const oldLength = originalValue.length;
-                        let newPos = cursorPos;
-                        if (newLength !== oldLength) {
-                            newPos = newLength - digitsToRight;
-                            if(newPos < 0) newPos = 0;
-                        }
+                        const newPos = Math.max(0, formattedValue.length - digitsToRight);
                         target.setSelectionRange(newPos, newPos);
                     });
                 });
             },
+            
+            // updateDepositReduction function removed
 
-            renderResultsView: () => {
+            renderResultsTable: () => {
                 const container = Utils.$('resultsTableContainer');
-                const targetYear = State.viewYear; // Use shared state
+                const targetYear = State.viewYear;
                 const targetMonths = Math.round(targetYear * 12);
                 const pricingModeMap = { 'deposit': 'עם פיקדון', 'entrance_fee': 'דמי כניסה', 'none': 'תשלום חודשי' };
 
                 let table = `<table class="results-table"><thead><tr>
-                    <th>#</th><th>שם החברה-סוג החדר</th><th>סוג מסלול</th><th>סה"כ חודשים (עצמאי / סיעודי)</th>
-                    <th class="tooltip-header">עלות דמי אחזקה (₪)</th>
-                    <th class="tooltip-header">עלות השחיקה (₪)</th>
-                    <th class="tooltip-header">עלות מצטברת כוללת (₪)</th>
-                    <th class="tooltip-header">יתרת הון בסיום (₪)</th>
-                    <th class="tooltip-header">החזר צפוי (₪)</th>
-                    <th class="tooltip-header">סה"כ יתרה (הון + החזר) (₪)</th>
+                    <th><span class="visually-hidden">גרירה</span></th>
+                    <th>הצג</th>
+                    <th><span class="visually-hidden">עריכה</span></th>
+                    <th>#</th>
+                    <th>שם החברה-סוג החדר</th>
+                    <th>סוג מסלול</th>
+                    <th>סה"כ חודשים</th>
+                    <th class="tooltip-header">עלות דמי אחזקה (₪)
+                        <span class="tooltip-text">סך תשלומי דמי האחזקה ששולמו בפועל לדיור המוגן. הסכום משקלל את עליית המדד (אינפלציה) לאורך השנים, ואת תוספת הסיעוד במידה והופעלה.</span>
+                    </th>
+                    <th class="tooltip-header">עלות השחיקה (₪)
+                        <span class="tooltip-text">החלק מתוך הפיקדון שקוזז ("נשחק") לטובת הדיור המוגן. מחושב לפי אחוז השחיקה השנתי ומע"מ (אם חל), עד לתקרת המקסימום המוגדרת.</span>
+                    </th>
+                    <th class="tooltip-header">עלות מצטברת כוללת (₪)
+                        <span class="tooltip-text">המחיר הכלכלי המלא: סך דמי האחזקה ששולמו (כולל הצמדה) ועוד סכום השחיקה שננגס מהפיקדון. משקף את העלות האמיתית של המגורים.</span>
+                    </th>
+                    <th class="tooltip-header">יתרת הון בסיום (₪)
+                        <span class="tooltip-text">יתרת הכספים וההשקעות שנותרה בידך (ללא הפיקדון). מחושבת ע"י הוספת הכנסות ותשואת ריבית דריבית, והפחתת הוצאות שוטפות ומדד יוקר המחיה.</span>
+                    </th>
+                    <th class="tooltip-header">החזר צפוי (₪)
+                        <span class="tooltip-text">סכום הפיקדון שיוחזר בתום התקופה. הסכום מורכב מהפיקדון המקורי פחות השחיקה שהצטברה, בתוספת הפרשי הצמדה למדד (אם הוגדרו).</span>
+                    </th>
+                    <th class="tooltip-header">סה"כ יתרה (₪)
+                        <span class="tooltip-text">השווי הכולל של הנכסים בתום התקופה: חיבור של יתרת ההון הנזיל (תיק ההשקעות) עם החזר הפיקדון הצפוי מהדיור המוגן.</span>
+                    </th>
+                    <th><span class="visually-hidden">מחיקה</span></th>
                 </tr></thead><tbody>`;
 
-                State.simulationResults.forEach((result, idx) => {
-                    const rSummary = result.summary;
-                    let displayMonths = 0, indMonths = 0, nursMonths = 0, finalCash = 0, refundEnd = 0,
-                        cumulativeDepreciation = 0, cumulativeMaintenance = 0, totalEconomicCost = 0, durationNote = '';
-                    let rowClass = '';
-                    const ranOut = !rSummary.maxedOut;
-                    const showInsolvent = ranOut && rSummary.totalMonths < targetMonths;
-                    const hasLog = result.monthlyLog.length > 0;
+                State.tracks.forEach((track, idx) => {
+                    const result = State.simulationResults[idx];
+                    if (!result) return; 
 
-                    if (!hasLog) {
-                         rowClass = 'insolvent';
-                         durationNote = '<div class="note danger">לא מספיק הון</div>';
-                    } else if (showInsolvent) {
-                        rowClass = 'insolvent';
-                        const last = result.monthlyLog[result.monthlyLog.length - 1];
-                        displayMonths = last.month; indMonths = last.independentMonths; nursMonths = last.nursingMonths;
-                        refundEnd = last.refund;
-                        cumulativeMaintenance = result.monthlyLog.reduce((s, l) => s + (l.providerCost || 0), 0);
-                        const totalEconomic = result.monthlyLog.reduce((s, l) => s + (l.providerEconomicCost || 0), 0);
-                        cumulativeDepreciation = totalEconomic - cumulativeMaintenance;
-                        totalEconomicCost = totalEconomic;
-                        durationNote = `<div class="note danger">אזל לאחר ${Math.floor(displayMonths/12)} ש' ו־${displayMonths%12} ח'</div>`;
+                    const rSummary = result.summary;
+                    const logs = result.monthlyLog;
+                    let rowClass = 'track-row';
+                    let displayMonths = 0, indMonths = 0, nursMonths = 0, finalCash = 0, refundEnd = 0,
+                        cumulativeDep = 0, cumulativeMaint = 0, totalEcon = 0, note = '';
+
+                    const ranOut = !rSummary.maxedOut;
+                    const isShort = ranOut && rSummary.totalMonths < targetMonths;
+                    
+                    // Determine which month data to show
+                    let sliceEnd = Math.min(targetMonths, logs.length);
+                    // If ran out early, we show the last available month
+                    
+                    const relevantLogs = logs.slice(0, sliceEnd);
+                    const last = relevantLogs[relevantLogs.length - 1];
+                    
+                    if (!last) { // Should not happen given logic but safety
+                         rowClass += ' insolvent';
+                         note = '<div class="note danger">אין מספיק הון</div>';
                     } else {
-                        const cappedMonths = Math.min(targetMonths, rSummary.totalMonths);
-                        const logs = result.monthlyLog.slice(0, cappedMonths);
-                        const last = logs[logs.length - 1];
-                        displayMonths = last.month; indMonths = last.independentMonths; nursMonths = last.nursingMonths;
-                        finalCash = last.cash; refundEnd = last.refund;
-                        cumulativeMaintenance = logs.reduce((s, l) => s + (l.providerCost || 0), 0);
-                        const totalEconomic = logs.reduce((s, l) => s + (l.providerEconomicCost || 0), 0);
-                        cumulativeDepreciation = totalEconomic - cumulativeMaintenance;
-                        totalEconomicCost = totalEconomic;
-                        durationNote = `<div class="note">${Math.floor(displayMonths/12)} ש' ו־${displayMonths%12} ח'</div>`;
+                        displayMonths = last.month; 
+                        indMonths = last.independentMonths; 
+                        nursMonths = last.nursingMonths;
+                        finalCash = last.cash; 
+                        refundEnd = last.refund;
+                        
+                        cumulativeMaint = relevantLogs.reduce((s, l) => s + (l.providerCost || 0), 0);
+                        const totalEconomic = relevantLogs.reduce((s, l) => s + (l.providerEconomicCost || 0), 0);
+                        cumulativeDep = totalEconomic - cumulativeMaint;
+                        totalEcon = totalEconomic;
+
+                        if (isShort) {
+                            rowClass += ' insolvent';
+                            const y = Math.floor(rSummary.totalMonths/12);
+                            const m = rSummary.totalMonths%12;
+                            note = `<div class="note danger">אזל לאחר ${y}ש' ו-${m}ח'</div>`;
+                        } else {
+                            note = `<div class="note">${targetYear} שנים</div>`;
+                        }
                     }
 
-                    const mHeaders = ['#', 'שם החברה', 'סוג מסלול', 'סה"כ חודשים', 'עלות אחזקה', 'עלות שחיקה', 'עלות מצטברת', 'יתרת הון', 'החזר צפוי', 'סה"כ יתרה'];
-                    const totalBalance = finalCash + refundEnd;
-                    const initP = UI.readAllInputsForTrack(rSummary.trackId);
-                    let tooltip = `<div>דמי אחזקה: <b>${Utils.fmt(initP.baseWithDeposit || initP.baseWithEntranceFee || initP.baseNoDeposit)} ₪</b></div>`;
-
-                    table += `<tr class="${rowClass}">
-                        <td data-label="${mHeaders[0]}"><span class="track-num-badge" style="background:${Constants.COLORS[idx % Constants.COLORS.length]}">${idx + 1}</span></td>
-                        <td data-label="${mHeaders[1]}"><span class="tooltip-header">${Utils.escapeHtml(rSummary.trackName)}<span class="tooltip-text">${tooltip}</span></span></td>
-                        <td data-label="${mHeaders[2]}">${pricingModeMap[rSummary.pricingMode]}</td>
-                        <td data-label="${mHeaders[3]}"><b>${Utils.fmt(displayMonths)} (${Utils.fmt(indMonths)} / ${Utils.fmt(nursMonths)})</b>${durationNote}</td>
-                        <td data-label="${mHeaders[4]}">${Utils.fmt(cumulativeMaintenance)}</td>
-                        <td data-label="${mHeaders[5]}">${Utils.fmt(cumulativeDepreciation)}</td>
-                        <td data-label="${mHeaders[6]}"><b class="danger">${Utils.fmt(totalEconomicCost)}</b></td>
-                        <td data-label="${mHeaders[7]}">${Utils.fmt(finalCash)}</td>
-                        <td data-label="${mHeaders[8]}">${Utils.fmt(refundEnd)}</td>
-                        <td data-label="${mHeaders[9]}"><b class="ok" style="font-size: 1.1rem;">${Utils.fmt(totalBalance)} ₪</b></td>
+                    table += `<tr class="${rowClass}" data-track-id="${track.id}">
+                        <td><div class="drag-handle"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></div></td>
+                        <td><input type="checkbox" class="track-vis-toggle" data-track-id="${track.id}" ${track.isVisible ? 'checked' : ''} title="הצג בגרף"></td>
+                        <td><button class="btn secondary edit-track-btn" data-track-id="${track.id}" title="ערוך" style="padding: 0; height: 32px; width: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; margin: 0 auto;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>
+                        <td><span class="track-num-badge" style="background:${Constants.COLORS[idx % Constants.COLORS.length]}">${idx + 1}</span></td>
+                        <td>${Utils.escapeHtml(rSummary.trackName)}</td>
+                        <td>${pricingModeMap[rSummary.pricingMode]}</td>
+                        <td><b>${Utils.fmt(displayMonths)}</b>${note}</td>
+                        <td>${Utils.fmt(cumulativeMaint)}</td>
+                        <td>${Utils.fmt(cumulativeDep)}</td>
+                        <td><b class="danger">${Utils.fmt(totalEcon)}</b></td>
+                        <td>${Utils.fmt(finalCash)}</td>
+                        <td>${Utils.fmt(refundEnd)}</td>
+                        <td><b class="ok" style="font-size: 1.1rem;">${Utils.fmt(finalCash + refundEnd)} ₪</b></td>
+                        <td>
+                            <div class="row-actions">
+                                <button class="btn danger delete-track-btn" data-track-id="${track.id}" title="מחק"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
+                            </div>
+                        </td>
                     </tr>`;
                 });
                 table += '</tbody></table>';
                 container.innerHTML = table;
-                UI.renderTrendCharts(targetYear);
             },
 
-            renderTrendCharts: (targetYear) => {
+            renderCharts: () => {
+                const targetYear = State.viewYear;
                 const targetMonths = Math.round(targetYear * 12);
                 const labels = [];
+                // Generate labels every 6 months
                 for (let i = 0; i <= targetMonths; i += 6) {
                     labels.push(i === 0 ? 'התחלה' : `${i/12} ש'`);
                 }
 
                 const datasetsCost = [];
                 const datasetsBalance = [];
-                
-                const modeMap = { 'deposit': 'פיקדון', 'entrance_fee': 'דמי כניסה', 'none': 'תשלום חודשי' };
 
-                State.simulationResults.forEach((res, idx) => {
+                State.tracks.forEach((track, idx) => {
+                    if (!track.isVisible) return;
+
+                    const result = State.simulationResults[idx];
+                    if (!result) return;
+                    
                     const color = Constants.COLORS[idx % Constants.COLORS.length];
-                    const logs = res.monthlyLog;
+                    const logs = result.monthlyLog;
                     
                     const costData = [];
                     const balanceData = [];
@@ -1046,41 +1158,37 @@
                     labels.forEach((_, labelIdx) => {
                         const m = labelIdx === 0 ? 0 : Math.round(labelIdx * 6);
                         const clampedM = Math.min(m, logs.length - 1);
-                        if (clampedM >= 0) {
-                            costData.push(logs[clampedM].cumulativeEconomic);
-                            balanceData.push(logs[clampedM].totalBalance);
-                        } else {
-                            costData.push(null);
-                            balanceData.push(null);
+                        
+                        if (m < logs.length) {
+                             costData.push(logs[m].cumulativeEconomic);
+                             balanceData.push(logs[m].totalBalance);
+                        } else if (clampedM >= 0) {
+                             // Simulation ended early
+                             costData.push(logs[clampedM].cumulativeEconomic); 
+                             balanceData.push(logs[clampedM].totalBalance); 
                         }
                     });
 
-                    const modeLabel = modeMap[res.summary.pricingMode] || '';
-                    const labelStr = `מסלול ${idx + 1}: ${res.summary.trackName} (${modeLabel})`;
-
                     datasetsCost.push({
-                        label: labelStr,
+                        label: track.company || `מסלול ${idx+1}`,
                         data: costData,
                         borderColor: color,
                         backgroundColor: color + '20',
                         fill: false,
                         tension: 0.1,
-                        borderWidth: 3
+                        borderWidth: 2
                     });
 
                     datasetsBalance.push({
-                        label: labelStr,
+                        label: track.company || `מסלול ${idx+1}`,
                         data: balanceData,
                         borderColor: color,
                         backgroundColor: color + '20',
                         fill: false,
                         tension: 0.1,
-                        borderWidth: 3
+                        borderWidth: 2
                     });
                 });
-
-                if (charts.cost) charts.cost.destroy();
-                if (charts.balance) charts.balance.destroy();
 
                 const commonOptions = {
                     responsive: true,
@@ -1107,301 +1215,225 @@
                     }
                 };
 
+                if (charts.cost) charts.cost.destroy();
                 charts.cost = new Chart(Utils.$('cumulativeCostChart'), {
-                    type: 'line',
-                    data: { labels, datasets: datasetsCost },
-                    options: commonOptions
+                    type: 'line', data: { labels, datasets: datasetsCost }, options: commonOptions
                 });
 
+                if (charts.balance) charts.balance.destroy();
                 charts.balance = new Chart(Utils.$('totalBalanceChart'), {
-                    type: 'line',
-                    data: { labels, datasets: datasetsBalance },
-                    options: commonOptions
+                    type: 'line', data: { labels, datasets: datasetsBalance }, options: commonOptions
                 });
             },
 
-            // Updates the visual aspects of a specific slider DOM element
-            updateSliderVisuals: (sliderId, bubbleId, labelId, ticksContainerId, val, maxYears, min) => {
-                const slider = Utils.$(sliderId);
-                const bubble = Utils.$(bubbleId);
-                const label = Utils.$(labelId);
-                
-                if (!slider) return;
-
-                // Update input value
-                slider.value = val;
-                
-                // Update Label and Bubble
-                if(label) label.textContent = `הצג תוצאות לאחר: ${val} שנים`;
-                if(bubble) {
-                    bubble.innerHTML = `${val} שנים`;
-                    const pct = (maxYears - min) > 0 ? ((val - min) / (maxYears - min)) * 100 : 0;
-                    bubble.style.right = `${pct}%`;
-                    slider.style.setProperty('--slider-fill-percent', `${pct}%`);
-                }
-            },
-
-            // Initializes and synchronizes both sliders
-            setupYearSliders: () => {
-                const sliderIds = [
-                    { slider: 'yearSlider', bubble: 'sliderValueBubble', label: 'yearSliderLabel', ticks: 'sliderTicksContainer' },
-                    { slider: 'yearSliderStep2', bubble: 'sliderValueBubbleStep2', label: 'yearSliderLabelStep2', ticks: 'sliderTicksContainerStep2' }
-                ];
+            setupYearSlider: () => {
+                const slider = Utils.$('yearSlider');
+                const bubble = Utils.$('sliderValueBubble');
+                const ticks = Utils.$('sliderTicksContainer');
                 
                 const maxYearsInput = parseFloat(Utils.unformat(Utils.$('maxYears').value)) || 15;
                 const min = 0.5;
                 
-                // Sync State.viewYear to bounds
+                slider.min = min;
+                slider.max = maxYearsInput;
+                slider.step = 0.5;
+                
                 if (State.viewYear > maxYearsInput) State.viewYear = maxYearsInput;
-                if (State.viewYear < min) State.viewYear = min;
+                slider.value = State.viewYear;
 
-                sliderIds.forEach(config => {
-                    const slider = Utils.$(config.slider);
-                    const ticks = Utils.$(config.ticks);
+                const updateVisuals = () => {
+                    const val = parseFloat(slider.value);
+                    State.viewYear = val;
+                    Utils.$('yearSliderLabel').textContent = `הצג תוצאות לאחר: ${val} שנים`;
                     
-                    if (!slider) return;
-
-                    slider.min = min;
-                    slider.max = maxYearsInput;
-                    slider.step = 0.5;
+                    const pct = (maxYearsInput - min) > 0 ? ((val - min) / (maxYearsInput - min)) * 100 : 0;
+                    bubble.innerHTML = `${val} שנים`;
                     
-                    // Render Ticks
-                    if(ticks) {
-                        ticks.innerHTML = '';
-                        const numTicks = Math.floor(maxYearsInput);
-                        let step = numTicks > 50 ? 10 : (numTicks > 20 ? 5 : 1);
-                        for (let i = 1; i <= numTicks; i++) {
-                            if (i > 0 && i % step !== 0 && i !== numTicks && numTicks > 10) continue;
-                            const pct = ((i - min) / (maxYearsInput - min)) * 100;
-                            if (pct >= 0 && pct <= 100) {
-                                const tick = document.createElement('div'); tick.className = 'slider-tick'; tick.style.right = `${pct}%`;
-                                const label = document.createElement('span'); label.className = 'slider-tick-label'; label.textContent = i; label.style.right = `${pct}%`;
-                                ticks.append(tick, label);
-                            }
-                        }
-                    }
+                    // RTL positioning: 
+                    // pct=0 (Min Val) should be at Right (right: 0%)
+                    // pct=100 (Max Val) should be at Left (right: 100%)
+                    bubble.style.right = `${pct}%`;
+                    bubble.style.left = 'auto'; // Reset left
+                    bubble.style.transform = `translateX(50%)`; // Centering shift for Right positioning
+                    
+                    slider.style.setProperty('--slider-fill-percent', `${pct}%`);
+                    
+                    UI.renderDashboard();
+                };
 
-                    // Initial visual update
-                    UI.updateSliderVisuals(config.slider, config.bubble, config.label, config.ticks, State.viewYear, maxYearsInput, min);
-
-                    // Add Listener
-                    slider.oninput = (e) => {
-                        const newVal = parseFloat(e.target.value);
-                        State.viewYear = newVal;
+                // Ticks
+                ticks.innerHTML = '';
+                const numTicks = Math.floor(maxYearsInput);
+                let step = numTicks > 20 ? 5 : 1;
+                for (let i = 1; i <= numTicks; i++) {
+                    if (i % step === 0) {
+                        const pct = ((i - min) / (maxYearsInput - min)) * 100;
+                        const tick = document.createElement('div'); tick.className = 'slider-tick'; 
+                        tick.style.right = `${pct}%`; // RTL Position
                         
-                        // Sync other sliders
-                        sliderIds.forEach(other => {
-                            UI.updateSliderVisuals(other.slider, other.bubble, other.label, other.ticks, newVal, maxYearsInput, min);
-                        });
+                        const label = document.createElement('span'); label.className = 'slider-tick-label'; label.textContent = i; 
+                        label.style.right = `${pct}%`; // RTL Position
+                        
+                        ticks.append(tick, label);
+                    }
+                }
 
-                        // Trigger Updates
-                        UI.updateAllPreviews(); // Update Step 2 Cards
-                        if(State.simulationResults.length > 0 && State.currentStep === 3) {
-                             UI.renderResultsView(); // Update Step 3 Table/Charts
-                        }
-                    };
-                });
-            },
-            
-            // Replaced setupYearSlider with setupYearSliders
-            setupYearSlider: () => {
-                UI.setupYearSliders();
+                slider.oninput = updateVisuals;
+                updateVisuals(); // Init
             }
         };
 
         const Events = {
             init: () => {
+                State.init();
+                Navigation.init();
                 DragManager.init();
-                Navigation.init(); // Initialize navigation listeners
-                UI.setupNumberFormatting(document.body);
-                UI.updateVacancyMonthsNote();
                 
-                // Initialize Sliders immediately
-                UI.setupYearSliders();
+                UI.setupNumberFormatting(document.body);
+                UI.setupYearSlider();
+                
+                // Initialize VAT from API (Simulated)
+                UI.fetchAndSetVat();
 
-                const debouncedPreviewUpdate = Utils.debounce((trackId) => {
-                    // Only update preview if we are on or past step 2
-                    if (State.currentStep >= 2) {
-                        if (trackId) UI.updateTrackPreview(trackId); else UI.updateAllPreviews();
-                    }
-                }, 100);
-                document.addEventListener('click', (e) => {
-                    const target = e.target;
-                    if (target.matches('.spinner-btn:not(.stepper-btn)')) Events.handleSpinner(target);
-                    else if (target.classList.contains('stepper-btn')) Events.handleStepper(target);
-                    else if (target.dataset.removeTrackId) {
-                        const id = target.dataset.removeTrackId;
-                        State.removeTrack(id);
-                        document.querySelector(`.track-card[data-track-id='${id}']`).remove();
-                        UI.updateCompanyDatalist(); // Update list when track removed
-                    }
-                    else if (target.closest('.toggle-track-btn')) {
-                         const btn = target.closest('.toggle-track-btn');
-                         const card = document.querySelector(`.track-card[data-track-id='${btn.dataset.toggleTrackId}']`);
-                         if(card) card.classList.toggle('collapsed');
-                    }
-                    else if (target.closest('.track-card.collapsed') && !target.closest('.remove-track-btn') && !target.closest('.drag-handle')) {
-                        target.closest('.track-card.collapsed').classList.remove('collapsed');
+                // Add Track
+                Utils.$('addTrackBtn').addEventListener('click', () => UI.openTrackEditor('new'));
+                
+                // Modal Actions
+                Utils.$('modalCloseX').addEventListener('click', UI.closeModal);
+                Utils.$('modalCancelBtn').addEventListener('click', UI.closeModal);
+                Utils.$('modalSaveBtn').addEventListener('click', UI.saveModal);
+                
+                // Delete Modal Actions
+                Utils.$('deleteModalCloseX').addEventListener('click', UI.closeDeleteModal);
+                Utils.$('deleteModalCancelBtn').addEventListener('click', UI.closeDeleteModal);
+                Utils.$('deleteModalConfirmBtn').addEventListener('click', () => {
+                    if (State.pendingDeleteId) {
+                        State.removeTrack(State.pendingDeleteId);
+                        UI.renderDashboard();
+                        UI.closeDeleteModal();
                     }
                 });
-                const container = Utils.$('tracksContainer');
-                container.addEventListener('change', (e) => {
-                    if (e.target.id.startsWith('pricingMode_')) UI.updateTrackBody(e.target.id.split('_')[1]);
-                    // If VAT check changes, update preview and note
-                    if (e.target.id.startsWith('depositAddVat_')) {
-                         const trackId = e.target.id.split('_')[1];
-                         UI.updateRefundPctNote(trackId);
-                         debouncedPreviewUpdate(trackId);
-                    }
+                
+                // Tooltip delegation
+                document.body.addEventListener('mouseover', (e) => {
+                    const header = e.target.closest('.tooltip-header');
+                    if (header) UI.showTooltip(header);
                 });
-                container.addEventListener('input', (e) => {
-                    const id = e.target.id;
-                    const trackId = e.target.dataset.trackId || e.target.closest('.track-card')?.dataset.trackId;
+                document.body.addEventListener('mouseout', (e) => {
+                    const header = e.target.closest('.tooltip-header');
+                    if (header) UI.hideTooltip();
+                });
+                
+                // Click delegation for Dashboard buttons
+                Utils.$('resultsTableContainer').addEventListener('click', (e) => {
+                    const btn = e.target.closest('button');
+                    const checkbox = e.target.closest('input[type="checkbox"]');
                     
-                    if (id.startsWith('trackCompany_')) {
-                        UI.updateCompanyDatalist(); // Update list as user types
-                    }
-                    
-                    if (id.startsWith('entranceFee')) UI.updateCalculatedEntranceFeeRate(trackId);
-                    if (id.startsWith('reducedDeposit')) UI.updateDepositReduction(trackId);
-                    if (id.startsWith('depositDepreciation')) UI.updateRefundPctNote(trackId);
-                    if (id.startsWith('baseWithDeposit_') || id.startsWith('depositAmount_')) {
-                        e.target.dataset.baseValue = Utils.unformat(e.target.value);
-                        const redInput = Utils.$(`reducedDepositAmount_${trackId}`);
-                        if (redInput && redInput.value !== '0' && redInput.value !== '') {
-                            redInput.value = Utils.formatNumber('0');
-                            UI.updateDepositReduction(trackId);
-                            const otherId = id.startsWith('base') ? `depositAmount_${trackId}` : `baseWithDeposit_${trackId}`;
-                            const otherInput = Utils.$(otherId);
-                            if(otherInput) otherInput.dataset.baseValue = Utils.unformat(otherInput.value);
+                    if (btn) {
+                        const id = btn.dataset.trackId;
+                        if (btn.classList.contains('edit-track-btn')) UI.openTrackEditor(id);
+                        if (btn.classList.contains('delete-track-btn')) {
+                            // Changed to use custom modal
+                            UI.openDeleteModal(id);
                         }
                     }
-                    if (trackId) debouncedPreviewUpdate(trackId);
-                });
-                Utils.$('commonInputsCard').addEventListener('input', () => debouncedPreviewUpdate());
-                
-                // When Max Years changes, update sliders
-                Utils.$('maxYears').addEventListener('input', (e) => {
-                    UI.setupYearSliders();
-                    debouncedPreviewUpdate();
-                });
-                
-                // Specific listener for VAT rate to update all refund notes
-                Utils.$('vatRate').addEventListener('input', () => {
-                     document.querySelectorAll('.track-card').forEach(c => {
-                        UI.updateRefundPctNote(c.dataset.trackId);
-                     });
-                     // Debounced update is handled by commonInputsCard listener
+                    
+                    if (checkbox && checkbox.classList.contains('track-vis-toggle')) {
+                        const id = checkbox.dataset.trackId;
+                        State.updateTrack(id, { isVisible: checkbox.checked });
+                        UI.renderDashboard();
+                    }
                 });
 
-                Utils.$('vacancyPct').addEventListener('input', UI.updateVacancyMonthsNote);
-                Utils.$('isNursing').addEventListener('change', (e) => Utils.$('nursingFieldsRow').style.display = e.target.checked ? 'grid' : 'none');
+                // Spinner and Modal Stepper delegation
+                document.body.addEventListener('click', (e) => {
+                    if (e.target.matches('.spinner-btn:not(.stepper-btn)')) Events.handleSpinner(e.target);
+                    else if (e.target.classList.contains('stepper-btn')) Events.handleStepper(e.target);
+                });
+
+                // General Inputs change
+                Utils.$('commonInputsCard').addEventListener('input', Utils.debounce(() => {
+                    UI.renderDashboard();
+                }, 300));
+
+                // Nursing Toggle Logic
+                const nursingToggle = Utils.$('isNursing');
+                if (nursingToggle) {
+                    const updateNursingVisibility = () => {
+                         Utils.$('nursingFieldsRow').style.display = nursingToggle.checked ? 'grid' : 'none';
+                    };
+                    nursingToggle.addEventListener('change', () => {
+                        updateNursingVisibility();
+                        UI.renderDashboard();
+                    });
+                    // Initialize state
+                    updateNursingVisibility();
+                }
+                
+                Utils.$('maxYears').addEventListener('input', UI.setupYearSlider);
                 Utils.$('assetScenarioSelect').addEventListener('change', (e) => {
                     Utils.$('sellBlock').style.display = e.target.value === 'sell' ? 'block' : 'none';
                     Utils.$('rentBlock').style.display = e.target.value === 'rent' ? 'block' : 'none';
+                    UI.renderDashboard();
                 });
-                Utils.$('addTrackBtn').addEventListener('click', () => {
-                    const t = State.addTrack();
-                    UI.renderTrackCard(t);
-                    if (window.innerWidth <= 600) setTimeout(() => document.querySelector(`.track-card[data-track-id='${t.id}']`)?.scrollIntoView({behavior:'smooth', block:'nearest'}), 100);
-                });
-                Utils.$('toggleAllTracksBtn').addEventListener('click', Events.toggleAllTracks);
                 
+                // Export/Import
                 Utils.$('exportBtn').addEventListener('click', Events.exportData);
                 Utils.$('importBtn').addEventListener('click', () => Utils.$('importFile').click());
                 Utils.$('importFile').addEventListener('change', Events.importData);
-                
-                // Init first track
-                const t = State.addTrack();
-                UI.renderTrackCard(t);
             },
 
             handleSpinner: (btn) => {
                 const { stepDir, target: targetId } = btn.dataset;
-                const input = Utils.$(targetId);
+                const input = document.getElementById(targetId);
                 if (!input) return;
+                
                 let val = Utils.unformat(input.value);
                 const id = input.id;
                 let step = 500;
-                if (id.includes('Pct') || id.includes('Return') || id.includes('Inflation') || id.includes('vatRate')) step = 0.5;
-                else if (id.toLowerCase().includes('years')) step = 1;
-                else if (id.includes('monthsIndependent')) step = 6;
-                else {
+                
+                if (id.includes('Pct') || id.includes('Return') || id.includes('Inflation') || id.includes('vatRate')) {
+                    step = 0.5;
+                } else if (id.toLowerCase().includes('years')) {
+                    step = 1;
+                } else if (id.includes('monthsIndependent')) {
+                    step = 6;
+                } else {
                     const abs = Math.abs(val);
                     if (abs >= 1000000) step = 100000;
                     else if (abs >= 100000) step = 10000;
                     else if (abs >= 10000) step = 1000;
                 }
-                val += (stepDir === 'up' ? step : -step);
+                
+                if (step === 0.5) {
+                    // Snap to nearest 0.5 grid
+                    if (stepDir === 'up') {
+                        val = Math.floor(val * 2 + 1) / 2;
+                    } else {
+                        val = Math.ceil(val * 2 - 1) / 2;
+                    }
+                } else {
+                    val += (stepDir === 'up' ? step : -step);
+                }
+                
                 input.value = Utils.formatNumber(Math.max(0, val));
                 input.dispatchEvent(new Event('input', { bubbles: true }));
             },
 
             handleStepper: (btn) => {
-                const { trackId, stepDir } = btn.dataset;
-                const redInput = Utils.$(`reducedDepositAmount_${trackId}`);
-                const depInput = Utils.$(`depositAmount_${trackId}`);
-                const cur = Utils.unformat(redInput.value);
-                const step = 50000;
-                const next = cur + (stepDir === 'up' ? step : -step);
-                if (next < 0) return;
-                const baseDep = Utils.unformat(depInput.dataset.baseValue);
-                if (stepDir === 'up' && (baseDep - next) < 0) { alert('לא ניתן להפחית יותר מסכום הפיקדון המקורי.'); return; }
-                redInput.value = Utils.formatNumber(next);
-                UI.updateDepositReduction(trackId);
-                UI.updateTrackPreview(trackId);
-            },
-
-            toggleAllTracks: () => {
-                const cards = document.querySelectorAll('.track-card');
-                if (!cards.length) return;
-                const anyExpanded = Array.from(cards).some(c => !c.classList.contains('collapsed'));
-                cards.forEach(c => c.classList.toggle('collapsed', anyExpanded));
-                const btn = Utils.$('toggleAllTracksBtn');
-                const tooltip = Utils.$('toggleAllTooltip');
-                btn.innerHTML = anyExpanded ? Constants.ICONS.expand : Constants.ICONS.collapse;
-                const txt = anyExpanded ? 'הרחב הכל' : 'כווץ הכל';
-                btn.setAttribute('aria-label', txt);
-                if(tooltip) tooltip.textContent = txt;
-            },
-
-            runCalculation: () => {
-                 const cards = document.querySelectorAll('.track-card');
-                 if (cards.length === 0) { alert('יש להוסיף לפחות מסלול אחד.'); return false; }
-                 State.simulationResults = Array.from(cards).map(c => {
-                     return Calculator.simulate(UI.readAllInputsForTrack(c.dataset.trackId));
-                 });
-                 // Re-sync sliders just in case
-                 UI.setupYearSliders();
-                 UI.renderResultsView();
-                 return true;
+                // Stepper logic simplified as reducedDepositAmount removed
             },
 
             exportData: () => {
-                try {
-                    const data = { common: {}, tracks: [] };
-                    document.querySelectorAll('#commonInputsCard input, #commonInputsCard select, .top-bar-settings input').forEach(inp => {
-                        data.common[inp.id] = inp.type === 'checkbox' ? inp.checked : inp.value;
-                    });
-                    document.querySelectorAll('.track-card').forEach(card => {
-                        const tData = {};
-                        card.querySelectorAll('input, select').forEach(inp => {
-                            const key = inp.id.split('_')[0];
-                            if (inp.type === 'checkbox') tData[key] = inp.checked;
-                            else {
-                                tData[key] = inp.value;
-                                if (inp.dataset.baseValue) tData[key + '_base'] = inp.dataset.baseValue;
-                            }
-                        });
-                        data.tracks.push(tData);
-                    });
-                    const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url; a.download = 'calculator-data.json';
-                    a.click();
-                    URL.revokeObjectURL(url);
-                } catch(e) { console.error(e); alert('שגיאה בייצוא'); }
+                const data = {
+                    common: UI.readCommonInputs(),
+                    tracks: State.tracks
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = 'calculator-data.json';
+                a.click();
             },
 
             importData: (e) => {
@@ -1411,60 +1443,30 @@
                 r.onload = (ev) => {
                     try {
                         const d = JSON.parse(ev.target.result);
-                        if (!d.common || !d.tracks) throw new Error();
+                        // Restore Common
                         Object.keys(d.common).forEach(k => {
                             const el = Utils.$(k);
                             if(el) {
                                 if(el.type === 'checkbox') el.checked = d.common[k];
-                                else el.value = d.common[k];
-                                el.dispatchEvent(new Event('change'));
+                                else el.value = Utils.formatNumber(d.common[k]);
                             }
                         });
-                        Utils.$('tracksContainer').innerHTML = '';
-                        State.clearTracks();
-                        d.tracks.forEach(td => {
-                            const t = State.addTrack();
-                            UI.renderTrackCard(t);
-                            Utils.$(`pricingMode_${t.id}`).value = td.pricingMode;
-                            UI.updateTrackBody(t.id);
-                            if (td.trackName && !td.trackCompany) {
-                                const compEl = Utils.$(`trackCompany_${t.id}`);
-                                if (compEl) compEl.value = td.trackName;
-                            }
-                            Object.keys(td).forEach(k => {
-                                const isBase = k.endsWith('_base');
-                                const realK = isBase ? k.replace('_base','') : k;
-                                const el = Utils.$(`${realK}_${t.id}`);
-                                if(el) { 
-                                    if(el.type === 'checkbox') el.checked = td[k];
-                                    else {
-                                        if(isBase) el.dataset.baseValue = td[k]; 
-                                        else el.value = td[k]; 
-                                    }
-                                }
-                            });
-                            UI.setupNumberFormatting(document.querySelector(`.track-card[data-track-id='${t.id}']`));
-                            if(td.pricingMode === 'deposit') UI.updateDepositReduction(t.id);
-                            if(td.pricingMode === 'entrance_fee') UI.updateCalculatedEntranceFeeRate(t.id);
-                        });
+                        // Restore Tracks
+                        State.tracks = d.tracks || [];
+                        if (State.tracks.length === 0) State.addTrack();
                         
-                        UI.updateAllPreviews(); 
-                        if (State.tracks.length > 0) Events.runCalculation();
-
-                        const cards = document.querySelectorAll('.track-card');
-                        cards.forEach(c => c.classList.remove('collapsed'));
-                        const btn = Utils.$('toggleAllTracksBtn');
-                        btn.innerHTML = Constants.ICONS.collapse;
-                        UI.updateCompanyDatalist(); // Update list after import
-                        alert('הנתונים יובאו בהצלחה!');
-                    } catch(err) { console.error(err); alert('קובץ לא תקין'); }
+                        UI.renderDashboard();
+                        alert('הנתונים יובאו בהצלחה');
+                    } catch(err) { console.error(err); alert('שגיאה בייבוא'); }
                     e.target.value = null;
                 };
                 r.readAsText(file);
             }
         };
+
         return { init: Events.init };
     })();
+    
     document.addEventListener('DOMContentLoaded', App.init);
   </script>
 </body>
