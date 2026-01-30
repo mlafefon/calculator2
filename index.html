@@ -144,7 +144,16 @@
         <div class="card" style="padding-bottom: 0;">
             <div class="header-row">
                  <h2>שלב 2: השוואה וניתוח</h2>
-                 <button id="addTrackBtn" class="btn secondary">+ הוסף מסלול</button>
+                 <div style="display: flex; gap: 16px; align-items: center;">
+                     <label style="display: flex; align-items: center; cursor: pointer; margin: 0;">
+                         <span class="toggle-label" style="margin-left: 8px;">הצג נתוני מסלול</span>
+                         <div class="toggle-switch">
+                             <input type="checkbox" id="tableModeToggle">
+                             <span class="slider"></span>
+                         </div>
+                     </label>
+                     <button id="addFacilityBtn" class="btn secondary">+ הוסף דיור מוגן</button>
+                 </div>
             </div>
             
             <div id="sliderGroup" class="slider-group-wrapper">
@@ -180,7 +189,36 @@
     </div>
   </div>
 
-  <!-- Modal for Editing/Adding Track -->
+  <!-- Modal for Adding Unit (Facility + Room) -->
+  <div id="unitModal" class="modal-overlay">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h2>הוספת יחידה להשוואה</h2>
+              <button class="close-modal" id="unitModalCloseX">&times;</button>
+          </div>
+          <div class="modal-body">
+              <div class="row">
+                  <div class="span-6">
+                      <label for="unitCompany">שם הדיור המוגן (מיקום)</label>
+                      <input type="text" id="unitCompany" list="companyList" placeholder="לדוגמה: אחוזת בית">
+                  </div>
+                  <div class="span-6">
+                      <label for="unitRoom">סוג יחידה / חדר</label>
+                      <input type="text" id="unitRoom" placeholder="לדוגמה: 2 חדרים">
+                  </div>
+              </div>
+              <p class="note" style="margin-top: 16px;">
+                  לחיצה על שמירה תוסיף אוטומטית 3 מסלולים עבור יחידה זו: מסלול פיקדון, מסלול דמי כניסה, ומסלול תשלום חודשי.
+              </p>
+          </div>
+          <div class="modal-footer">
+              <button class="btn secondary" id="unitModalCancelBtn">ביטול</button>
+              <button class="btn" id="unitModalSaveBtn">שמור והוסף</button>
+          </div>
+      </div>
+  </div>
+
+  <!-- Modal for Editing Track -->
   <div id="trackModal" class="modal-overlay">
       <div class="modal-content">
           <div class="modal-header">
@@ -201,15 +239,35 @@
   <div id="deleteConfirmationModal" class="modal-overlay">
       <div class="modal-content" style="max-width: 500px; height: auto;">
           <div class="modal-header">
-              <h2>מחיקת מסלול</h2>
+              <h2>מחיקת מסלול/יחידה</h2>
               <button class="close-modal" id="deleteModalCloseX">&times;</button>
           </div>
           <div class="modal-body">
-              <p style="font-size: 1.1rem; line-height: 1.6;">האם אתה בטוח שברצונך למחוק מסלול זה? הפעולה אינה הפיכה.</p>
+              <p style="font-size: 1.1rem; line-height: 1.6;" id="deleteModalText">האם אתה בטוח שברצונך למחוק? הפעולה אינה הפיכה.</p>
           </div>
           <div class="modal-footer">
               <button class="btn secondary" id="deleteModalCancelBtn">ביטול</button>
-              <button class="btn danger" id="deleteModalConfirmBtn">מחק מסלול</button>
+              <button class="btn danger" id="deleteModalConfirmBtn">אשר מחיקה</button>
+          </div>
+      </div>
+  </div>
+
+  <!-- Modal for Editing Room Name -->
+  <div id="editRoomModal" class="modal-overlay">
+      <div class="modal-content" style="max-width: 500px; height: auto;">
+          <div class="modal-header">
+              <h2>עריכת שם יחידה</h2>
+              <button class="close-modal" id="editRoomModalCloseX">&times;</button>
+          </div>
+          <div class="modal-body">
+              <label for="editRoomNameInput">שם יחידה חדש</label>
+              <input type="text" id="editRoomNameInput" />
+              <input type="hidden" id="editRoomCompanyHidden" />
+              <input type="hidden" id="editRoomOldNameHidden" />
+          </div>
+          <div class="modal-footer">
+              <button class="btn secondary" id="editRoomModalCancelBtn">ביטול</button>
+              <button class="btn" id="editRoomModalSaveBtn">שמור</button>
           </div>
       </div>
   </div>
@@ -356,7 +414,6 @@
                         rentIncome = Math.max(0, (gross * rentNetFactor) - maintenanceMonthly);
                     }
                     
-                    // FIXED: Apply inflation to fixed monthly income (Pension/Kitzba usually linked)
                     const currentMonthlyIncome = p.monthlyIncome * inflationFactor;
                     
                     const income = currentMonthlyIncome + rentIncome;
@@ -375,7 +432,6 @@
                         entranceFeeBook = Math.max(0, entranceFeeBook - entranceFeeMonthlyDep);
                     }
                     
-                    // Economic Cost includes the Nominal depreciation (Erosion) + Real provider costs
                     const providerEconomicCost = providerMonthlyCost + depreciationThisMonth;
                     cumulativeMaintenance += providerMonthlyCost;
                     cumulativeEconomic += providerEconomicCost;
@@ -386,7 +442,6 @@
                     lastPositiveCash = cash;
                     
                     const refundNominal = isDeposit ? depositBook : (isEntrance ? entranceFeeBook : 0);
-                    // FIXED: Apply linkage to entrance fee refund as well (standard practice in IL)
                     const refundLinked = refundNominal * inflationFactor; 
                     
                     monthlyLog.push({ 
@@ -427,23 +482,65 @@
             currentStep: 1,
             viewYear: 15,
             editModeTrackId: null, // Track currently in modal
-            pendingDeleteId: null, // Track pending deletion
+            pendingDeleteId: null, // Track or Unit pending deletion
+            deleteType: 'track', // 'track' or 'room' or 'company'
+            tableMode: 'results', // 'results' or 'inputs'
 
             init: () => {
-                // Seed initial track if empty
-                if(State.tracks.length === 0) State.addTrack();
+                if(State.tracks.length === 0) {
+                     State.addUnit('אחוזת בית', '2 חדרים');
+                }
             },
             
-            addTrack: () => {
-                const newTrack = {
-                    id: Date.now(),
-                    company: '',
-                    room: '',
+            // Add a complete unit with 3 tracks (hierarchical add)
+            addUnit: (company, room) => {
+                const baseId = Date.now();
+                // 1. Deposit Track
+                State.tracks.push({
+                    id: baseId,
+                    company, room,
                     pricingMode: 'deposit',
                     isVisible: true,
-                    // Default values
                     baseWithDeposit: 9000,
-                    depositAmount: 1000000,
+                    depositAmount: 1500000,
+                    depositDepreciationPct: 3,
+                    depositAddVat: true,
+                    depositDepreciationYears: 12,
+                    // Placeholders for other modes to keep object shape consistent
+                    baseWithEntranceFee: 9500,
+                    entranceFeeAmount: 450000,
+                    entranceFeeDepreciationYears: 5,
+                    entranceFeeDepreciationRateMonthly: 0,
+                    baseNoDeposit: 16000
+                });
+                
+                // 2. Entrance Fee Track
+                State.tracks.push({
+                    id: baseId + 1,
+                    company, room,
+                    pricingMode: 'entrance_fee',
+                    isVisible: true,
+                    baseWithDeposit: 9000,
+                    depositAmount: 1500000,
+                    depositDepreciationPct: 3,
+                    depositAddVat: true,
+                    depositDepreciationYears: 12,
+                    
+                    baseWithEntranceFee: 12000,
+                    entranceFeeAmount: 600000,
+                    entranceFeeDepreciationYears: 5,
+                    entranceFeeDepreciationRateMonthly: 0,
+                    baseNoDeposit: 16000
+                });
+
+                // 3. Monthly Track
+                State.tracks.push({
+                    id: baseId + 2,
+                    company, room,
+                    pricingMode: 'none',
+                    isVisible: true,
+                    baseWithDeposit: 9000,
+                    depositAmount: 1500000,
                     depositDepreciationPct: 3,
                     depositAddVat: true,
                     depositDepreciationYears: 12,
@@ -451,10 +548,9 @@
                     entranceFeeAmount: 450000,
                     entranceFeeDepreciationYears: 5,
                     entranceFeeDepreciationRateMonthly: 0,
-                    baseNoDeposit: 14000
-                };
-                State.tracks.push(newTrack);
-                return newTrack;
+                    
+                    baseNoDeposit: 18000
+                });
             },
             
             updateTrack: (id, data) => {
@@ -466,118 +562,22 @@
             
             removeTrack: (id) => {
                 State.tracks = State.tracks.filter(t => String(t.id) !== String(id));
-            }
-        };
+            },
 
-        // --- Drag & Drop Manager ---
-        const DragManager = {
-            draggedItem: null,
-            placeholder: null,
-            ghost: null,
-            startY: 0,
-            initialTop: 0,
-            
-            init: () => {
-                const container = Utils.$('resultsTableContainer');
-                container.addEventListener('mousedown', DragManager.handleStart);
-                container.addEventListener('touchstart', DragManager.handleStart, { passive: false });
-                document.addEventListener('mousemove', DragManager.handleMove);
-                document.addEventListener('touchmove', DragManager.handleMove, { passive: false });
-                document.addEventListener('mouseup', DragManager.handleEnd);
-                document.addEventListener('touchend', DragManager.handleEnd);
+            removeRoom: (company, room) => {
+                State.tracks = State.tracks.filter(t => !(t.company === company && t.room === room));
             },
             
-            handleStart: (e) => {
-                const handle = e.target.closest('.drag-handle');
-                if (!handle) return;
-                e.preventDefault();
-                const row = handle.closest('.track-row');
-                if (!row) return;
-                
-                DragManager.draggedItem = row;
-                const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
-                const rect = row.getBoundingClientRect();
-                DragManager.startY = clientY;
-                DragManager.initialTop = rect.top;
-                
-                // Create placeholder
-                DragManager.placeholder = document.createElement('tr');
-                DragManager.placeholder.className = 'drag-placeholder-row';
-                DragManager.placeholder.innerHTML = `<td colspan="${row.children.length}"></td>`;
-                DragManager.placeholder.style.height = `${rect.height}px`;
-                row.parentNode.insertBefore(DragManager.placeholder, row);
-                
-                // Create Ghost
-                DragManager.ghost = row.cloneNode(true);
-                DragManager.ghost.classList.add('is-dragging');
-                DragManager.ghost.style.position = 'fixed';
-                DragManager.ghost.style.zIndex = '1000';
-                DragManager.ghost.style.width = `${rect.width}px`;
-                DragManager.ghost.style.height = `${rect.height}px`;
-                DragManager.ghost.style.top = `${rect.top}px`;
-                DragManager.ghost.style.left = `${rect.left}px`;
-                DragManager.ghost.style.background = 'var(--panel)';
-                DragManager.ghost.style.display = 'table'; // Maintain table layout look
-                // IMPORTANT: Prevent ghost from capturing mouse events
-                DragManager.ghost.style.pointerEvents = 'none';
-                
-                // Copy widths to ghost cells
-                const originalCells = row.children;
-                const ghostCells = DragManager.ghost.children;
-                for(let i=0; i<originalCells.length; i++) {
-                    ghostCells[i].style.width = `${originalCells[i].offsetWidth}px`;
-                }
-
-                document.body.appendChild(DragManager.ghost);
-                
-                row.style.display = 'none'; // Hide original
+            removeCompany: (company) => {
+                State.tracks = State.tracks.filter(t => t.company !== company);
             },
             
-            handleMove: (e) => {
-                if (!DragManager.draggedItem) return;
-                e.preventDefault();
-                const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.touches[0].clientY;
-                const deltaY = clientY - DragManager.startY;
-                
-                if (DragManager.ghost) {
-                    DragManager.ghost.style.top = `${DragManager.initialTop + deltaY}px`;
-                }
-                
-                // Table Row Reordering Logic
-                const tbody = DragManager.draggedItem.parentNode;
-                const siblings = [...tbody.querySelectorAll('.track-row:not([style*="display: none"])')];
-                const sibling = siblings.find(sib => {
-                    const rect = sib.getBoundingClientRect();
-                    return clientY >= rect.top && clientY <= rect.bottom;
+            renameRoom: (company, oldRoom, newRoom) => {
+                State.tracks.forEach(t => {
+                    if (t.company === company && t.room === oldRoom) {
+                        t.room = newRoom;
+                    }
                 });
-                
-                if (sibling && sibling !== DragManager.placeholder) {
-                     const rect = sibling.getBoundingClientRect();
-                     const isTop = clientY < (rect.top + rect.height / 2);
-                     if(isTop) tbody.insertBefore(DragManager.placeholder, sibling);
-                     else tbody.insertBefore(DragManager.placeholder, sibling.nextSibling);
-                }
-            },
-            
-            handleEnd: (e) => {
-                if (!DragManager.draggedItem) return;
-                
-                // Finalize DOM position
-                DragManager.placeholder.parentNode.insertBefore(DragManager.draggedItem, DragManager.placeholder);
-                DragManager.draggedItem.style.display = '';
-                
-                if (DragManager.ghost) DragManager.ghost.remove();
-                if (DragManager.placeholder) DragManager.placeholder.remove();
-                DragManager.draggedItem = null;
-                DragManager.ghost = null;
-                DragManager.placeholder = null;
-                
-                // Sync State
-                const newOrderIds = Array.from(document.querySelectorAll('.track-row')).map(el => el.dataset.trackId);
-                State.tracks.sort((a, b) => newOrderIds.indexOf(String(a.id)) - newOrderIds.indexOf(String(b.id)));
-                
-                // Re-render to ensure correct indexing colors
-                UI.renderDashboard();
             }
         };
 
@@ -617,10 +617,7 @@
         const UI = {
             fetchAndSetVat: async () => {
                 try {
-                    // Simulate API Fetch for VAT
-                    // In a real scenario: const response = await fetch('https://api.gov.il/vat'); const data = await response.json();
                     await new Promise(resolve => setTimeout(resolve, 500)); 
-                    // Assuming API returns 17%
                     Utils.$('vatRate').value = '17'; 
                 } catch (e) {
                     console.warn('Failed to fetch VAT, defaulting to 17');
@@ -642,7 +639,6 @@
                 let top = rect.top - tRect.height - 12; // 12px gap
                 let left = rect.left + (rect.width / 2) - (tRect.width / 2);
                 
-                // Prevent going off screen (basic)
                 if (left < 10) left = 10;
                 if (left + tRect.width > window.innerWidth - 10) left = window.innerWidth - tRect.width - 10;
                 
@@ -683,7 +679,6 @@
                 };
             },
 
-            // Calculates effective params for simulation
             getTrackParams: (track) => {
                 const commonRaw = UI.readCommonInputs();
                 const pct = (v) => v / 100;
@@ -701,9 +696,9 @@
                 const vatRate = common.vatRate;
                 const company = track.company;
                 const room = track.room;
-                const trackName = `${company}${room ? ' - ' + room : ''}` || `מסלול ${track.id}`;
+                // Simplified name for table logic is handled separately, but kept for legacy
+                const trackName = `${company} - ${room}`;
                 
-                // Calculate refundPct based on params
                 let depositRefundPct = 0;
                 if(track.pricingMode === 'deposit') {
                     const multiplier = track.depositAddVat ? (1 + vatRate) : 1;
@@ -715,7 +710,6 @@
                     ...common,
                     ...track,
                     trackName,
-                    // Ensure numeric conversion for key props
                     depositDepreciationPct: pct(Number(track.depositDepreciationPct)),
                     depositRefundPct,
                     entranceFeeDepreciationRateMonthly: Number(track.entranceFeeDepreciationRateMonthly)
@@ -723,7 +717,15 @@
             },
 
             renderDashboard: () => {
-                // Calculate results for ALL tracks to populate table
+                // Ensure Sorted for Grouping
+                State.tracks.sort((a, b) => {
+                    if (a.company !== b.company) return a.company.localeCompare(b.company);
+                    if (a.room !== b.room) return a.room.localeCompare(b.room);
+                    // Custom order for modes: Deposit -> Entrance -> None
+                    const order = { 'deposit': 1, 'entrance_fee': 2, 'none': 3 };
+                    return (order[a.pricingMode] || 99) - (order[b.pricingMode] || 99);
+                });
+
                 State.simulationResults = State.tracks.map((track, idx) => {
                     return Calculator.simulate(UI.getTrackParams(track));
                 });
@@ -732,33 +734,67 @@
                 UI.renderCharts();
             },
 
-            // -- Modal Logic --
+            // -- Unit Modal Logic --
+            openUnitModal: (prefillCompany = '') => {
+                 Utils.$('unitCompany').value = prefillCompany;
+                 Utils.$('unitRoom').value = '';
+                 Utils.$('unitModal').classList.add('open');
+                 UI.updateCompanyDatalist();
+            },
+            
+            closeUnitModal: () => {
+                Utils.$('unitModal').classList.remove('open');
+            },
+            
+            saveUnitModal: () => {
+                const company = Utils.$('unitCompany').value.trim();
+                const room = Utils.$('unitRoom').value.trim();
+                if(company && room) {
+                    State.addUnit(company, room);
+                    UI.renderDashboard();
+                    UI.closeUnitModal();
+                } else {
+                    alert('נא למלא את שם הדיור המוגן וסוג היחידה');
+                }
+            },
+            
+            // -- Edit Room Modal Logic --
+            openEditRoomModal: (company, room) => {
+                Utils.$('editRoomCompanyHidden').value = company;
+                Utils.$('editRoomOldNameHidden').value = room;
+                Utils.$('editRoomNameInput').value = room;
+                Utils.$('editRoomModal').classList.add('open');
+            },
+            
+            closeEditRoomModal: () => {
+                Utils.$('editRoomModal').classList.remove('open');
+            },
+            
+            saveEditRoomModal: () => {
+                const company = Utils.$('editRoomCompanyHidden').value;
+                const oldRoom = Utils.$('editRoomOldNameHidden').value;
+                const newRoom = Utils.$('editRoomNameInput').value.trim();
+                
+                if (newRoom && newRoom !== oldRoom) {
+                    State.renameRoom(company, oldRoom, newRoom);
+                    UI.renderDashboard();
+                }
+                UI.closeEditRoomModal();
+            },
+
+            // -- Track Modal Logic --
             openTrackEditor: (trackId) => {
                 State.editModeTrackId = trackId;
-                const isNew = trackId === 'new';
-                const track = isNew ? State.addTrack() : State.tracks.find(t => t.id == trackId);
-                
-                // Safeguard against missing track
-                if (!track) {
-                    console.error('Track not found:', trackId);
-                    return;
-                }
+                const track = State.tracks.find(t => t.id == trackId);
+                if (!track) return;
 
-                if (isNew) State.editModeTrackId = track.id; // Update Ref
-                
-                Utils.$('modalTitle').textContent = isNew ? 'הוספת מסלול חדש' : 'עריכת מסלול';
-                
-                // Inject Form
+                Utils.$('modalTitle').textContent = 'עריכת מסלול';
                 const body = Utils.$('modalBody');
                 body.innerHTML = UI.Templates.trackForm(track);
                 
-                // Setup formatting & listeners inside modal
                 UI.setupNumberFormatting(body);
                 UI.attachModalListeners(track.id);
-                
                 Utils.$('trackModal').classList.add('open');
-                
-                // Populate Company Datalist
                 UI.updateCompanyDatalist();
             },
 
@@ -771,7 +807,6 @@
                 const id = State.editModeTrackId;
                 if (!id) return;
                 
-                // Read inputs from Modal
                 const getVal = (field) => {
                     const el = Utils.$(`${field}_${id}`);
                     return el ? (el.type === 'checkbox' ? el.checked : Utils.unformat(el.value)) : null;
@@ -781,14 +816,12 @@
                      return el ? el.value : '';
                 };
 
-                const mode = getStr('pricingMode');
-                
                 const data = {
                     company: getStr('trackCompany'),
                     room: getStr('trackRoom'),
-                    pricingMode: mode,
+                    // Pricing Mode is fixed in edit for now to maintain the triple structure logic easier, 
+                    // or user can change it but it might look duplicate.
                     baseWithDeposit: getVal('baseWithDeposit'),
-                    // reducedDepositAmount logic removed
                     depositAmount: getVal('depositAmount'),
                     depositDepreciationPct: getVal('depositDepreciationPct'),
                     depositAddVat: getVal('depositAddVat'),
@@ -799,14 +832,9 @@
                     baseNoDeposit: getVal('baseNoDeposit')
                 };
 
-                // Calculate derived values like monthly rate for entrance fee
-                if (mode === 'entrance_fee') {
-                     const rateStr = Utils.$(`entranceFeeDepreciationRateMonthly_${id}`).value;
-                     // Parse percentage back or recalc? Better recalc on save logic or trust storage
-                     // We actually just need to store the years/amount. The rate is derived.
-                     if (data.entranceFeeDepreciationYears > 0) {
-                         data.entranceFeeDepreciationRateMonthly = (1 / (data.entranceFeeDepreciationYears * 12));
-                     }
+                // Recalc entrance fee rate if needed
+                if (data.entranceFeeDepreciationYears > 0) {
+                     data.entranceFeeDepreciationRateMonthly = (1 / (data.entranceFeeDepreciationYears * 12));
                 }
                 
                 State.updateTrack(id, data);
@@ -815,14 +843,39 @@
             },
             
             // -- Delete Modal Logic --
-            openDeleteModal: (id) => {
-                State.pendingDeleteId = id;
+            openDeleteModal: (id, type) => {
+                State.pendingDeleteId = id; // if type is room, id is object {company, room}
+                State.deleteType = type;
+                
+                let txt = '';
+                if (type === 'room') {
+                    txt = `האם אתה בטוח שברצונך למחוק את היחידה "${id.company} - ${id.room}" ואת כל המסלולים המשויכים אליה?`;
+                } else if (type === 'company') {
+                    txt = `האם אתה בטוח שברצונך למחוק את הדיור המוגן "${id}" ואת כל היחידות שבו?`;
+                } else {
+                    txt = 'האם אתה בטוח שברצונך למחוק מסלול זה?';
+                }
+                
+                Utils.$('deleteModalText').textContent = txt;
                 Utils.$('deleteConfirmationModal').classList.add('open');
             },
             
             closeDeleteModal: () => {
                 State.pendingDeleteId = null;
                 Utils.$('deleteConfirmationModal').classList.remove('open');
+            },
+            
+            confirmDelete: () => {
+                if (State.deleteType === 'room') {
+                    const {company, room} = State.pendingDeleteId;
+                    State.removeRoom(company, room);
+                } else if (State.deleteType === 'company') {
+                    State.removeCompany(State.pendingDeleteId);
+                } else {
+                    State.removeTrack(State.pendingDeleteId);
+                }
+                UI.renderDashboard();
+                UI.closeDeleteModal();
             },
 
             Templates: {
@@ -834,11 +887,9 @@
                     </div>`,
                 
                 trackForm: (track) => {
-                    if (!track) return '<div>Error: Track not found</div>';
                     const id = track.id;
                     const safeCompany = Utils.escapeHtml(track.company);
                     const safeRoom = Utils.escapeHtml(track.room);
-                    const isSelected = (val) => track.pricingMode === val ? 'selected' : '';
                     
                     const depositHtml = `
                     <div id="mode_deposit_${id}" class="mode-fields" style="display:${track.pricingMode === 'deposit' ? 'block' : 'none'}">
@@ -892,19 +943,12 @@
 
                     return `
                         <div class="row">
-                             <div class="span-6"><label for="trackCompany_${id}">שם חברה וכתובת</label><input type="text" id="trackCompany_${id}" value="${safeCompany}" list="companyList" placeholder="לדוגמה: אחוזת בית"></div>
-                             <div class="span-6"><label for="trackRoom_${id}">סוג חדר</label><input type="text" id="trackRoom_${id}" value="${safeRoom}" placeholder="לדוגמה: 2 חדרים"></div>
+                             <div class="span-6"><label for="trackCompany_${id}">שם חברה וכתובת</label><input type="text" id="trackCompany_${id}" value="${safeCompany}" list="companyList"></div>
+                             <div class="span-6"><label for="trackRoom_${id}">סוג חדר</label><input type="text" id="trackRoom_${id}" value="${safeRoom}"></div>
                         </div>
-                        <div class="row">
-                            <div class="span-12"><label for="pricingMode_${id}">סוג מסלול</label>
-                                <select id="pricingMode_${id}">
-                                    <option value="deposit" ${isSelected('deposit')}>עם פיקדון</option>
-                                    <option value="entrance_fee" ${isSelected('entrance_fee')}>דמי כניסה</option>
-                                    <option value="none" ${isSelected('none')}>תשלום חודשי</option>
-                                </select>
-                            </div>
-                        </div>
+                        <input type="hidden" id="pricingMode_${id}" value="${track.pricingMode}" />
                         <hr class="hr"/>
+                        <h3 style="margin-top:0;">${track.pricingMode === 'deposit' ? 'מסלול פיקדון' : (track.pricingMode === 'entrance_fee' ? 'מסלול דמי כניסה' : 'מסלול תשלום חודשי')}</h3>
                         ${depositHtml}${entranceHtml}${noneHtml}
                     `;
                 }
@@ -913,16 +957,6 @@
             attachModalListeners: (trackId) => {
                 const modal = Utils.$('modalBody');
                 
-                // Mode switcher
-                const modeSelect = Utils.$(`pricingMode_${trackId}`);
-                if (!modeSelect) return;
-                
-                modeSelect.addEventListener('change', () => {
-                    modal.querySelectorAll('.mode-fields').forEach(el => el.style.display = 'none');
-                    const mode = modeSelect.value;
-                    Utils.$(`mode_${mode}_${trackId}`).style.display = 'block';
-                });
-
                 // Input listeners for live updates (refund note, entrance fee calc, VAT note)
                 modal.addEventListener('input', (e) => {
                     const tId = e.target.id;
@@ -935,7 +969,6 @@
                     }
                 });
                 
-                // Trigger initial updates
                 UI.updateRefundPctNote(trackId, true);
                 UI.updateCalculatedEntranceFeeRate(trackId, true);
                 UI.updateVatNote(trackId);
@@ -953,7 +986,6 @@
                 });
             },
 
-            // Updated to handle both DOM read (dashboard preview) and Modal read
             updateRefundPctNote: (trackId, inModal = false) => {
                 const suffix = `_${trackId}`;
                 const getVal = (id) => Utils.unformat(Utils.$(id)?.value);
@@ -987,9 +1019,6 @@
                     noteEl.innerHTML = '';
                     return;
                 }
-                
-                // The VAT added is on the Base Deduction
-                // VAT Amount = Deposit * TotalBaseDeductionPct * VAT_Rate
                 const totalBaseDeductionPct = pct * years;
                 const vatAmount = deposit * totalBaseDeductionPct * globalVat;
                 
@@ -1024,102 +1053,195 @@
                 });
             },
             
-            // updateDepositReduction function removed
-
             renderResultsTable: () => {
                 const container = Utils.$('resultsTableContainer');
                 const targetYear = State.viewYear;
                 const targetMonths = Math.round(targetYear * 12);
-                const pricingModeMap = { 'deposit': 'עם פיקדון', 'entrance_fee': 'דמי כניסה', 'none': 'תשלום חודשי' };
+                const pricingModeMap = { 'deposit': 'מסלול פיקדון', 'entrance_fee': 'דמי כניסה', 'none': 'תשלום חודשי' };
+                const isInputMode = State.tableMode === 'inputs';
+                
+                // --- Headers Logic ---
+                let thead = '';
+                if (isInputMode) {
+                    thead = `<tr>
+                        <th>הצג</th>
+                        <th><span class="visually-hidden">עריכה</span></th>
+                        <th>#</th>
+                        <th>סוג מסלול</th>
+                        <th>סכום חד-פעמי (₪)</th>
+                        <th>דמי אחזקה (₪)</th>
+                        <th>מנגנון שחיקה/פחת</th>
+                        <th>הצמדה למע"מ</th>
+                        <th><span class="visually-hidden">מחיקה</span></th>
+                    </tr>`;
+                } else {
+                    thead = `<tr>
+                        <th>הצג</th>
+                        <th><span class="visually-hidden">עריכה</span></th>
+                        <th>#</th>
+                        <th>סוג מסלול</th>
+                        <th>סה"כ חודשים</th>
+                        <th class="tooltip-header">עלות דמי אחזקה (₪)
+                            <span class="tooltip-text">סך תשלומי דמי האחזקה ששולמו בפועל לדיור המוגן.</span>
+                        </th>
+                        <th class="tooltip-header">עלות השחיקה (₪)
+                            <span class="tooltip-text">החלק מתוך הפיקדון שקוזז.</span>
+                        </th>
+                        <th class="tooltip-header">עלות מצטברת כוללת (₪)
+                            <span class="tooltip-text">המחיר הכלכלי המלא.</span>
+                        </th>
+                        <th class="tooltip-header">יתרת הון בסיום (₪)
+                            <span class="tooltip-text">יתרת הכספים וההשקעות שנותרה.</span>
+                        </th>
+                        <th class="tooltip-header">החזר צפוי (₪)
+                            <span class="tooltip-text">סכום הפיקדון שיוחזר.</span>
+                        </th>
+                        <th class="tooltip-header">סה"כ יתרה (₪)
+                            <span class="tooltip-text">השווי הכולל של הנכסים בתום התקופה.</span>
+                        </th>
+                        <th><span class="visually-hidden">מחיקה</span></th>
+                    </tr>`;
+                }
+                
+                let table = `<table class="results-table"><thead>${thead}</thead><tbody>`;
+                const colSpan = isInputMode ? 9 : 12;
 
-                let table = `<table class="results-table"><thead><tr>
-                    <th><span class="visually-hidden">גרירה</span></th>
-                    <th>הצג</th>
-                    <th><span class="visually-hidden">עריכה</span></th>
-                    <th>#</th>
-                    <th>שם החברה-סוג החדר</th>
-                    <th>סוג מסלול</th>
-                    <th>סה"כ חודשים</th>
-                    <th class="tooltip-header">עלות דמי אחזקה (₪)
-                        <span class="tooltip-text">סך תשלומי דמי האחזקה ששולמו בפועל לדיור המוגן. הסכום משקלל את עליית המדד (אינפלציה) לאורך השנים, ואת תוספת הסיעוד במידה והופעלה.</span>
-                    </th>
-                    <th class="tooltip-header">עלות השחיקה (₪)
-                        <span class="tooltip-text">החלק מתוך הפיקדון שקוזז ("נשחק") לטובת הדיור המוגן. מחושב לפי אחוז השחיקה השנתי ומע"מ (אם חל), עד לתקרת המקסימום המוגדרת.</span>
-                    </th>
-                    <th class="tooltip-header">עלות מצטברת כוללת (₪)
-                        <span class="tooltip-text">המחיר הכלכלי המלא: סך דמי האחזקה ששולמו (כולל הצמדה) ועוד סכום השחיקה שננגס מהפיקדון. משקף את העלות האמיתית של המגורים.</span>
-                    </th>
-                    <th class="tooltip-header">יתרת הון בסיום (₪)
-                        <span class="tooltip-text">יתרת הכספים וההשקעות שנותרה בידך (ללא הפיקדון). מחושבת ע"י הוספת הכנסות ותשואת ריבית דריבית, והפחתת הוצאות שוטפות ומדד יוקר המחיה.</span>
-                    </th>
-                    <th class="tooltip-header">החזר צפוי (₪)
-                        <span class="tooltip-text">סכום הפיקדון שיוחזר בתום התקופה. הסכום מורכב מהפיקדון המקורי פחות השחיקה שהצטברה, בתוספת הפרשי הצמדה למדד (אם הוגדרו).</span>
-                    </th>
-                    <th class="tooltip-header">סה"כ יתרה (₪)
-                        <span class="tooltip-text">השווי הכולל של הנכסים בתום התקופה: חיבור של יתרת ההון הנזיל (תיק ההשקעות) עם החזר הפיקדון הצפוי מהדיור המוגן.</span>
-                    </th>
-                    <th><span class="visually-hidden">מחיקה</span></th>
-                </tr></thead><tbody>`;
+                let lastCompany = null;
+                let lastRoom = null;
 
                 State.tracks.forEach((track, idx) => {
                     const result = State.simulationResults[idx];
                     if (!result) return; 
 
-                    const rSummary = result.summary;
-                    const logs = result.monthlyLog;
-                    let rowClass = 'track-row';
-                    let displayMonths = 0, indMonths = 0, nursMonths = 0, finalCash = 0, refundEnd = 0,
-                        cumulativeDep = 0, cumulativeMaint = 0, totalEcon = 0, note = '';
-
-                    const ranOut = !rSummary.maxedOut;
-                    const isShort = ranOut && rSummary.totalMonths < targetMonths;
-                    
-                    // Determine which month data to show
-                    let sliceEnd = Math.min(targetMonths, logs.length);
-                    // If ran out early, we show the last available month
-                    
-                    const relevantLogs = logs.slice(0, sliceEnd);
-                    const last = relevantLogs[relevantLogs.length - 1];
-                    
-                    if (!last) { // Should not happen given logic but safety
-                         rowClass += ' insolvent';
-                         note = '<div class="note danger">אין מספיק הון</div>';
-                    } else {
-                        displayMonths = last.month; 
-                        indMonths = last.independentMonths; 
-                        nursMonths = last.nursingMonths;
-                        finalCash = last.cash; 
-                        refundEnd = last.refund;
-                        
-                        cumulativeMaint = relevantLogs.reduce((s, l) => s + (l.providerCost || 0), 0);
-                        const totalEconomic = relevantLogs.reduce((s, l) => s + (l.providerEconomicCost || 0), 0);
-                        cumulativeDep = totalEconomic - cumulativeMaint;
-                        totalEcon = totalEconomic;
-
-                        if (isShort) {
-                            rowClass += ' insolvent';
-                            const y = Math.floor(rSummary.totalMonths/12);
-                            const m = rSummary.totalMonths%12;
-                            note = `<div class="note danger">אזל לאחר ${y}ש' ו-${m}ח'</div>`;
-                        } else {
-                            note = `<div class="note">${targetYear} שנים</div>`;
-                        }
+                    // --- Group Headers ---
+                    if (track.company !== lastCompany) {
+                        table += `<tr class="group-header company-header">
+                            <td colspan="${colSpan}">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span>${Utils.escapeHtml(track.company)}</span>
+                                    <div class="header-actions">
+                                        <button class="btn secondary add-room-btn" data-company="${Utils.escapeHtml(track.company)}" style="font-size:0.8rem; padding:4px 8px;">+ הוסף סוג יחידה</button>
+                                        <button class="btn danger delete-company-btn icon-btn" data-company="${Utils.escapeHtml(track.company)}" title="מחק דיור מוגן" style="width: 28px; height: 28px;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>`;
+                        lastCompany = track.company;
+                        lastRoom = null; // Reset room when company changes
                     }
 
+                    if (track.room !== lastRoom) {
+                         table += `<tr class="group-header room-header">
+                            <td colspan="${colSpan}">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <button class="btn secondary edit-room-btn icon-btn" data-company="${Utils.escapeHtml(track.company)}" data-room="${Utils.escapeHtml(track.room)}" title="ערוך שם יחידה" style="width: 24px; height: 24px;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                        </button>
+                                        <span>חדר: ${Utils.escapeHtml(track.room)}</span>
+                                    </div>
+                                    <button class="btn danger delete-room-btn icon-btn" data-company="${Utils.escapeHtml(track.company)}" data-room="${Utils.escapeHtml(track.room)}" title="מחק יחידה" style="width: 28px; height: 28px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>`;
+                        lastRoom = track.room;
+                    }
+                    // ---------------------
+
+                    const rSummary = result.summary;
+                    let rowClass = 'track-row child-row';
+                    let contentCells = '';
+                    
+                    // Define logic for insolvency check
+                    const isShort = !rSummary.maxedOut && rSummary.totalMonths < targetMonths;
+                    const isImmediateInsolvency = result.monthlyLog.length === 0;
+
+                    if (isInputMode) {
+                        // --- Input Mode Cells ---
+                        let amount = '—';
+                        let monthly = '—';
+                        let depreciation = '—';
+                        let vat = '—';
+                        
+                        if (track.pricingMode === 'deposit') {
+                            amount = Utils.fmt(track.depositAmount);
+                            monthly = Utils.fmt(track.baseWithDeposit);
+                            depreciation = `${track.depositDepreciationPct}% למשך ${track.depositDepreciationYears} שנים`;
+                            vat = track.depositAddVat ? 'כן' : 'לא';
+                        } else if (track.pricingMode === 'entrance_fee') {
+                            amount = Utils.fmt(track.entranceFeeAmount);
+                            monthly = Utils.fmt(track.baseWithEntranceFee);
+                            depreciation = `למשך ${track.entranceFeeDepreciationYears} שנים`;
+                            vat = '—';
+                        } else {
+                            monthly = Utils.fmt(track.baseNoDeposit);
+                        }
+                        
+                        contentCells = `
+                            <td>${amount}</td>
+                            <td>${monthly}</td>
+                            <td>${depreciation}</td>
+                            <td>${vat}</td>
+                        `;
+                    } else {
+                        // --- Results Mode Cells ---
+                        const logs = result.monthlyLog;
+                        let displayMonths = 0, cumulativeDep = 0, cumulativeMaint = 0, totalEcon = 0, finalCash=0, refundEnd=0, note = '';
+
+                        let sliceEnd = Math.min(targetMonths, logs.length);
+                        const relevantLogs = logs.slice(0, sliceEnd);
+                        const last = relevantLogs[relevantLogs.length - 1];
+                        
+                        if (!last) {
+                             rowClass += ' insolvent';
+                             note = '<div class="note danger">אין מספיק הון</div>';
+                        } else {
+                            displayMonths = last.month; 
+                            finalCash = last.cash; 
+                            refundEnd = last.refund;
+                            
+                            cumulativeMaint = relevantLogs.reduce((s, l) => s + (l.providerCost || 0), 0);
+                            totalEcon = relevantLogs.reduce((s, l) => s + (l.providerEconomicCost || 0), 0);
+                            cumulativeDep = totalEcon - cumulativeMaint;
+
+                            if (isShort) {
+                                rowClass += ' insolvent';
+                                const y = Math.floor(rSummary.totalMonths/12);
+                                const m = rSummary.totalMonths%12;
+                                note = `<div class="note danger">אזל לאחר ${y}ש' ו-${m}ח'</div>`;
+                            } else {
+                                note = `<div class="note">${targetYear} שנים</div>`;
+                            }
+                        }
+
+                        contentCells = `
+                            <td><b>${Utils.fmt(displayMonths)}</b>${note}</td>
+                            <td>${Utils.fmt(cumulativeMaint)}</td>
+                            <td>${Utils.fmt(cumulativeDep)}</td>
+                            <td><b class="danger">${Utils.fmt(totalEcon)}</b></td>
+                            <td>${Utils.fmt(finalCash)}</td>
+                            <td>${Utils.fmt(refundEnd)}</td>
+                            <td><b class="ok" style="font-size: 1.1rem;">${Utils.fmt(finalCash + refundEnd)} ₪</b></td>
+                        `;
+                    }
+
+                    // Determine checkbox state
+                    const isGraphDisabled = !isInputMode && isImmediateInsolvency; 
+                    const checkboxHtml = `<input type="checkbox" class="track-vis-toggle" data-track-id="${track.id}" 
+                        ${track.isVisible && !isGraphDisabled ? 'checked' : ''} 
+                        ${isGraphDisabled ? 'disabled' : ''} 
+                        title="${isGraphDisabled ? 'לא ניתן להציג בגרף (אין מספיק הון)' : 'הצג בגרף'}">`;
+
                     table += `<tr class="${rowClass}" data-track-id="${track.id}">
-                        <td><div class="drag-handle"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></div></td>
-                        <td><input type="checkbox" class="track-vis-toggle" data-track-id="${track.id}" ${track.isVisible ? 'checked' : ''} title="הצג בגרף"></td>
+                        <td>${checkboxHtml}</td>
                         <td><button class="btn secondary edit-track-btn" data-track-id="${track.id}" title="ערוך" style="padding: 0; height: 32px; width: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; margin: 0 auto;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>
                         <td><span class="track-num-badge" style="background:${Constants.COLORS[idx % Constants.COLORS.length]}">${idx + 1}</span></td>
-                        <td>${Utils.escapeHtml(rSummary.trackName)}</td>
                         <td>${pricingModeMap[rSummary.pricingMode]}</td>
-                        <td><b>${Utils.fmt(displayMonths)}</b>${note}</td>
-                        <td>${Utils.fmt(cumulativeMaint)}</td>
-                        <td>${Utils.fmt(cumulativeDep)}</td>
-                        <td><b class="danger">${Utils.fmt(totalEcon)}</b></td>
-                        <td>${Utils.fmt(finalCash)}</td>
-                        <td>${Utils.fmt(refundEnd)}</td>
-                        <td><b class="ok" style="font-size: 1.1rem;">${Utils.fmt(finalCash + refundEnd)} ₪</b></td>
+                        ${contentCells}
                         <td>
                             <div class="row-actions">
                                 <button class="btn danger delete-track-btn" data-track-id="${track.id}" title="מחק"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
@@ -1135,7 +1257,6 @@
                 const targetYear = State.viewYear;
                 const targetMonths = Math.round(targetYear * 12);
                 const labels = [];
-                // Generate labels every 6 months
                 for (let i = 0; i <= targetMonths; i += 6) {
                     labels.push(i === 0 ? 'התחלה' : `${i/12} ש'`);
                 }
@@ -1144,11 +1265,14 @@
                 const datasetsBalance = [];
 
                 State.tracks.forEach((track, idx) => {
-                    if (!track.isVisible) return;
-
                     const result = State.simulationResults[idx];
                     if (!result) return;
                     
+                    // Filter out only immediate insolvency tracks from graph
+                    const isImmediateInsolvency = result.monthlyLog.length === 0;
+
+                    if (!track.isVisible || isImmediateInsolvency) return;
+
                     const color = Constants.COLORS[idx % Constants.COLORS.length];
                     const logs = result.monthlyLog;
                     
@@ -1163,14 +1287,16 @@
                              costData.push(logs[m].cumulativeEconomic);
                              balanceData.push(logs[m].totalBalance);
                         } else if (clampedM >= 0) {
-                             // Simulation ended early
                              costData.push(logs[clampedM].cumulativeEconomic); 
                              balanceData.push(logs[clampedM].totalBalance); 
                         }
                     });
+                    
+                    const pricingModeMap = { 'deposit': 'פיקדון', 'entrance_fee': 'דמי כניסה', 'none': 'ת.חודשי' };
+                    const label = `${track.company}-${track.room} (${pricingModeMap[track.pricingMode]})`;
 
                     datasetsCost.push({
-                        label: track.company || `מסלול ${idx+1}`,
+                        label: label,
                         data: costData,
                         borderColor: color,
                         backgroundColor: color + '20',
@@ -1180,7 +1306,7 @@
                     });
 
                     datasetsBalance.push({
-                        label: track.company || `מסלול ${idx+1}`,
+                        label: label,
                         data: balanceData,
                         borderColor: color,
                         backgroundColor: color + '20',
@@ -1248,20 +1374,15 @@
                     
                     const pct = (maxYearsInput - min) > 0 ? ((val - min) / (maxYearsInput - min)) * 100 : 0;
                     bubble.innerHTML = `${val} שנים`;
-                    
-                    // RTL positioning: 
-                    // pct=0 (Min Val) should be at Right (right: 0%)
-                    // pct=100 (Max Val) should be at Left (right: 100%)
                     bubble.style.right = `${pct}%`;
-                    bubble.style.left = 'auto'; // Reset left
-                    bubble.style.transform = `translateX(50%)`; // Centering shift for Right positioning
+                    bubble.style.left = 'auto'; 
+                    bubble.style.transform = `translateX(50%)`; 
                     
                     slider.style.setProperty('--slider-fill-percent', `${pct}%`);
                     
                     UI.renderDashboard();
                 };
 
-                // Ticks
                 ticks.innerHTML = '';
                 const numTicks = Math.floor(maxYearsInput);
                 let step = numTicks > 20 ? 5 : 1;
@@ -1269,17 +1390,15 @@
                     if (i % step === 0) {
                         const pct = ((i - min) / (maxYearsInput - min)) * 100;
                         const tick = document.createElement('div'); tick.className = 'slider-tick'; 
-                        tick.style.right = `${pct}%`; // RTL Position
-                        
+                        tick.style.right = `${pct}%`; 
                         const label = document.createElement('span'); label.className = 'slider-tick-label'; label.textContent = i; 
-                        label.style.right = `${pct}%`; // RTL Position
-                        
+                        label.style.right = `${pct}%`; 
                         ticks.append(tick, label);
                     }
                 }
 
                 slider.oninput = updateVisuals;
-                updateVisuals(); // Init
+                updateVisuals(); 
             }
         };
 
@@ -1287,16 +1406,31 @@
             init: () => {
                 State.init();
                 Navigation.init();
-                DragManager.init();
+                // DragManager.init(); // REMOVED
                 
                 UI.setupNumberFormatting(document.body);
                 UI.setupYearSlider();
                 
-                // Initialize VAT from API (Simulated)
                 UI.fetchAndSetVat();
 
-                // Add Track
-                Utils.$('addTrackBtn').addEventListener('click', () => UI.openTrackEditor('new'));
+                // Add Facility Button
+                Utils.$('addFacilityBtn').addEventListener('click', () => UI.openUnitModal(''));
+                
+                // Toggle Table Mode
+                Utils.$('tableModeToggle').addEventListener('change', (e) => {
+                    State.tableMode = e.target.checked ? 'inputs' : 'results';
+                    UI.renderDashboard();
+                });
+                
+                // Unit Modal Actions
+                Utils.$('unitModalCloseX').addEventListener('click', UI.closeUnitModal);
+                Utils.$('unitModalCancelBtn').addEventListener('click', UI.closeUnitModal);
+                Utils.$('unitModalSaveBtn').addEventListener('click', UI.saveUnitModal);
+                
+                // Edit Room Modal Actions
+                Utils.$('editRoomModalCloseX').addEventListener('click', UI.closeEditRoomModal);
+                Utils.$('editRoomModalCancelBtn').addEventListener('click', UI.closeEditRoomModal);
+                Utils.$('editRoomModalSaveBtn').addEventListener('click', UI.saveEditRoomModal);
                 
                 // Modal Actions
                 Utils.$('modalCloseX').addEventListener('click', UI.closeModal);
@@ -1306,15 +1440,8 @@
                 // Delete Modal Actions
                 Utils.$('deleteModalCloseX').addEventListener('click', UI.closeDeleteModal);
                 Utils.$('deleteModalCancelBtn').addEventListener('click', UI.closeDeleteModal);
-                Utils.$('deleteModalConfirmBtn').addEventListener('click', () => {
-                    if (State.pendingDeleteId) {
-                        State.removeTrack(State.pendingDeleteId);
-                        UI.renderDashboard();
-                        UI.closeDeleteModal();
-                    }
-                });
+                Utils.$('deleteModalConfirmBtn').addEventListener('click', UI.confirmDelete);
                 
-                // Tooltip delegation
                 document.body.addEventListener('mouseover', (e) => {
                     const header = e.target.closest('.tooltip-header');
                     if (header) UI.showTooltip(header);
@@ -1324,17 +1451,23 @@
                     if (header) UI.hideTooltip();
                 });
                 
-                // Click delegation for Dashboard buttons
                 Utils.$('resultsTableContainer').addEventListener('click', (e) => {
                     const btn = e.target.closest('button');
                     const checkbox = e.target.closest('input[type="checkbox"]');
                     
                     if (btn) {
-                        const id = btn.dataset.trackId;
-                        if (btn.classList.contains('edit-track-btn')) UI.openTrackEditor(id);
-                        if (btn.classList.contains('delete-track-btn')) {
-                            // Changed to use custom modal
-                            UI.openDeleteModal(id);
+                        if (btn.classList.contains('edit-track-btn')) {
+                            UI.openTrackEditor(btn.dataset.trackId);
+                        } else if (btn.classList.contains('delete-track-btn')) {
+                            UI.openDeleteModal(btn.dataset.trackId, 'track');
+                        } else if (btn.classList.contains('add-room-btn')) {
+                            UI.openUnitModal(btn.dataset.company);
+                        } else if (btn.classList.contains('delete-room-btn')) {
+                            UI.openDeleteModal({company: btn.dataset.company, room: btn.dataset.room}, 'room');
+                        } else if (btn.classList.contains('delete-company-btn')) {
+                            UI.openDeleteModal(btn.dataset.company, 'company');
+                        } else if (btn.classList.contains('edit-room-btn')) {
+                            UI.openEditRoomModal(btn.dataset.company, btn.dataset.room);
                         }
                     }
                     
@@ -1345,18 +1478,14 @@
                     }
                 });
 
-                // Spinner and Modal Stepper delegation
                 document.body.addEventListener('click', (e) => {
                     if (e.target.matches('.spinner-btn:not(.stepper-btn)')) Events.handleSpinner(e.target);
-                    else if (e.target.classList.contains('stepper-btn')) Events.handleStepper(e.target);
                 });
 
-                // General Inputs change
                 Utils.$('commonInputsCard').addEventListener('input', Utils.debounce(() => {
                     UI.renderDashboard();
                 }, 300));
 
-                // Nursing Toggle Logic
                 const nursingToggle = Utils.$('isNursing');
                 if (nursingToggle) {
                     const updateNursingVisibility = () => {
@@ -1366,7 +1495,6 @@
                         updateNursingVisibility();
                         UI.renderDashboard();
                     });
-                    // Initialize state
                     updateNursingVisibility();
                 }
                 
@@ -1377,7 +1505,6 @@
                     UI.renderDashboard();
                 });
                 
-                // Export/Import
                 Utils.$('exportBtn').addEventListener('click', Events.exportData);
                 Utils.$('importBtn').addEventListener('click', () => Utils.$('importFile').click());
                 Utils.$('importFile').addEventListener('change', Events.importData);
@@ -1406,7 +1533,6 @@
                 }
                 
                 if (step === 0.5) {
-                    // Snap to nearest 0.5 grid
                     if (stepDir === 'up') {
                         val = Math.floor(val * 2 + 1) / 2;
                     } else {
@@ -1418,10 +1544,6 @@
                 
                 input.value = Utils.formatNumber(Math.max(0, val));
                 input.dispatchEvent(new Event('input', { bubbles: true }));
-            },
-
-            handleStepper: (btn) => {
-                // Stepper logic simplified as reducedDepositAmount removed
             },
 
             exportData: () => {
@@ -1443,7 +1565,6 @@
                 r.onload = (ev) => {
                     try {
                         const d = JSON.parse(ev.target.result);
-                        // Restore Common
                         Object.keys(d.common).forEach(k => {
                             const el = Utils.$(k);
                             if(el) {
@@ -1451,9 +1572,8 @@
                                 else el.value = Utils.formatNumber(d.common[k]);
                             }
                         });
-                        // Restore Tracks
                         State.tracks = d.tracks || [];
-                        if (State.tracks.length === 0) State.addTrack();
+                        if (State.tracks.length === 0) State.addUnit('אחוזת בית', '2 חדרים');
                         
                         UI.renderDashboard();
                         alert('הנתונים יובאו בהצלחה');

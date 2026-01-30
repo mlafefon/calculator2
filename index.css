@@ -1,4 +1,7 @@
 
+
+
+
 :root {
   --bg: #0f172a;          /* slate-900 */
   --panel: #1e293b;       /* slate-800 */
@@ -74,6 +77,39 @@ button svg { pointer-events: none; }
     height: auto;
 }
 
+/* Toggle Switch Styles */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  vertical-align: middle;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--border);
+  transition: .4s;
+  border-radius: 24px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+input:checked + .slider { background-color: var(--accent); }
+input:checked + .slider:before { transform: translateX(20px); }
+.toggle-label { margin-left: 8px; font-size: 0.9rem; color: var(--muted); vertical-align: middle; font-weight: 500; }
+input:checked ~ .toggle-label { color: var(--accent); }
+
 /* Modal Styles */
 .modal-overlay {
     position: fixed;
@@ -140,32 +176,6 @@ button svg { pointer-events: none; }
     cursor: pointer;
 }
 .close-modal:hover { color: var(--text); }
-
-
-/* Drag & Drop Styles for Table Rows */
-.drag-handle {
-    width: 24px;
-    height: 24px;
-    color: var(--muted);
-    cursor: grab;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    touch-action: none;
-    margin: 0 auto;
-}
-.drag-handle:hover { color: var(--accent); }
-.track-row.is-dragging {
-    opacity: 0.3;
-}
-.drag-placeholder-row {
-    background: rgba(255, 255, 255, 0.05);
-}
-.drag-placeholder-row td {
-    border-top: 2px dashed var(--border);
-    border-bottom: 2px dashed var(--border);
-    height: 60px;
-}
 
 /* Charts Styles */
 .charts-container {
@@ -612,18 +622,46 @@ button svg { pointer-events: none; }
     justify-content: flex-end;
 }
 
-/* Results View */
+/* Results View & Hierarchy */
 #resultsTableContainer {
   padding: 0;
   overflow-x: auto;
 }
 
-.results-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
-.results-table th, .results-table td { padding: 12px; text-align: center; border-bottom: 1px solid var(--border); }
-.results-table th { color: var(--accent); font-size: 0.9rem; background: var(--panel); vertical-align: middle; }
-.results-table td { font-size: 1rem; vertical-align: middle; }
+.results-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; table-layout: fixed; }
+.results-table th, .results-table td { padding: 10px; text-align: center; border-bottom: 1px solid var(--border); overflow: hidden; text-overflow: ellipsis; }
+.results-table th { color: var(--accent); font-size: 0.85rem; background: var(--panel); vertical-align: middle; }
+.results-table td { font-size: 0.95rem; vertical-align: middle; }
 .results-table tr:last-child td { border-bottom: none; }
 .results-table tr.insolvent { background-color: rgba(251, 113, 133, 0.1); }
+
+/* Hierarchy Group Headers */
+.group-header {
+    text-align: right;
+    font-weight: bold;
+    padding: 12px 16px;
+}
+.company-header {
+    background-color: var(--panel);
+    border-bottom: 1px solid var(--border);
+    color: var(--accent);
+    font-size: 1.1rem;
+}
+.room-header {
+    background-color: rgba(30, 41, 59, 0.5);
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-size: 1rem;
+    padding-right: 24px; /* Indent */
+}
+.header-actions {
+    float: left;
+    display: flex;
+    gap: 8px;
+}
+/* No dragging anymore */
+.drag-handle { display: none; } 
+
 .track-num-badge {
     background: var(--accent);
     color: var(--bg);
@@ -705,7 +743,6 @@ button svg { pointer-events: none; }
     .stepper-container { padding: 0; margin-bottom: 24px; }
     .step-label { display: none; } 
 
-    /* Mobile adjustments for top bar stepper */
     .top-bar .stepper-container {
         padding: 0;
         margin-left: 8px;
@@ -714,7 +751,7 @@ button svg { pointer-events: none; }
         display: none;
     }
     .top-bar .step.active .step-label {
-        display: none; /* Override absolute position behavior for top bar */
+        display: none;
     }
     .top-bar .stepper {
         margin: 0;
