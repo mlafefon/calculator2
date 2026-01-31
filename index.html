@@ -479,6 +479,7 @@
             tracks: [], // Objects with full data properties
             simulationResults: [],
             collapsedRooms: new Set(), // Set of "company|room" strings
+            collapsedCompanies: new Set(), // Set of company strings
             currentStep: 1,
             viewYear: 15,
             editModeTrackId: null, // Track currently in modal
@@ -1113,12 +1114,20 @@
                     const result = State.simulationResults[idx];
                     if (!result) return; 
 
-                    // --- Group Headers ---
+                    // --- Company Header ---
+                    const isCompanyCollapsed = State.collapsedCompanies.has(track.company);
                     if (track.company !== lastCompany) {
                         table += `<tr class="group-header company-header">
                             <td colspan="${colSpan}">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span>${Utils.escapeHtml(track.company)}</span>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <button class="btn secondary toggle-company-collapse-btn icon-btn" data-company="${Utils.escapeHtml(track.company)}" title="${isCompanyCollapsed ? 'הצג' : 'הסתר'}" style="width: 24px; height: 24px;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${isCompanyCollapsed ? '90' : '0'}deg); transition: transform 0.2s;">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                            </svg>
+                                        </button>
+                                        <span>${Utils.escapeHtml(track.company)}</span>
+                                    </div>
                                     <div class="header-actions">
                                         <button class="btn secondary add-room-btn" data-company="${Utils.escapeHtml(track.company)}" style="font-size:0.8rem; padding:4px 8px;">+ הוסף סוג יחידה</button>
                                         <button class="btn danger delete-company-btn icon-btn" data-company="${Utils.escapeHtml(track.company)}" title="מחק דיור מוגן" style="width: 28px; height: 28px;">
@@ -1133,15 +1142,19 @@
                     }
 
                     const roomKey = `${track.company}|${track.room}`;
-                    const isCollapsed = State.collapsedRooms.has(roomKey);
+                    const isRoomCollapsed = State.collapsedRooms.has(roomKey);
 
+                    // --- Room Header ---
                     if (track.room !== lastRoom) {
-                         table += `<tr class="group-header room-header">
+                         let roomHeaderClass = 'group-header room-header';
+                         if (isCompanyCollapsed) roomHeaderClass += ' hidden-row';
+                         
+                         table += `<tr class="${roomHeaderClass}">
                             <td colspan="${colSpan}">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <div style="display: flex; align-items: center; gap: 8px;">
-                                        <button class="btn secondary toggle-room-collapse-btn icon-btn" data-room-key="${roomKey}" title="${isCollapsed ? 'הצג' : 'הסתר'}" style="width: 24px; height: 24px;">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${isCollapsed ? '90' : '0'}deg); transition: transform 0.2s;">
+                                        <button class="btn secondary toggle-room-collapse-btn icon-btn" data-room-key="${roomKey}" title="${isRoomCollapsed ? 'הצג' : 'הסתר'}" style="width: 24px; height: 24px;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${isRoomCollapsed ? '90' : '0'}deg); transition: transform 0.2s;">
                                                 <polyline points="6 9 12 15 18 9"></polyline>
                                             </svg>
                                         </button>
@@ -1158,11 +1171,11 @@
                         </tr>`;
                         lastRoom = track.room;
                     }
-                    // ---------------------
 
+                    // --- Track Rows ---
                     const rSummary = result.summary;
                     let rowClass = 'track-row child-row';
-                    if (isCollapsed) rowClass += ' hidden-row';
+                    if (isCompanyCollapsed || isRoomCollapsed) rowClass += ' hidden-row';
 
                     let contentCells = '';
                     
@@ -1416,7 +1429,6 @@
             init: () => {
                 State.init();
                 Navigation.init();
-                // DragManager.init(); // REMOVED
                 
                 UI.setupNumberFormatting(document.body);
                 UI.setupYearSlider();
@@ -1478,6 +1490,24 @@
                             UI.openDeleteModal(btn.dataset.company, 'company');
                         } else if (btn.classList.contains('edit-room-btn')) {
                             UI.openEditRoomModal(btn.dataset.company, btn.dataset.room);
+                        } else if (btn.classList.contains('toggle-company-collapse-btn')) {
+                            const company = btn.dataset.company;
+                            const willCollapse = !State.collapsedCompanies.has(company);
+                            
+                            if (willCollapse) {
+                                State.collapsedCompanies.add(company);
+                            } else {
+                                State.collapsedCompanies.delete(company);
+                            }
+                            
+                            // Synchronize track visibility: hide from graph if company is collapsed
+                            State.tracks.forEach(t => {
+                                if (t.company === company) {
+                                    t.isVisible = !willCollapse;
+                                }
+                            });
+                            
+                            UI.renderDashboard();
                         } else if (btn.classList.contains('toggle-room-collapse-btn')) {
                             const key = btn.dataset.roomKey;
                             const [company, room] = key.split('|');
