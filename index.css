@@ -1,4 +1,3 @@
-
 :root {
   --bg: #0f172a;          /* slate-900 */
   --panel: #1e293b;       /* slate-800 */
@@ -654,7 +653,16 @@ input:checked ~ .toggle-label { color: var(--accent); }
     border-bottom: 1px solid var(--border);
     color: var(--text);
     font-size: 1rem;
-    padding-right: 24px; /* Indent */
+    padding-right: 48px !important; /* Indent increased for hierarchy */
+}
+.room-header td {
+    padding-right: 48px !important;
+}
+
+/* Indent child tracks to sit under room header */
+.child-row td:nth-child(4) {
+    padding-right: 72px !important;
+    text-align: right;
 }
 
 /* Hide rows when parent room is collapsed */
