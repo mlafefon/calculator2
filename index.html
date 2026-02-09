@@ -1,4 +1,5 @@
 
+
 <!doctype html>
 <html lang="he" dir="rtl">
 <head>
@@ -69,21 +70,29 @@
             </div>
           </div>
           <div class="row">
-            <div class="span-3"><label for="annualReturn">תשואת ריבית שנתית על היתרה (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualReturn">+</button><input type="text" id="annualReturn" value="4.5" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualReturn">-</button></div></div>
-            <div class="span-3">
+            <div class="span-2"><label for="annualReturn">תשואה שנתית (%)</label><div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualReturn">+</button><input type="text" id="annualReturn" value="4.5" class="income" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualReturn">-</button></div></div>
+            <div class="span-2">
                 <label for="annualInflation">
-                    <span class="tooltip-header">קצב התייקרות שנתי (מדד) (%)
-                        <span class="tooltip-text">שיעור האינפאציה השנתי הצפוי. משפיע על התייקרות דמי האחזקה, הוצאות המחייה, וההכנסה משכר דירה לאורך זמן. בנוסף, יתרת הפיקדון המוחזרת מוצמדת למדד זה.</span>
+                    <span class="tooltip-header">מדד שנתי (%)
+                        <span class="tooltip-text">שיעור האינפלציה השנתי (מדד). משפיע על יוקר המחיה, שכר דירה, והחזר פיקדון.</span>
                     </span>
                 </label>
                 <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="annualInflation">+</button><input type="text" id="annualInflation" value="2" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="annualInflation">-</button></div>
             </div>
-            <div class="span-3">
-                <label for="vatRate">שיעור מע"מ (%)</label>
+            <div class="span-4">
+                <label for="maintIncrease">
+                     <span class="tooltip-header">עליית דמי אחזקה ריאלית (%)
+                        <span class="tooltip-text">תוספת שנתית לדמי האחזקה מעבר למדד (התייקרות ריאלית בשוחק). אם המדד הוא 2% ותגדיר כאן 1%, דמי האחזקה יעלו ב-3% בשנה.</span>
+                    </span>
+                </label>
+                <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="maintIncrease">+</button><input type="text" id="maintIncrease" value="0" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="maintIncrease">-</button></div>
+            </div>
+            <div class="span-2">
+                <label for="vatRate">מע"מ (%)</label>
                 <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="vatRate">+</button><input type="text" id="vatRate" value="17" class="expense" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="vatRate">-</button></div>
             </div>
-            <div class="span-3">
-                <label for="maxYears">מגבלת סימולציה (שנים)</label>
+            <div class="span-2">
+                <label for="maxYears">שנים</label>
                 <div class="spinner-control"><button type="button" class="spinner-btn" data-step-dir="up" data-target="maxYears">+</button><input type="text" id="maxYears" value="15" inputmode="decimal"/><button type="button" class="spinner-btn" data-step-dir="down" data-target="maxYears">-</button></div>
             </div>
           </div>
@@ -388,6 +397,8 @@
 
                 const monthlyReturn = Math.pow(1 + p.annualReturn, 1/12) - 1;
                 const monthlyInfl = Math.pow(1 + p.annualInflation, 1/12) - 1;
+                // Effective maintenance inflation = General Inflation + Real Maintenance Increase
+                const monthlyMaintInfl = Math.pow(1 + p.annualInflation + p.maintIncrease, 1/12) - 1;
                 const maxMonths = p.maxYears > 0 ? p.maxYears * 12 : 50 * 12;
 
                 const isDeposit = p.pricingMode === 'deposit';
@@ -411,6 +422,7 @@
                 
                 while (t < maxMonths) {
                     const inflationFactor = Math.pow(1 + monthlyInfl, t);
+                    const maintFactor = Math.pow(1 + monthlyMaintInfl, t);
                     cash *= (1 + monthlyReturn);
 
                     let base;
@@ -418,16 +430,20 @@
                     else if (isEntrance) base = p.baseWithEntranceFee;
                     else base = p.baseNoDeposit;
                     
-                    const currentBaseCost = base * inflationFactor;
+                    // Maintenance and Nursing fees scale with maintenance inflation (Index + Real Increase)
+                    const currentBaseCost = base * maintFactor;
                     const currentNursingCost = (p.isNursing && t >= p.monthsIndependent) 
-                        ? (Math.max(0, p.nursingAddon - p.nursingAllowance) * inflationFactor) 
+                        ? (Math.max(0, p.nursingAddon - p.nursingAllowance) * maintFactor) 
                         : 0;
                         
                     const providerMonthlyCost = currentBaseCost + currentNursingCost;
+                    
+                    // Living expenses scale with general inflation
                     const totalMonthlyCost = providerMonthlyCost + (p.monthlyLivingExpenses * inflationFactor);
 
                     let rentIncome = 0;
                     if (p.scenario === 'rent') {
+                        // Rent and Income scale with general inflation (or standard index)
                         const gross = p.rentGross * inflationFactor;
                         rentIncome = Math.max(0, (gross * rentNetFactor) - maintenanceMonthly);
                     }
@@ -715,6 +731,7 @@
                     oneTimeCosts: getVal('oneTimeCosts'),
                     annualReturn: getVal('annualReturn'),
                     annualInflation: getVal('annualInflation'),
+                    maintIncrease: getVal('maintIncrease'),
                     vatRate: getVal('vatRate'),
                     maxYears: getVal('maxYears'),
                     monthsIndependent: getVal('monthsIndependent'),
@@ -738,6 +755,7 @@
                     ...commonRaw,
                     annualReturn: pct(commonRaw.annualReturn),
                     annualInflation: pct(commonRaw.annualInflation),
+                    maintIncrease: pct(commonRaw.maintIncrease),
                     vatRate: pct(commonRaw.vatRate),
                     saleCostsPct: pct(commonRaw.saleCostsPct),
                     rentTaxPct: pct(commonRaw.rentTaxPct),
@@ -1476,7 +1494,7 @@
                 let val = Utils.unformat(input.value);
                 const id = input.id;
                 let step = 500;
-                if (id.includes('Pct') || id.includes('Return') || id.includes('Inflation') || id.includes('vatRate')) step = 0.5;
+                if (id.includes('Pct') || id.includes('Return') || id.includes('Inflation') || id.includes('vatRate') || id.includes('Increase')) step = 0.5;
                 else if (id.toLowerCase().includes('years')) step = 1;
                 else if (id.includes('monthsIndependent')) step = 6;
                 else {
